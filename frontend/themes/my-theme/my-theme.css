@@ -1,0 +1,10 @@
+@charset "ISO-8859-1";
+
+
+:host(.custom-combobox) [part="input-field"] {
+    height: 40px;
+}
+
+:host(.custom-combobox) [part="overlay"] {
+    width: 300px;
+}

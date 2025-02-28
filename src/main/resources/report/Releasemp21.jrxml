@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Mp" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="13acf49e-4913-4d1b-bccc-113817ad15d1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="SMIS.jrdax"/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
+	<parameter name="amount" class="java.lang.String"/>
+	<parameter name="Note" class="java.lang.String"/>
+	<parameter name="CopyTo" class="java.lang.String"/>
+	<parameter name="ComplDate" class="java.time.LocalDate"/>
+	<parameter name="implAgency" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[select installment_mp.*, work_mp.*,constituency_mp.*, district.*, state.*,year.year_name, year.year_label
+ from Installment_mp
+ Join work_mp on  installment_mp.work_code=work_mp.work_code
+ Join Constituency_mp on Constituency_mp.constituency_id=work_mp.constituency_id
+ Join district on district.district_id=work_mp.district_district_id
+ Join State on state.state_id=district.state_id
+ Join Year on work_mp.year_id=year.year_id]]>
+	</queryString>
+	<field name="installmentAmount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="installment_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="installment_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="installmentAmountPrev" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="installment_amount_prev"/>
+		<property name="com.jaspersoft.studio.field.label" value="installment_amount_prev"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="installmentDate" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="installment_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="installment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="installmentLetter" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="installment_letter"/>
+		<property name="com.jaspersoft.studio.field.label" value="installment_letter"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="installmentNo" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="installment_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="installment_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="ucDate" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="uc_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="uc_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="ucLetter" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="uc_letter"/>
+		<property name="com.jaspersoft.studio.field.label" value="uc_letter"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="workmp.workCode" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="work_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="installment_mp"/>
+	</field>
+	<field name="workmp.implAddress" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="impl_address"/>
+		<property name="com.jaspersoft.studio.field.label" value="impl_address"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.implAgency" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="impl_agency"/>
+		<property name="com.jaspersoft.studio.field.label" value="impl_agency"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.implHead" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="impl_head"/>
+		<property name="com.jaspersoft.studio.field.label" value="impl_head"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.noOfInstallments" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="no_of_installments"/>
+		<property name="com.jaspersoft.studio.field.label" value="no_of_installments"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.priority" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="priority"/>
+		<property name="com.jaspersoft.studio.field.label" value="priority"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.sanctionDate" class="java.time.LocalDate">
+		<property name="com.jaspersoft.studio.field.name" value="sanction_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="sanction_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.sanctionNo" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sanction_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="sanction_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.workAmount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="work_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.workLocation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="work_location"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_location"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.workName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="work_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.workStatus" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="work_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_status"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.constituencymp.constituencyId" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.district.districtId" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="district_district_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_district_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work_mp"/>
+	</field>
+	<field name="workmp.constituencymp.address1" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="address1"/>
+		<property name="com.jaspersoft.studio.field.label" value="address1"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.address2" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="address2"/>
+		<property name="com.jaspersoft.studio.field.label" value="address2"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.address3" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="address3"/>
+		<property name="com.jaspersoft.studio.field.label" value="address3"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.constituencyLabel" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_label"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_label"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.constituencyMp" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_mp"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_mp"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.constituencyName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.constituencyType" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.constituencymp.schemeDuration" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="scheme_duration"/>
+		<property name="com.jaspersoft.studio.field.label" value="scheme_duration"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency_mp"/>
+	</field>
+	<field name="workmp.district.deputyCommissioner" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="deputy_commissioner"/>
+		<property name="com.jaspersoft.studio.field.label" value="deputy_commissioner"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.deputyCommissionerName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="deputy_commissioner_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="deputy_commissioner_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.districtAddress" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="district_address"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_address"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.districtHq" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="district_hq"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_hq"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.districtLabel" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="district_label"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_label"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.districtName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="district_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="workmp.district.state.stateHq" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="state_hq"/>
+		<property name="com.jaspersoft.studio.field.label" value="state_hq"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="state"/>
+	</field>
+	<field name="workmp.district.state.stateLabel" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="state_label"/>
+		<property name="com.jaspersoft.studio.field.label" value="state_label"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="state"/>
+	</field>
+	<field name="workmp.district.state.stateName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="state_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="state_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="state"/>
+	</field>
+	<field name="workmp.year.yearName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="year_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="year_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="year"/>
+	</field>
+	<field name="workmp.year.yearLabel" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="year_label"/>
+		<property name="com.jaspersoft.studio.field.label" value="year_label"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="year"/>
+	</field>
+	<variable name="Sum_Amount" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{installmentAmount}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="148" splitType="Stretch">
+			<textField>
+				<reportElement style="Detail" x="-1" y="15" width="555" height="15" uuid="2215e315-2f02-455b-afd2-91a6444a22f1">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Center" markup="styled">
+					<font fontName="Times New Roman" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">OFFICE OF THE "+$F{workmp.district.deputyCommissioner}.toUpperCase()+" :: "
++$F{workmp.district.districtName}.toUpperCase()+"::"+$F{workmp.district.districtHq}.toUpperCase() +"</style>"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="0" y="0" width="555" height="15" uuid="e1ff3018-f238-4f88-a6e2-ae6e174739d8">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Center" markup="styled">
+					<font fontName="Times New Roman" size="12" isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">GOVERNMENT OF "+$F{workmp.district.state.stateName}.toUpperCase()+"</style>"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement style="Detail" x="-1" y="30" width="556" height="15" uuid="37a6656a-7829-43a3-9251-d349ca8a980c">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b36dbddf-2307-4603-9cd9-1184caf289d5"/>
+				</reportElement>
+				<textElement textAlignment="Center" markup="styled">
+					<font fontName="Times New Roman" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">"+$F{workmp.district.districtLabel}.toUpperCase()+"</style>"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="0" y="48" width="340" height="15" uuid="249fa951-2f18-4318-bc18-bd3bfb337136">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b36dbddf-2307-4603-9cd9-1184caf289d5"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA["No."+$F{installmentLetter}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="350" y="48" width="204" height="15" uuid="915746a3-392e-4a3e-bb08-374cf96c65bd">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b36dbddf-2307-4603-9cd9-1184caf289d5"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Times New Roman" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Dated  "+$F{workmp.district.districtHq}+", the "+new SimpleDateFormat("dd/MMM/yyyy").format(new java.util.Date())]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="false">
+				<reportElement key="textField" x="3" y="85" width="550" height="63" uuid="c7d73459-fe54-4f6e-9361-3cacecce23c5"/>
+				<textElement textAlignment="Justified" markup="styled">
+					<font fontName="Times New Roman" size="10" isBold="false" isUnderline="false"/>
+					<paragraph lineSpacing="1_1_2"/>
+				</textElement>
+				<textFieldExpression><![CDATA["               Under Authority delegated in MPLADS guidelines issued by Govt of India, Ministry of Statistics and Programme Implementation of MPLAD Schemes, Sanction is hereby accorded for an expenditure of a sum of <style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">Rs. "+$V{Sum_Amount}+"/- "+$P{amount}+"</style>  for implementation of <style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\"> MPLAD Scheme, "+$F{workmp.year.yearLabel}+"</style>  as per project(s) below recommended by "+$F{workmp.constituencymp.constituencyMp}+", Hon'ble MP("+$F{workmp.constituencymp.constituencyType}+") under <style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">"+$P{implAgency}+"</style>."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="0" y="66" width="554" height="15" uuid="33ca6532-97cc-46e7-a84f-918ef3c8c4cf">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b36dbddf-2307-4603-9cd9-1184caf289d5"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="12" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["ORDER"]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement style="Column header" x="2" y="7" width="48" height="16" forecolor="#0A0909" uuid="11204af0-0a1b-4d9f-bbc1-1cb8ff5b8e5e">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="79456416-241e-4855-a48e-e8adfe317ac0"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Work Id]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="50" y="7" width="30" height="18" forecolor="#0A0909" uuid="caa1b4e1-8ee5-4b37-b76e-247726787bbb">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="575fc76d-4b84-4d31-bb61-47d4f1039e07"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Priority]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="102" y="7" width="188" height="18" forecolor="#0A0909" uuid="de8272bd-ac40-445e-a5a2-70591ed2847c">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="6487b958-1b26-407e-9869-228f1824b8e2"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Name of The Sanctioned/Recommended Project(s)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="291" y="7" width="108" height="18" forecolor="#0A0909" uuid="05d246ed-d301-4997-9ced-a6d675013377">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="792025b4-02c8-4159-9c7b-b7aa1d2b0a8e"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Location-Agency]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="455" y="0" width="55" height="25" forecolor="#0A0909" uuid="998f332f-c925-47c8-8f09-73d57fb2d259">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a40f652c-8714-4267-954d-4442a684683c"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount To Be Released]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="510" y="0" width="44" height="24" forecolor="#0A0909" uuid="75ef2145-30a5-42fe-8f16-388703f586b4">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="7a25dc4f-34b5-47a3-a55a-c34625ee1de0"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Percent]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="FixRelativeToBottom" mode="Opaque" x="0" y="26" width="555" height="1" backcolor="#0D0B0B" uuid="e08dd92e-63ea-4fe4-ae74-caee87afc430"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#999999"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement style="Column header" x="400" y="0" width="55" height="25" forecolor="#0A0909" uuid="6f3eecf3-7aac-40b0-9961-846f6ab24472">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a40f652c-8714-4267-954d-4442a684683c"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount Recommended]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<frame>
+				<reportElement style="Row" mode="Opaque" x="0" y="0" width="555" height="18" uuid="b50221b5-8254-440b-8c6f-1f0b138c9259"/>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="0" y="0" width="50" height="18" uuid="7b345d7c-b3a0-4d56-a54a-463dd9b5bd76">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="79456416-241e-4855-a48e-e8adfe317ac0"/>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workmp.workCode}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="50" y="0" width="30" height="18" uuid="33ceb8c2-f026-403d-af4d-4ba77f88bec8">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="575fc76d-4b84-4d31-bb61-47d4f1039e07"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workmp.priority}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="80" y="0" width="210" height="18" uuid="b4279e22-cdbb-48b6-b023-a55369d097d5">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="6487b958-1b26-407e-9869-228f1824b8e2"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workmp.workName}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="291" y="0" width="108" height="18" uuid="67f20e9b-2859-495a-8274-4a9e2ceaa599">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="792025b4-02c8-4159-9c7b-b7aa1d2b0a8e"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workmp.workLocation}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight" pattern="###0.###;(###0.###-)">
+					<reportElement style="Detail" positionType="Float" x="455" y="0" width="55" height="18" uuid="330e5847-9523-4ecc-83c5-e620cf295a19">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a40f652c-8714-4267-954d-4442a684683c"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{installmentAmount}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+					<reportElement style="Detail" positionType="Float" x="510" y="0" width="44" height="18" uuid="93212a11-d228-4422-97f2-cac531234a76">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="7a25dc4f-34b5-47a3-a55a-c34625ee1de0"/>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[new java.lang.Long( 100* ($F{installmentAmount}.longValue()) /($F{workmp.workAmount}.longValue()) ) +"%"]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement positionType="FixRelativeToBottom" mode="Opaque" x="0" y="20" width="555" height="1" backcolor="#0D0B0B" uuid="1133a906-5b71-476e-9f3e-bc97c97058c1"/>
+					<graphicElement>
+						<pen lineWidth="0.5" lineColor="#999999"/>
+					</graphicElement>
+				</line>
+				<textField textAdjust="StretchHeight" pattern="#,##0.###;(#,##0.###-)">
+					<reportElement style="Detail" positionType="Float" x="400" y="0" width="55" height="18" uuid="c7096d70-3e45-4b61-b1aa-c1601e8447ca">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a40f652c-8714-4267-954d-4442a684683c"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workmp.workAmount}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</detail>
+	<summary>
+		<band height="394" splitType="Stretch">
+			<textField>
+				<reportElement style="Detail" x="350" y="60" width="204" height="41" uuid="39b1e164-e675-46f0-a87b-b1c86382bc2e">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{workmp.district.deputyCommissioner}+",  \n "+$F{workmp.district.districtName}+", "+$F{workmp.district.districtHq}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="0" y="106" width="185" height="15" uuid="f550039a-ca27-4b21-b24a-9d2086880415">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Memo No. "+$F{installmentLetter}+"-A"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="350" y="106" width="204" height="15" uuid="efb73b33-22a8-4ae6-bcd2-556d392e8e0f">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Dated  "+$F{workmp.district.districtHq}+", the "+new SimpleDateFormat("dd/MMM/yyyy").format(new java.util.Date())]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="229" y="3" width="225" height="15" uuid="3052e71d-149d-4456-be2b-5ea40de3fc28">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Times New Roman" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Total Amount Released: Rs. "]]></textFieldExpression>
+			</textField>
+			<textField pattern="#.###;(#.###-)">
+				<reportElement style="Detail" x="455" y="3" width="85" height="15" uuid="5530d59c-4eca-4ecb-8d0e-2d7f1c209ec6">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum_Amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="2" y="126" width="185" height="15" uuid="8d77a889-ddc5-4f36-b59a-056fb912509c">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Copy To:"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="18" y="142" width="536" height="29" uuid="14838d71-b176-4856-8920-bca20f91e27d">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["The P.S to "+$F{workmp.constituencymp.constituencyMp}+", Hon'ble MP, "+$F{workmp.constituencymp.constituencyName}+", "+$F{workmp.constituencymp.address1}+", "+$F{workmp.constituencymp.address2}+", "+$F{workmp.constituencymp.address3} +" for favour of information of the Hon'ble MP."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="6" y="220" width="547" height="20" uuid="e28cb52a-bcc3-4da0-9a6b-d612a489533c">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["5. The Project Director, DRDA, "+$F{workmp.district.districtName}+", "+$F{workmp.district.districtHq}+" with a request to release the amount accordingly."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="6" y="271" width="547" height="15" uuid="fa13c59a-75cf-406f-ae0d-320c0813cfa1">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["7. Office Copy."]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement style="Detail" x="6" y="287" width="548" height="28" uuid="a13bb277-df25-4ba5-95f6-cf9c6ef09ce9">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{CopyTo}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement style="Detail" x="6" y="315" width="547" height="28" uuid="71f753aa-1947-4ae5-bd9f-baf2cf94054d">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Note}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="350" y="356" width="204" height="30" uuid="ef6277bd-6f13-45b8-8c42-315191a0cd98">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{workmp.district.deputyCommissioner}+",  \n "+$F{workmp.district.districtName}+", "+$F{workmp.district.districtHq}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="9" y="20" width="330" height="15" uuid="4c51d594-1df1-4708-b63d-b462e4f6418f">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Right" markup="styled">
+					<font fontName="Times New Roman" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<style isBold=\"true\"  pdfFontName=\"Helvetica-Bold\">"+$P{amount}+"</style>"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Column header" x="6" y="142" width="12" height="15" forecolor="#120A0A" uuid="52d0a95c-4a27-48ef-a2c3-e41a1137583e">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[1. ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="6" y="240" width="12" height="15" forecolor="#120A0A" uuid="f88cbc56-0d42-4c51-89d4-582b0c9f6bde">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[6. ]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Detail" x="6" y="171" width="547" height="15" uuid="4c243797-f37d-4ad6-b208-c230059c7506">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["2. The Secretary to the Govt. of Meghalaya, Department of Programme Implementation & Evaluation, Shillong."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="6" y="187" width="547" height="15" uuid="8be8c256-2d40-4426-a12f-03cba879694d">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["3. The Accountant General, Meghalaya, Shillong."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="6" y="203" width="547" height="15" uuid="3e282d95-6d07-4bbf-9627-5a6eb89f5a92">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["4. The Director, Department of Programme Implementation & Evaluation, Shillong."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="19" y="240" width="534" height="30" uuid="f6a62f0a-9d50-432f-b351-0b696de3162e">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="394d3c07-5f3d-45a0-878f-33e5fd03a8fe"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="Times New Roman" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["The "+$F{workmp.implHead}+", "+$F{workmp.implAgency}+" for information and necessary action with a request to submit the Utilization and Completion report with photos as per guidelines to the undersigned on or before "+$P{ComplDate}.format( java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))+"."]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

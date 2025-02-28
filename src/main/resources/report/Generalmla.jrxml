@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="General" pageWidth="595" pageHeight="842" columnWidth="575" leftMargin="10" rightMargin="10" topMargin="10" bottomMargin="10" uuid="13acf49e-4913-4d1b-bccc-113817ad15d1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="SMIS.jrdax"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman"/>
+	<queryString language="SQL">
+		<![CDATA[Select work.*, scheme.*,block.*,constituency.*, district.*, state.*,year.year_name, year.year_label
+ from  Work 
+ Join Scheme on Scheme.scheme_id=work.scheme_id
+ Join Block on Block.block_id=work.block_id
+ Join Constituency on Constituency.constituency_id=work.constituency_id
+ Join district on district.district_id=work.district_id
+ Join State on state.state_id=district.state_id
+ Join Year on work.year_id=year.year_id]]>
+	</queryString>
+	<field name="workCode" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="work_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="workName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="work_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="workAmount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="work_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="noOfInstallments" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="no_of_installments"/>
+		<property name="com.jaspersoft.studio.field.label" value="no_of_installments"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="sanctionNo" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sanction_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="sanction_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="sanctionDate" class="java.time.LocalDate">
+		<property name="com.jaspersoft.studio.field.name" value="sanction_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="sanction_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="workStatus" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="work_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="work_status"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="work"/>
+	</field>
+	<field name="constituency.constituencyName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="constituency_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="constituency_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="constituency"/>
+	</field>
+	<field name="block.blockName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="block_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="block_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="block"/>
+	</field>
+	<field name="scheme.schemeName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="scheme_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="scheme_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="scheme"/>
+	</field>
+	<field name="year.yearName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="year_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="year_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="year"/>
+	</field>
+	<field name="district.districtName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="district_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="district_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="district"/>
+	</field>
+	<field name="district.state.stateName" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="state_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="state_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="state"/>
+	</field>
+	<group name="Group1">
+		<groupExpression><![CDATA[$F{constituency.constituencyName}]]></groupExpression>
+		<groupHeader>
+			<band height="18">
+				<frame>
+					<reportElement mode="Opaque" x="0" y="2" width="230" height="16" forecolor="#B89F7D" backcolor="#F5F2F2" uuid="0a5fc4ac-2e39-4b7a-8f96-59f8eb2df66d">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textField textAdjust="StretchHeight">
+						<reportElement style="SubTitle" isPrintRepeatedValues="false" x="2" y="0" width="228" height="15" forecolor="#0A0101" uuid="4fbebfd3-a184-45af-b7d9-5c3faaf087b5">
+							<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						</reportElement>
+						<textElement>
+							<font fontName="Times New Roman" size="10" isBold="false"/>
+						</textElement>
+						<textFieldExpression><![CDATA["Constituency: "+$F{constituency.constituencyName}]]></textFieldExpression>
+					</textField>
+				</frame>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="6"/>
+		</groupFooter>
+	</group>
+	<group name="Group2">
+		<groupExpression><![CDATA[$F{block.blockName}]]></groupExpression>
+		<groupHeader>
+			<band height="18">
+				<frame>
+					<reportElement mode="Opaque" x="10" y="2" width="220" height="16" forecolor="#B89F7D" backcolor="#F5F2F2" uuid="c1780c2b-aa57-4a34-a2b3-2add68602834">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textField>
+						<reportElement positionType="Float" x="0" y="0" width="220" height="15" forecolor="#000000" uuid="539b4cf8-ac6d-4bf8-ae91-63f3d4149f2d">
+							<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						</reportElement>
+						<textElement>
+							<font fontName="Times New Roman" size="10" isBold="false"/>
+						</textElement>
+						<textFieldExpression><![CDATA["Block/MB: "+$F{block.blockName}]]></textFieldExpression>
+					</textField>
+				</frame>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="Group3">
+		<groupExpression><![CDATA[$F{scheme.schemeName}]]></groupExpression>
+		<groupHeader>
+			<band height="18">
+				<frame>
+					<reportElement mode="Opaque" x="17" y="2" width="213" height="16" forecolor="#B89F7D" backcolor="#F5F2F2" uuid="8dd1edbf-0d8b-4867-8262-28384b54153b">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textField>
+						<reportElement positionType="Float" x="0" y="1" width="213" height="15" forecolor="#000000" uuid="d2af6f35-6a15-4857-bf1f-1586fb306158">
+							<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						</reportElement>
+						<textElement>
+							<font fontName="Times New Roman" size="10" isBold="false"/>
+						</textElement>
+						<textFieldExpression><![CDATA["Scheme: "+$F{scheme.schemeName}]]></textFieldExpression>
+					</textField>
+				</frame>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="Group4">
+		<groupExpression><![CDATA[$F{year.yearName}]]></groupExpression>
+		<groupHeader>
+			<band height="18">
+				<frame>
+					<reportElement mode="Opaque" x="22" y="2" width="208" height="16" forecolor="#B89F7D" backcolor="#F5F2F2" uuid="0ac0c58b-350a-4e9b-8e02-d3b0af6e65dc">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textField>
+						<reportElement positionType="Float" x="0" y="0" width="208" height="15" forecolor="#000000" uuid="fc9c1a30-2de8-4716-ba3c-8e34d1a747c5">
+							<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						</reportElement>
+						<textElement>
+							<font fontName="Times New Roman" size="10" isBold="false"/>
+						</textElement>
+						<textFieldExpression><![CDATA["Year: "+$F{year.yearName}]]></textFieldExpression>
+					</textField>
+				</frame>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="62" splitType="Stretch">
+			<frame>
+				<reportElement mode="Opaque" x="0" y="0" width="553" height="60" backcolor="#FCF7F7" uuid="6c6ca4e1-17cd-4913-93d6-5e670ea9ae8a"/>
+				<staticText>
+					<reportElement style="Title" x="0" y="0" width="370" height="30" forecolor="#0D0404" uuid="a2a2cac8-5a7d-4487-8c54-dab235ce4e21"/>
+					<textElement>
+						<font size="26" isBold="false"/>
+					</textElement>
+					<text><![CDATA[MLA Schemes General Report]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="316" y="34" width="237" height="25" uuid="5b7e1f72-0655-4386-a2d7-c45e2af679d5">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font size="16"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{district.districtName}+"-"+$F{district.state.stateName}]]></textFieldExpression>
+				</textField>
+				<rectangle>
+					<reportElement x="373" y="0" width="175" height="30" backcolor="#666666" uuid="5006b1f9-dbc6-4765-a151-8d7c3940e47e"/>
+					<graphicElement>
+						<pen lineWidth="0.0"/>
+					</graphicElement>
+				</rectangle>
+			</frame>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="17" splitType="Stretch">
+			<staticText>
+				<reportElement style="Column header" x="22" y="3" width="294" height="10" forecolor="#000000" uuid="0151dc1d-53c3-45c8-b2df-f899c49a506a">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="19195937-f857-4ebf-aefb-dd0c698996ad"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Work]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="316" y="3" width="54" height="10" forecolor="#000000" uuid="8c4edeba-440c-4592-a4a6-b67d1c9e7a37">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="260c3daa-a21f-4460-8aa5-46c73fd0a071"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sanc Amt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="370" y="3" width="12" height="10" forecolor="#000000" uuid="9219cf6c-3bec-47f6-880f-eb2ad8dbe3db">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b2e3e6c9-8536-4e6a-bb33-8d27b666c889"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Insts]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="382" y="3" width="68" height="10" forecolor="#000000" uuid="ea520859-4ad8-46a8-b8ca-e93cb741db0f">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="46fb0448-3e2e-4735-b756-8cbabadd8662"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sanc No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="450" y="3" width="44" height="10" forecolor="#000000" uuid="2da43d2b-fbc0-4b01-96d3-90f9e945ead4">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="1022b6af-4a71-419e-b25e-2ec03e6bf519"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sanc Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="495" y="3" width="79" height="10" forecolor="#000000" uuid="b511d7fc-98a3-4afc-8a56-e52504dc410d">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="9cd92d8f-4ca0-4690-9bd6-c68a0673413a"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Times New Roman" size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<frame>
+				<reportElement style="Row" mode="Opaque" x="0" y="0" width="574" height="18" backcolor="#FFFFFF" uuid="b50221b5-8254-440b-8c6f-1f0b138c9259"/>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="2" y="0" width="314" height="18" uuid="d091c972-5150-44a0-a7ef-cc6c65557d6d">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="19195937-f857-4ebf-aefb-dd0c698996ad"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="10"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workCode}+" - "+$F{workName}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight" pattern="###0.###;(###0.###-)">
+					<reportElement style="Detail" positionType="Float" x="316" y="0" width="54" height="18" uuid="879ea9ab-f527-4e34-9c87-1504327f7563">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="260c3daa-a21f-4460-8aa5-46c73fd0a071"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workAmount}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Detail" positionType="Float" x="370" y="0" width="12" height="18" uuid="e8be7108-4372-44c9-bea4-c663e833e96d">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b2e3e6c9-8536-4e6a-bb33-8d27b666c889"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{noOfInstallments}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="ScaleFont">
+					<reportElement style="Detail" positionType="Float" x="382" y="0" width="68" height="18" uuid="13943771-f023-4afc-acfc-ec992e4b2b41">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="46fb0448-3e2e-4735-b756-8cbabadd8662"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sanctionNo}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="ScaleFont" pattern="dd/MM/yy" isBlankWhenNull="true">
+					<reportElement style="Detail" positionType="Float" x="450" y="0" width="50" height="18" uuid="561b85e0-518e-462a-ac10-da92e3828052">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="1022b6af-4a71-419e-b25e-2ec03e6bf519"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sanctionDate}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="ScaleFont">
+					<reportElement style="Detail" positionType="Float" x="500" y="0" width="72" height="18" uuid="73517928-8359-4189-9ebc-43a8ae32696e">
+						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="9cd92d8f-4ca0-4690-9bd6-c68a0673413a"/>
+					</reportElement>
+					<textElement>
+						<font fontName="Times New Roman" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{workStatus}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="7" splitType="Stretch">
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="0" width="574" height="4" uuid="1133a906-5b71-476e-9f3e-bc97c97058c1"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#999999"/>
+				</graphicElement>
+			</line>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="19" splitType="Stretch">
+			<frame>
+				<reportElement mode="Opaque" x="0" y="1" width="573" height="13" forecolor="#D0B48E" backcolor="#FFFFFF" uuid="729c3539-f946-4d0e-a0a7-bda2815ea1b0"/>
+				<textField evaluationTime="Report">
+					<reportElement style="Column header" x="530" y="0" width="40" height="12" forecolor="#0A0909" uuid="4834e99c-7f6c-485a-b098-50e5187f2ab4">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Times New Roman" size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement style="Column header" x="450" y="0" width="80" height="12" forecolor="#0A0909" uuid="9825b46e-76f1-469a-abb8-a1cc27aad685">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right" verticalAlignment="Middle">
+						<font fontName="Times New Roman" size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+				</textField>
+				<textField pattern="EEEEE dd MMMMM yyyy">
+					<reportElement style="Column header" x="2" y="1" width="197" height="12" forecolor="#0A0909" uuid="137d38c7-1a83-4fc5-b156-9d5f1b1a0ddc">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Times New Roman" size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

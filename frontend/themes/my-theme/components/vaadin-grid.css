@@ -1,0 +1,15 @@
+
+/* frontend/theme/[my-theme]/components/vaadin-grid.css */
+
+.high-rating {
+    background-color: var(--lumo-success-color-50pct);
+}
+
+.low-rating {
+    background-color: var(--lumo-error-color-10pct);
+   /* background-color: var(--lumo-primary-color-10pct);*/
+}
+
+.font-weight-bold {
+    font-weight: bold;
+}

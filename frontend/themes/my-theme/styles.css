@@ -1,0 +1,88 @@
+html {
+      
+      --lumo-font-size: 1rem;
+      --lumo-font-size-xxxl: 1.75rem;
+      --lumo-font-size-xxl: 1.375rem;
+      --lumo-font-size-xl: 1.125rem;
+      --lumo-font-size-l: 1rem;
+      --lumo-font-size-m: 0.875rem;
+      --lumo-font-size-s: 0.8125rem;
+      --lumo-font-size-xs: 0.75rem;
+      --lumo-font-size-xxs: 0.6875rem;
+      --lumo-line-height-m: 1.4;
+      --lumo-line-height-s: 1.2;
+      --lumo-line-height-xs: 1.1;
+
+    }
+
+    [theme~="dark"] {
+      --lumo-base-color: hsl(214, 23%, 82%);
+
+    }
+    
+    
+.custom-combobox::part(input-field) {
+    height: 40px; /* Adjust the input field height */
+    white-space: pre-wrap; /* Allows text to wrap */
+    word-wrap: break-word; /* Break long words */
+}
+
+.custom-combobox::part(overlay) {
+    width: 300px; /* Adjust the overlay width */
+}
+
+.custom-combobox-item {
+    white-space: pre-wrap; /* Allows text to wrap into multiple lines */
+    padding: 5px; /* Optional: Add some padding for better readability */
+}
+
+
+
+.homeLayout{
+	padding: 10px 10px 20px 10px;
+}
+
+vaadin-app-layout::part(drawer) {
+  width: 100px;
+}
+
+
+.card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s, transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+    color: rgb(2, 115, 253);
+}
+
+.card-title {
+    font-size: 1.5em;
+    font-family: inherit;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.card-description {
+    margin: 16px 0;
+     font-family: inherit;
+     font-size: var(--lumo-font-size-xs);
+    text-align: center;
+     color: rgb(2, 115, 253);
+}
