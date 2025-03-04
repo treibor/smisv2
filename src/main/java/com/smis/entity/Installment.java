@@ -36,7 +36,7 @@ public class Installment implements Serializable {
 	private String installmentLabel;
 	private String ucLetter;
 	private LocalDate ucDate;
-
+	private byte[] ucDocument;
 	private LocalDate enteredOn;
 	@ManyToOne
 	@JoinColumn(name="userId")
@@ -144,6 +144,12 @@ public class Installment implements Serializable {
 
 	
 	
+	public byte[] getUcDocument() {
+		return ucDocument;
+	}
+	public void setUcDocument(byte[] ucDocument) {
+		this.ucDocument = ucDocument;
+	}
 	public Work getWork() {
 		return work;
 	}

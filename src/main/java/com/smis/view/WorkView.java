@@ -119,14 +119,8 @@ public class WorkView extends VerticalLayout {
 	}
 
 	private void configureGrid() {
-
 		grid.setSizeFull();
-		// grid.setClassNameGenerator(work -> work.getWorkAmount().intValue() > 500 ?
-		// "warn" : null);
-		// grid.getColumns().forEach(col-> col.setAutoWidth(true));
-
 		grid.setColumns("workCode");
-		
 		grid.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%").setResizable(true)
 				.setSortable(true);
 		grid.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true).setSortable(true)
@@ -150,18 +144,13 @@ public class WorkView extends VerticalLayout {
 				.setSortable(true).setAutoWidth(true);
 		grid.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
-		grid.addColumn(work -> work.getEnteredBy()).setHeader("Entered By").setResizable(true).setSortable(true)
+		grid.addColumn(work -> work.getEnteredBy().getUserName()).setHeader("Entered By").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 
 		grid.addColumn(work -> work.getEnteredOn() != null ? work.getEnteredOn().format(dateFormatter) : "No Date")
 				.setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
 		grid.asSingleSelect().addValueChangeListener(e -> editWork(e.getValue()));
 		grid.getHeaderRows().clear();
-//		HeaderRow headerRow = grid.appendHeaderRow();
-//		headerRow.getCell(blockColumn).setComponent(block);
-//		headerRow.getCell(constiColumn).setComponent(consti);
-//		headerRow.getCell(schemeColumn).setComponent(scheme);
-//		headerRow.getCell(yearColumn).setComponent(year);
 		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		grid.setClassNameGenerator(work -> {
 			if (work.getWorkStatus().equals("Completed"))
@@ -183,14 +172,8 @@ public class WorkView extends VerticalLayout {
 
 	}
 	private void configureGridHistory() {
-
 		gridhistory.setSizeFull();
-		// gridhistory.setClassNameGenerator(work -> work.getWorkAmount().intValue() > 500 ?
-		// "warn" : null);
-		// gridhistory.getColumns().forEach(col-> col.setAutoWidth(true));
-
 		gridhistory.setColumns("workCode");
-		
 		gridhistory.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%").setResizable(true)
 				.setSortable(true);
 		gridhistory.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true).setSortable(true)
@@ -214,7 +197,7 @@ public class WorkView extends VerticalLayout {
 				.setSortable(true).setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getEnteredBy().).setHeader("Updated By").setResizable(true).setSortable(true)
+		gridhistory.addColumn(work -> work.getEnteredBy().getUserName()).setHeader("Updated By").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 
 		gridhistory.addColumn(work -> work.getEnteredOn() != null ? work.getEnteredOn().format(dateFormatter) : "No Date")
@@ -292,10 +275,10 @@ public class WorkView extends VerticalLayout {
 	}
 
 	private Component getContent() {
-		var grids=new VerticalLayout(grid, gridhistory);
-		grids.setSizeFull();
-		HorizontalLayout content = new HorizontalLayout(grids, workform);
-		content.setFlexGrow(1, grids);
+		//var grids=new VerticalLayout(grid, gridhistory);
+		//grids.setSizeFull();
+		HorizontalLayout content = new HorizontalLayout(grid, workform);
+		content.setFlexGrow(1, grid);
 		content.setFlexGrow(1, workform);
 		content.addClassName("content");
 		content.setSizeFull();

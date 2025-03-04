@@ -113,6 +113,8 @@ public class MainLayout extends AppLayout  {
 				LineAwesomeIcon.HOME_SOLID.create());
 		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("", "Works", WorkView.class,
 				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
+		SideNavItemWithHelperText history = new SideNavItemWithHelperText("", "Works History", WorkViewHistory.class,
+				LineAwesomeIcon.HISTORY_SOLID.create());
 		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("", "Release Order", PrintView.class,
 				LineAwesomeIcon.DONATE_SOLID.create());
 		SideNavItemWithHelperText master = new SideNavItemWithHelperText("", "Master", MasterView.class,
@@ -137,7 +139,7 @@ public class MainLayout extends AppLayout  {
 		// getElement().getStyle().set("--_vaadin-app-layout-drawer-width", "2px");
 		// addToDrawer(new VerticalLayout(nav));
 		// addToDrawer(nav);
-		drawerContent.add(home, mla, releaseorder, master, distmaster, report, audit, users, newWorks);
+		drawerContent.add(home, mla,history, releaseorder, master, distmaster, report, audit, users, newWorks);
 		//drawerContent.add(home, mla, releaseorder, master, distmaster, report, audit, users);
 		addToDrawer(drawerContent);
 	}

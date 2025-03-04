@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.smis.entity.Block;
+import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
 import com.smis.entity.District;
 import com.smis.entity.Impldistrict;
@@ -21,6 +22,7 @@ import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
+import com.smis.entity.SchemeUser;
 import com.smis.entity.State;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
@@ -28,6 +30,7 @@ import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.repository.BlockRepository;
+import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
 import com.smis.repository.DistrictRepository;
 import com.smis.repository.ImpldistrictRepository;
@@ -37,6 +40,7 @@ import com.smis.repository.ProcessFlowUserRepo;
 import com.smis.repository.ProcessHistoryRepo;
 import com.smis.repository.RoleRepository;
 import com.smis.repository.SchemeRepository;
+import com.smis.repository.SchemeUserRepo;
 import com.smis.repository.StateRepository;
 import com.smis.repository.UserRepository;
 import com.smis.repository.VillageRepository;
@@ -70,10 +74,12 @@ public class Dbservice implements Serializable{
 	private final ProcessFlowRepo pflowrepo;
 	private final ProcessFlowUserRepo pflowuserrepo;
 	private final ProcessHistoryRepo phistoryrrepo;
+	private final BlockUserRepo buserrepo;
+	private final SchemeUserRepo suserrepo;
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
 			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,
 			InstallmentRepository irepo, ImpldistrictRepository idrepo, VillageRepository vrepo, RoleRepository rolerepo, 
-			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo) {
+			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
 		this.srepo = srepo;
@@ -90,6 +96,8 @@ public class Dbservice implements Serializable{
 		this.pflowrepo=pflowrepo;
 		this.pflowuserrepo=pflowuserrepo;
 		this.phistoryrrepo=phistoryrrepo;
+		this.buserrepo=buserrepo;
+		this.suserrepo=suserrepo;
 	}
 
 	// Development Phase only
@@ -646,7 +654,43 @@ public class Dbservice implements Serializable{
 	public void deleteProcessFlowUser(ProcessFlowUser pfu) {
 		pflowuserrepo.delete(pfu);
 	}
+	public BlockUser getBlockUser(Users user, Block block) {
+		return buserrepo.findByUserAndBlock(user, block);
+	}
+	public List<BlockUser> getBlockUser(Users user) {
+		return buserrepo.findByUser(user);
+	}
+	public void saveBlockUser(BlockUser bu) {
+		buserrepo.save(bu);
+	}
+	
+	public SchemeUser getSchemeUser(Users user, Scheme sch) {
+		return suserrepo.findByUserAndScheme(user, sch);
+	}
+	public List<SchemeUser> getSchemeUser(Users user) {
+		return suserrepo.findByUser(user);
+	}
+	public void saveSchemeUser(SchemeUser bu) {
+		suserrepo.save(bu);
+	}
+	
 	public void saveProcessHistory(ProcessHistory pfh) {
 		phistoryrrepo.save(pfh);
 	}
+	public List<ProcessHistory> getProcessHistory() {
+		try {
+			return phistoryrrepo.findByUser(getLoggedUser());
+		} catch (Exception e) {
+			return Collections.emptyList();
+		}
+	}
+	public List<ProcessHistory> getProcessHistory(Work work) {
+		try {
+			return phistoryrrepo.findByWork(work);
+		} catch (Exception e) {
+			return Collections.emptyList();
+		}
+	}
+	
+	
 }

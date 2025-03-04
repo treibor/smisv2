@@ -2,6 +2,7 @@ package com.smis.view;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
@@ -38,6 +39,8 @@ import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
@@ -94,7 +97,8 @@ public class WorkForm extends VerticalLayout {
 	// Label ucmaster=new Label("");
 	boolean isAdmin;
 	boolean isUser;
-	
+	MemoryBuffer buffer = new MemoryBuffer();
+	Upload upload1 = new Upload(buffer);
 	public WorkForm(Dbservice service) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
@@ -255,13 +259,30 @@ public class WorkForm extends VerticalLayout {
 		hl1.setWidthFull();
 		return hl1;
 	}
-
+	private Component createUpload(Upload upload) {
+		upload.setHeight("20%");
+		upload.getStyle().set("font-size", "12px");
+		upload.setMaxFiles(1);
+		
+		upload.setMaxFileSize(5000000);
+		Button uploadButton=new Button("Select Document To Upload");
+		//upload.setDropLabel(uploadButton);
+		uploadButton.getStyle().set("font-size", "12px");
+		upload.setUploadButton(uploadButton);
+		//upload.setDropLabel(new Label("Drop Photo"));
+		 upload.setAcceptedFileTypes("application/pdf");
+		upload.addFileRejectedListener(e -> Notification.show("Invalid File: Please select only image files which are less than 5Mb",3000, Position.TOP_END));
+		//upload.addSucceededListener(event -> showPicture());
+		
+		return upload;
+	}
 	public Component configureUcForm() {
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(ucmaster, 2);
 		form2.add(ucDate, 1);
-		form2.add(ucletter, 2);
+		form2.add(ucletter, 1);
+		form2.add(createUpload(upload1), 2);
 		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
 				// Use two columns, if layout's width exceeds 500px
 				new ResponsiveStep("500px", 2));
@@ -312,6 +333,7 @@ public class WorkForm extends VerticalLayout {
 					work.setProcessflow(service.getProcessFlowByOrder(2));
 					
 					ph.setWork(work);
+					ph.setEnteredOn(LocalDateTime.now());
 					ph.setProcessFlow(service.getProcessFlowByOrder(1));
 					ph.setUser(user);
 					
@@ -374,6 +396,7 @@ public class WorkForm extends VerticalLayout {
 				ph.setWork(work);
 				ph.setProcessFlow(service.getProcessFlowByOrder(2));
 				ph.setUser(user);
+				ph.setEnteredOn(LocalDateTime.now());
 				service.saveInstallment(installment);
 				service.saveProcessHistory(ph);
 				updateWork("Installment " + toEnterInstallment + "",service.getProcessFlowByOrder(3));
@@ -426,6 +449,7 @@ public class WorkForm extends VerticalLayout {
 				ph.setWork(work);
 				ph.setProcessFlow(service.getProcessFlowByOrder(4));
 				ph.setUser(user);
+				ph.setEnteredOn(LocalDateTime.now());
 				service.saveProcessHistory(ph);
 				if (work.getNoOfInstallments() == tableinstallments) {
 					updateWork("Completed",service.getProcessFlowByOrder(5));

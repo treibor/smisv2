@@ -25,9 +25,15 @@ public class Users {
 	@SequenceGenerator(name="users_generator", sequenceName = "users_seq", allocationSize=1)
 	long userId;
 	@NotEmpty
+	private String profileName;
+	@NotEmpty
+	private String email;
+	@NotEmpty
 	private String userName;
 	@NotEmpty
 	private String password;
+	private String password1;
+	private String password2;
 	//@NotEmpty
 	//private String role;
 	@ManyToOne
@@ -39,6 +45,7 @@ public class Users {
 	private String enteredBy;
 	private LocalDate enteredOn;
 	private LocalDate pwdChangedDate;
+	private byte[] profilePhoto;
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user", fetch = FetchType.LAZY)
 	private List<UsersRoles> Roles;
 	@ManyToMany
@@ -106,6 +113,36 @@ public class Users {
 	}
 	public void setRoles(List<UsersRoles> roles) {
 		Roles = roles;
+	}
+	public String getProfileName() {
+		return profileName;
+	}
+	public void setProfileName(String profileName) {
+		this.profileName = profileName;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getPassword1() {
+		return password1;
+	}
+	public void setPassword1(String password1) {
+		this.password1 = password1;
+	}
+	public String getPassword2() {
+		return password2;
+	}
+	public void setPassword2(String password2) {
+		this.password2 = password2;
+	}
+	public byte[] getProfilePhoto() {
+		return profilePhoto;
+	}
+	public void setProfilePhoto(byte[] profilePhoto) {
+		this.profilePhoto = profilePhoto;
 	}
 	
 	

@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -225,6 +226,7 @@ public class PrintView extends HorizontalLayout{
 						ph.setWork(singlework);
 						ph.setProcessFlow(service.getProcessFlowByOrder(3));
 						ph.setUser(user);
+						ph.setEnteredOn(LocalDateTime.now());
 						service.saveProcessHistory(ph);
 						singlework.setProcessflow(service.getProcessFlowByOrder(4));
 						service.saveWork(singlework);
