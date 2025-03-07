@@ -2,24 +2,17 @@ package com.smis.entity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
-import org.hibernate.validator.constraints.UniqueElements;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-
 @Entity
 @Table(name="AuditTrail")
 public class AuditTrail implements Serializable {
@@ -30,7 +23,9 @@ public class AuditTrail implements Serializable {
 	private long id;
 	private String action;
 	private String ipAddress;
-	private String actionBy;
+	 @ManyToOne
+	    @JoinColumn(name = "userId", nullable = false)
+	    private Users actionBy;
 	private LocalDateTime actionOn;
 	@Column(length = 1000)
 	private String details;
@@ -52,12 +47,7 @@ public class AuditTrail implements Serializable {
 	public void setIpAddress(String ipAddress) {
 		this.ipAddress = ipAddress;
 	}
-	public String getActionBy() {
-		return actionBy;
-	}
-	public void setActionBy(String actionBy) {
-		this.actionBy = actionBy;
-	}
+
 	public LocalDateTime getActionOn() {
 		return actionOn;
 	}
@@ -69,6 +59,12 @@ public class AuditTrail implements Serializable {
 	}
 	public void setDetails(String details) {
 		this.details = details;
+	}
+	public Users getActionBy() {
+		return actionBy;
+	}
+	public void setActionBy(Users actionBy) {
+		this.actionBy = actionBy;
 	}
 	
 	

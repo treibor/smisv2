@@ -265,6 +265,8 @@ public class Dbservice implements Serializable{
 	public List<Work> getWorksAssignedToUser() {
         return wrepo.findWorksByUser(getLoggedUser());
     }
+	
+	
 	public List<Work> getFilteredWorks(String searchTerm) {
 		try {
 			return wrepo.search(searchTerm, getDistrict());
@@ -272,6 +274,8 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
+	
+	
 	public List<Work> getFilteredWorkss(String searchTerm) {
 		try {
 			return wrepo.searchAll(searchTerm, getDistrict());
@@ -531,8 +535,11 @@ public class Dbservice implements Serializable{
 	public List<Scheme> getAllSchemes() {
 		if (isSuperAdmin()) {
 			return srepo.findAll();
-		} else {
+		} else if (isAdmin()){
 			return srepo.findByDistrictAndInUse(getDistrict(), true);
+			//return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
+		}else {
+			return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
 		}
 
 	}
@@ -573,9 +580,11 @@ public class Dbservice implements Serializable{
 	public List<Block> getAllBlocks() {
 		if (isSuperAdmin()) {
 			return brepo.findAll();
-		} else {
+		} else if (isAdmin()){
 			// return brepo.findByDistrictAndInUse(getDistrict(), true);
 			return brepo.findByDistrictAndInUseOrderByBlockNameAsc(getDistrict(), true);
+		}else {
+			return brepo.findBlocksByUserAndStatus(getLoggedUser(), true);
 		}
 
 	}
@@ -663,7 +672,9 @@ public class Dbservice implements Serializable{
 	public void saveBlockUser(BlockUser bu) {
 		buserrepo.save(bu);
 	}
-	
+	public void deleteBlockUser(BlockUser su) {
+		buserrepo.delete(su);
+	}
 	public SchemeUser getSchemeUser(Users user, Scheme sch) {
 		return suserrepo.findByUserAndScheme(user, sch);
 	}
@@ -673,7 +684,9 @@ public class Dbservice implements Serializable{
 	public void saveSchemeUser(SchemeUser bu) {
 		suserrepo.save(bu);
 	}
-	
+	public void deleteSchemeUser(SchemeUser su) {
+		suserrepo.delete(su);
+	}
 	public void saveProcessHistory(ProcessHistory pfh) {
 		phistoryrrepo.save(pfh);
 	}

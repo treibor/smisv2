@@ -1,6 +1,7 @@
 package com.smis.view;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +10,10 @@ import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.District;
-import com.smis.entity.UsersRoles;
 import com.smis.entity.State;
 import com.smis.entity.Users;
+import com.smis.entity.UsersRoles;
 import com.smis.security.SecurityService;
-import com.smis.view.processflow.WorkViewNew;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -89,9 +89,9 @@ public class MainLayout extends AppLayout  {
 
 	private void checkPasswordExpiry() {
 		user = service.getLoggedUser();
-		LocalDate expiryDate = user.getPwdChangedDate();
-		LocalDate expiryDatePlus180Days = expiryDate.plus(180, ChronoUnit.DAYS);
-		LocalDate today = LocalDate.now();
+		LocalDateTime expiryDate = user.getPwdChangedDate();
+		LocalDateTime expiryDatePlus180Days = expiryDate.plus(180, ChronoUnit.DAYS);
+		LocalDateTime today = LocalDateTime.now();
 		boolean isExpiryDateValid = expiryDatePlus180Days.isAfter(today);
 		if (!isExpiryDateValid) {
 			openMandatoryPasswordDialog();
@@ -128,8 +128,7 @@ public class MainLayout extends AppLayout  {
 				LineAwesomeIcon.CALENDAR.create());
 		SideNavItemWithHelperText users = new SideNavItemWithHelperText("", "Users", UsersView.class,
 				LineAwesomeIcon.USER.create());
-		SideNavItemWithHelperText newWorks = new SideNavItemWithHelperText("", "New Works", WorkViewNew.class,
-				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
+		
 		master.setVisible(isAdmin);
 		distmaster.setVisible(isSuper);
 		releaseorder.setVisible(isUser);
@@ -139,7 +138,7 @@ public class MainLayout extends AppLayout  {
 		// getElement().getStyle().set("--_vaadin-app-layout-drawer-width", "2px");
 		// addToDrawer(new VerticalLayout(nav));
 		// addToDrawer(nav);
-		drawerContent.add(home, mla,history, releaseorder, master, distmaster, report, audit, users, newWorks);
+		drawerContent.add(home, mla,history, releaseorder, master, distmaster, report, audit, users);
 		//drawerContent.add(home, mla, releaseorder, master, distmaster, report, audit, users);
 		addToDrawer(drawerContent);
 	}
@@ -298,7 +297,7 @@ public class MainLayout extends AppLayout  {
 				if (passwordEncoder.matches(pwd, service.getLoggedUser().getPassword())) {
 					user = service.getLoggedUser();
 					user.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-					user.setPwdChangedDate(LocalDate.now());
+					user.setPwdChangedDate(LocalDateTime.now());
 					service.saveUser(user);
 					showConfirmationDialog();
 
@@ -426,9 +425,9 @@ public class MainLayout extends AppLayout  {
 						users.setDistrict(district.getValue());
 						users.setUserName(userName.getValue());
 						users.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-						users.setEnteredBy(service.getloggeduser());
-						users.setEnteredOn(LocalDate.now());
-						users.setPwdChangedDate(LocalDate.now());
+						users.setEnteredBy(service.getLoggedUser());
+						users.setEnteredOn(LocalDateTime.now());
+						users.setPwdChangedDate(LocalDateTime.now());
 						users.setEnabled(true);
 						service.saveUser(users);
 						role.setUser(users);

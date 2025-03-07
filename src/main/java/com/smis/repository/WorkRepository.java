@@ -1,6 +1,7 @@
 package com.smis.repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,8 +66,8 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("select c from Work c where c.district= :district and(str(c.workCode)=:searchTerm or lower(c.workName) like lower(concat('%', :searchTerm, '%'))or lower(c.sanctionNo) like lower(concat('%', :searchTerm, '%'))) order by c.workCode Desc")
 	List<Work> searchAll(@Param("searchTerm") String searchTerm, @Param("district") District district);
 	
-	@Query("select  count(*) from Work c  where  c.enteredOn between :sdate and :edate")
-	int getWorksCountBetweenDates(@Param("sdate") LocalDate sdate, @Param("edate") LocalDate edate);
+	@Query("select  count(*) from Work c  where  c.updatedOn between :sdate and :edate")
+	int getWorksCountBetweenDates(@Param("sdate") LocalDateTime sdate, @Param("edate") LocalDateTime edate);
 	@Query("select  count(*) from Work c")
 	int getWorksCount();
 	
@@ -80,11 +81,26 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 
 	@Query("SELECT w FROM Work w WHERE w.processflow IN " +
 	           "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user)")
-	    List<Work> findWorksByUser(@Param("user") Users user);
+	    List<Work> findWorksByUserz(@Param("user") Users user);
+	
+	
+	//Find Works
+	@Query("SELECT w FROM Work w " +
+		       "WHERE w.processflow IN " +
+		       "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user) " +
+		       "AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = w.block) " +  // Block check
+		       "AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = w.scheme) " +  // Scheme check
+		       "ORDER BY w.workCode DESC")
+		List<Work> findWorksByUser(@Param("user") Users user);
+	
+	
+	//Works Search
 	@Query("SELECT w FROM Work w " +
 		       "WHERE w.processflow IN " +
 		       "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user) " +
 		       "AND w.district = :district " +
+		       "AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = w.block) " +  // Block check
+		       "AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = w.scheme) " +  // Scheme check
 		       "AND (CAST(w.workCode AS string) = :searchTerm " +
 		       "     OR LOWER(w.workName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
 		       "     OR LOWER(w.sanctionNo) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
@@ -93,10 +109,13 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 		                                    @Param("district") District district,
 		                                    @Param("searchTerm") String searchTerm);
 	
+	
 	@Query("SELECT c FROM Work c " +
 		       "WHERE c.processflow IN " +
 		       "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user) " +
 		       "AND c.district = :district " +
+		       "AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = c.block) " +  // Block check
+		       "AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = c.scheme) " +  // Scheme check
 		       "AND (:scheme IS NULL OR c.scheme = :scheme) " +
 		       "AND (:year IS NULL OR c.year = :year) " +
 		       "AND (:block IS NULL OR c.block = :block) " +
@@ -108,6 +127,9 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 		                                  @Param("year") Year year,
 		                                  @Param("consti") Constituency consti, 
 		                                  @Param("block") Block block);
+
+	
+	
 
 	@Query("SELECT DISTINCT ph.work FROM ProcessHistory ph " +
 		       "WHERE ph.user = :user " +

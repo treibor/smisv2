@@ -16,7 +16,6 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.SecurityContextRepository;
 
-import com.smis.audit.Audit;
 import com.smis.security.captcha.Captcha;
 import com.smis.security.captcha.CapthaImpl;
 import com.smis.view.HomeView;
@@ -57,8 +56,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 @AnonymousAllowed
 public class Login extends VerticalLayout implements BeforeEnterObserver {
 
-	@Autowired
-	Audit audit;
+	
 	@Autowired
 	SessionRegistry sr;
 	@Autowired
@@ -194,11 +192,11 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 			registerSession(VaadinService.getCurrentRequest().getWrappedSession(),
 					(UserDetails) authentication.getPrincipal());
 			
-			audit.saveLoginAudit("Login Successfully", username);
+			//audit.saveLoginAudit("Login Successfully", username);
 			UI.getCurrent().navigate(HomeView.class);
 		} catch (Exception e) {
 			// Handle login failure
-			audit.saveLoginAudit("Login Failure- Authentication", username);
+			//audit.saveLoginAudit("Login Failure- Authentication", username);
 			Notification.show("Authentication failed: Wrong User Name and Password")
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			clearFields();

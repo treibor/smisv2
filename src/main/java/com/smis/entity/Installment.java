@@ -3,6 +3,7 @@ package com.smis.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -37,20 +38,20 @@ public class Installment implements Serializable {
 	private String ucLetter;
 	private LocalDate ucDate;
 	private byte[] ucDocument;
-	private LocalDate enteredOn;
+	private LocalDateTime enteredOn;
 	@ManyToOne
 	@JoinColumn(name="userId")
 	@NotNull
 	private Users enteredBy;
-	
-	
-	
-	
-
-
-
 	@Column(length=2000)
 	private String copyTo;
+	
+	@ManyToOne 
+	@JoinColumn(name="workId", referencedColumnName = "workId")
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	@NotNull
+	private Work work;
+	
 	public String getCopyTo() {
 		return copyTo;
 	}
@@ -59,13 +60,6 @@ public class Installment implements Serializable {
 	}
 
 
-	@ManyToOne 
-	@JoinColumn(name="workId", referencedColumnName = "workId")
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	@NotNull
-	private Work work;
-	
-	
 	
 	public Users getEnteredBy() {
 		return enteredBy;
@@ -73,10 +67,11 @@ public class Installment implements Serializable {
 	public void setEnteredBy(Users enteredBy) {
 		this.enteredBy = enteredBy;
 	}
-	public LocalDate getEnteredOn() {
+	
+	public LocalDateTime getEnteredOn() {
 		return enteredOn;
 	}
-	public void setEnteredOn(LocalDate enteredOn) {
+	public void setEnteredOn(LocalDateTime enteredOn) {
 		this.enteredOn = enteredOn;
 	}
 	public long getInstallmentId() {

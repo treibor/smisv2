@@ -15,7 +15,7 @@ import com.vaadin.flow.theme.Theme;
 //@JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 @Theme(value = "my-theme")
 @PWA(name = "Smis", shortName = "SMIS", iconPath = "/images/plant.png")
-public class SmisJuneApplication extends SpringBootServletInitializer implements AppShellConfigurator{
+public class SmisApplication extends SpringBootServletInitializer implements AppShellConfigurator{
 	
 	/**
 	 * 
@@ -25,7 +25,7 @@ public class SmisJuneApplication extends SpringBootServletInitializer implements
 	
 	
 	public static void main(String[] args) {
-		SpringApplication.run(SmisJuneApplication.class, args);
+		SpringApplication.run(SmisApplication.class, args);
 	}
 	
 	@Override

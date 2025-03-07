@@ -32,6 +32,10 @@ public class SchemeUser implements Serializable {
 
     private LocalDateTime assignedDate;
 
+    @ManyToOne
+    @JoinColumn(name = "assignedBy", nullable = false)
+    private Users assignedBy;
+    
 	public long getId() {
 		return Id;
 	}
@@ -62,6 +66,14 @@ public class SchemeUser implements Serializable {
 
 	public void setUser(Users user) {
 		this.user = user;
+	}
+
+	public Users getAssignedBy() {
+		return assignedBy;
+	}
+
+	public void setAssignedBy(Users assignedBy) {
+		this.assignedBy = assignedBy;
 	}
 
 	

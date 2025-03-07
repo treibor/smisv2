@@ -63,7 +63,10 @@ public class DashboardService {
 		DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		LocalDate startdate = LocalDate.parse("01/"+month+"/" + year, df);
 		LocalDate enddate = LocalDate.parse("31/"+month+"/" + year, df);
-		int count = workrepo.getWorksCountBetweenDates(startdate, enddate);
+		LocalDateTime startDateTime = startdate.atStartOfDay();
+		LocalDateTime endDateTime = enddate.atTime(23, 59, 59); // End of the day
+
+		int count = workrepo.getWorksCountBetweenDates(startDateTime, endDateTime);
 		
 		return count;
 	}
@@ -96,7 +99,10 @@ public class DashboardService {
 		DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		LocalDate startdate = LocalDate.parse("01/"+month+"/" + year, df);
 		LocalDate enddate = LocalDate.parse("31/"+month+"/" + year, df);
-		int count=workrepo.getWorksCountBetweenDates(startdate, enddate);
+		LocalDateTime startDateTime = startdate.atStartOfDay();
+		LocalDateTime endDateTime = enddate.atTime(23, 59, 59); // End of the day
+
+		int count = workrepo.getWorksCountBetweenDates(startDateTime, endDateTime);
 		return count;
 	}
 }

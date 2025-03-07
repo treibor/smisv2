@@ -1,6 +1,7 @@
 package com.smis.view;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -26,10 +28,12 @@ import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -57,13 +61,14 @@ public class UsersForm extends FormLayout {
 	public ComboBox<Block> blockc=new ComboBox<Block>("Block");
 	public ComboBox<Scheme> scheme=new ComboBox<Scheme>("Scheme");
 	//ComboBox<MasterProcess> schemeprocess=new ComboBox<MasterProcess>("Assigned Task");
-	Button savetask= new Button("Add Process");
-	Button deletetask= new Button("Delete Process");
-	Button saveblock= new Button("Add Block");
-	Button deleteblock= new Button("Delete Block");
-	Button savescheme= new Button("Add Scheme");
-	Button deletescheme= new Button("Delete Scheme");
+	Button savetask= new Button("Add");
+	Button deletetask= new Button("Delete");
+	Button saveblock= new Button("Add");
+	Button deleteblock= new Button("Delete");
+	Button savescheme= new Button("Add");
+	Button deletescheme= new Button("Delete");
 	private Users user;
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	//private Impldistrict impldist;
 	public UsersForm(Dbservice service) {
 		this.service=service;
@@ -74,37 +79,73 @@ public class UsersForm extends FormLayout {
 	}
 
 	private Component createForm() {
-		checkboxGroup.setLabel("Roles");
-		checkboxGroup.setItems("ADMIN", "USER");
-		//checkboxGroup.select("Order ID", "Customer");
-		checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-		processflow.setItems(service.getAllProcessFlow());
-		processflow.setItemLabelGenerator(ProcessFlow::getStepName);
-		blockc.setItems(service.getAllBlocks());
-		blockc.setItemLabelGenerator(Block::getBlockName);
-		scheme.setItems(service.getAllSchemes());
-		scheme.setItemLabelGenerator(Scheme::getSchemeName);
-		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		save.addClickShortcut(Key.ENTER);
-		save.addClickListener(event-> validateandSave());
-		savetask.addClickListener(e->addProcess());
-		saveblock.addClickListener(e->addBlock());
-		savescheme.addClickListener(e->addScheme());
-		deletetask.addClickListener(e->deleteProcess());
-		deletetask.setEnabled(false);
-		checkboxGroup.setVisible(service.isSuperAdmin());
-		//block.setVisible(false);
-		//pfugrid.setHeight("200px");
-		pfugrid.setWidth("100%");
-		HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask, deletetask);
-		HorizontalLayout blocklayout = new HorizontalLayout(blockc, saveblock, deleteblock);
-		HorizontalLayout schemelayout = new HorizontalLayout(scheme, savescheme, deletescheme);
-		processlayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-		blocklayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-		schemelayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-		//return new VerticalLayout(checkboxGroup,new HorizontalLayout(enabled,save), processlayout,pfugrid);
-		return new VerticalLayout(checkboxGroup,new HorizontalLayout(enabled,save), processlayout,pfugrid, blocklayout, blugrid, schemelayout,scgrid);
+	    checkboxGroup.setLabel("Roles");
+	    checkboxGroup.setItems("ADMIN", "USER");
+	    checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+
+	    processflow.setItems(service.getAllProcessFlow());
+	    processflow.setItemLabelGenerator(ProcessFlow::getStepName);
+	    blockc.setItems(service.getAllBlocks());
+	    blockc.setItemLabelGenerator(Block::getBlockName);
+	    scheme.setItems(service.getAllSchemes());
+	    scheme.setItemLabelGenerator(Scheme::getSchemeName);
+
+	    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+	    save.addClickShortcut(Key.ENTER);
+	    save.addClickListener(event -> validateandSave());
+
+	    savetask.addClickListener(e -> addProcess());
+	    saveblock.addClickListener(e -> addBlock());
+	    savescheme.addClickListener(e -> addScheme());
+	    deletetask.addClickListener(e -> deleteProcess());
+	    deleteblock.addClickListener(e -> deleteBlockUser());
+	    deletescheme.addClickListener(e -> deleteSchemeUser());
+
+	    deletetask.setEnabled(false);
+	    deleteblock.setEnabled(false);
+	    deletescheme.setEnabled(false);
+
+	    checkboxGroup.setVisible(service.isSuperAdmin());
+
+	    // Process Flow Section
+	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask, deletetask);
+	    processlayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+	    VerticalLayout processContent = new VerticalLayout(processlayout, pfugrid);
+	    processContent.setSpacing(true);
+	    pfugrid.setHeight("400px");
+
+	    // Block Section
+	    HorizontalLayout blocklayout = new HorizontalLayout(blockc, saveblock, deleteblock);
+	    blocklayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+	    VerticalLayout blockContent = new VerticalLayout(blocklayout, blugrid);
+	    blockContent.setSpacing(true);
+	    blugrid.setHeight("400px");
+
+	    // Scheme Section
+	    HorizontalLayout schemelayout = new HorizontalLayout(scheme, savescheme, deletescheme);
+	    schemelayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+	    VerticalLayout schemeContent = new VerticalLayout(schemelayout, scgrid);
+	    schemeContent.setSpacing(true);
+	    scgrid.setHeight("400px");
+
+	    // Accordion with sections
+	    Accordion accordion = new Accordion();
+	    //accordion.add("Roles", checkboxGroup);
+	    accordion.add("Process Flow", processContent);
+	    accordion.add("Block Assignment", blockContent);
+	    accordion.add("Scheme Assignment", schemeContent);
+
+	    // Make the accordion scrollable
+	    VerticalLayout layout = new VerticalLayout(checkboxGroup, enabled, save,accordion);
+	    layout.setSizeFull();
+	    layout.getStyle().set("overflow", "auto");
+
+	    Scroller scroller = new Scroller(layout);
+	    scroller.setSizeFull();
+
+	    return scroller;
 	}
+
 
 	private void deleteProcess() {
 		try {
@@ -120,6 +161,7 @@ public class UsersForm extends FormLayout {
 		if (existingPFU != null) {
 		    // Update existing entry
 		    existingPFU.setAssignedDate(LocalDateTime.now());
+		    existingPFU.setAssignedBy(service.getLoggedUser());
 		    service.saveProcessFlowUser(existingPFU);
 		    
 		} else {
@@ -128,6 +170,7 @@ public class UsersForm extends FormLayout {
 		    pfu.setUser(user);
 		    pfu.setProcessFlow(processflow.getValue());
 		    pfu.setAssignedDate(LocalDateTime.now());
+		    pfu.setAssignedBy(service.getLoggedUser());
 		    service.saveProcessFlowUser(pfu);
 		}
 		Notification.show("Process Assigned to User");
@@ -136,14 +179,12 @@ public class UsersForm extends FormLayout {
 	
 	public void refreshpfugrid(Users user) {
 		pfugrid.removeAllColumns();
-		//pfugrid.setSizeFull();
-		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepOrder()).setHeader("Order").setResizable(true);
-		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepName()).setHeader("Process").setResizable(true).setWidth("95%");
-		
+		//pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepOrder()).setHeader("Order").setResizable(true);
+		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepName()).setHeader("Process").setResizable(true);
+		pfugrid.addColumn(processflowuser->processflowuser.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<ProcessFlowUser> items = service.getProcessFlowUser(user);
 		pfugrid.setItems(items);
-		pfugrid.setVisible(!items.isEmpty());
-		//
+		pfugrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		pfugrid.asSingleSelect().addValueChangeListener(event -> {
 	    ProcessFlowUser selectedItem = event.getValue(); // Replace MyObject with your actual item type
 		    if (selectedItem != null) {
@@ -152,12 +193,22 @@ public class UsersForm extends FormLayout {
 		    	deletetask.setEnabled(false);
 		    }
 		});
-		//pfugrid.setVisible(!items.isEmpty());
+	
+	}
+	private void deleteBlockUser() {
+		try {
+			service.deleteBlockUser(blugrid.asSingleSelect().getValue());
+			Notification.show("Block Deleted");
+		} catch (Exception e) {
+			Notification.show("Error:" + e);
+		}
+		refreshblockgrid(user);
 	}
 	private void addBlock() {
 		BlockUser existingBU = service.getBlockUser(user, blockc.getValue());
 		if (existingBU != null) {
 		    existingBU.setAssignedDate(LocalDateTime.now());
+		    existingBU.setAssignedBy(service.getLoggedUser());
 		    service.saveBlockUser(existingBU);
 		    
 		} else {
@@ -165,6 +216,7 @@ public class UsersForm extends FormLayout {
 		    pfu.setUser(user);
 		    pfu.setBlock(blockc.getValue());
 		    pfu.setAssignedDate(LocalDateTime.now());
+		    pfu.setAssignedBy(service.getLoggedUser());
 		    service.saveBlockUser(pfu);
 		}
 		Notification.show("Block Assigned to User");
@@ -173,13 +225,12 @@ public class UsersForm extends FormLayout {
 	
 	public void refreshblockgrid(Users user) {
 		blugrid.removeAllColumns();
-		blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
-		blugrid.addColumn(block->block.getBlock().getBlockName()).setHeader("Process").setResizable(true).setWidth("95%");
-		
+		//blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
+		blugrid.addColumn(block->block.getBlock().getBlockName()).setHeader("Process").setResizable(true);
+		blugrid.addColumn(block->block.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<BlockUser> items = service.getBlockUser(user);
 		blugrid.setItems(items);
-		blugrid.setVisible(!items.isEmpty());
-		//
+		blugrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		blugrid.asSingleSelect().addValueChangeListener(event -> {
 	    BlockUser selectedItem = event.getValue(); // Replace MyObject with your actual item type
 		    if (selectedItem != null) {
@@ -190,11 +241,20 @@ public class UsersForm extends FormLayout {
 		});
 		//pfugrid.setVisible(!items.isEmpty());
 	}
-	
+	private void deleteSchemeUser() {
+		try {
+			service.deleteSchemeUser(scgrid.asSingleSelect().getValue());
+			Notification.show("Scheme Deleted");
+		} catch (Exception e) {
+			Notification.show("Error:" + e);
+		}
+		refreshschemegrid(user);
+	}
 	private void addScheme() {
 		SchemeUser existingSU = service.getSchemeUser(user, scheme.getValue());
 		if (existingSU != null) {
 		    existingSU.setAssignedDate(LocalDateTime.now());
+		    existingSU.setAssignedBy(service.getLoggedUser());
 		    service.saveSchemeUser(existingSU);
 		    
 		} else {
@@ -202,20 +262,21 @@ public class UsersForm extends FormLayout {
 		    pfu.setUser(user);
 		    pfu.setScheme(scheme.getValue());
 		    pfu.setAssignedDate(LocalDateTime.now());
+		    pfu.setAssignedBy(service.getLoggedUser());
 		    service.saveSchemeUser(pfu);
 		}
 		Notification.show("Scheme Assigned to User");
-		refreshblockgrid(user);
+		refreshschemegrid(user);
 	}
 	
 	public void refreshschemegrid(Users user) {
 		scgrid.removeAllColumns();
-		scgrid.addColumn(scheme->scheme.getId()).setHeader("No.").setResizable(true);
-		scgrid.addColumn(scheme->scheme.getScheme().getSchemeName()).setHeader("Scheme").setResizable(true).setWidth("95%");
-		scgrid.addColumn(scheme->scheme.getAssignedDate()).setHeader("Date").setResizable(true).setWidth("95%");
+		//scgrid.addColumn(scheme->scheme.getId()).setHeader("No.").setResizable(true);
+		scgrid.addColumn(scheme->scheme.getScheme().getSchemeName()).setHeader("Scheme").setResizable(true);
+		scgrid.addColumn(scheme->scheme.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<SchemeUser> items = service.getSchemeUser(user);
 		scgrid.setItems(items);
-		scgrid.setVisible(!items.isEmpty());
+		scgrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		scgrid.asSingleSelect().addValueChangeListener(event -> {
 	    SchemeUser selectedItem = event.getValue(); // Replace MyObject with your actual item type
 		    if (selectedItem != null) {
@@ -227,10 +288,7 @@ public class UsersForm extends FormLayout {
 		
 	}
 
-	private Component createButtonsLayout() {
-		
-		return new HorizontalLayout(save);
-	}
+	
 	
 	private void validateandSave() {
 		try {

@@ -21,18 +21,22 @@ public class AuditView extends HorizontalLayout {
 		// TODO Auto-generated constructor stub
 		setSizeFull();
 		
-		add(getAuditTab());
+	//	add(getAuditTab());
 	}
 	
-	public Component getAuditTab() {
-		auditgrid.removeAllColumns();
-		auditgrid.addColumn(audittrail->audittrail.getAction()).setHeader("Action").setSortable(true).setResizable(true);
-		auditgrid.addColumn(audittrail->audittrail.getDetails()).setHeader("Details").setSortable(true).setResizable(true);
-		auditgrid.addColumn(audittrail->audittrail.getActionBy()).setHeader("Performed By").setSortable(true).setResizable(true);
-		auditgrid.addColumn(audittrail->audittrail.getIpAddress()).setHeader("IP Address").setSortable(true).setResizable(true);
-		auditgrid.addColumn(audittrail->audittrail.getActionOn()).setHeader("Date /Time").setSortable(true).setResizable(true);
-		auditgrid.setItems(service.getAuditTrail());
-		auditgrid.setSizeFull();
-		return auditgrid;
-	}
+	/*
+	 * public Component getAuditTab() { auditgrid.removeAllColumns();
+	 * auditgrid.addColumn(audittrail->audittrail.getAction()).setHeader("Action").
+	 * setSortable(true).setResizable(true);
+	 * auditgrid.addColumn(audittrail->audittrail.getDetails()).setHeader("Details")
+	 * .setSortable(true).setResizable(true);
+	 * auditgrid.addColumn(audittrail->audittrail.getActionBy()).
+	 * setHeader("Performed By").setSortable(true).setResizable(true);
+	 * auditgrid.addColumn(audittrail->audittrail.getIpAddress()).
+	 * setHeader("IP Address").setSortable(true).setResizable(true);
+	 * auditgrid.addColumn(audittrail->audittrail.getActionOn()).
+	 * setHeader("Date /Time").setSortable(true).setResizable(true);
+	 * auditgrid.setItems(service.getAuditTrail()); auditgrid.setSizeFull(); return
+	 * auditgrid; }
+	 */
 }

@@ -1,6 +1,6 @@
 package com.smis.entity;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -42,9 +42,13 @@ public class Users {
 	private District district;
 	
 	private boolean enabled;
-	private String enteredBy;
-	private LocalDate enteredOn;
-	private LocalDate pwdChangedDate;
+	
+	 @ManyToOne
+	    @JoinColumn(name = "entered_by") // References the same Users table
+	    private Users enteredBy;
+	private LocalDateTime enteredOn;
+	
+	private LocalDateTime pwdChangedDate;
 	private byte[] profilePhoto;
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user", fetch = FetchType.LAZY)
 	private List<UsersRoles> Roles;
@@ -55,24 +59,8 @@ public class Users {
         inverseJoinColumns = @JoinColumn(name = "processId")
     )
     
-	public LocalDate getPwdChangedDate() {
-		return pwdChangedDate;
-	}
-	public void setPwdChangedDate(LocalDate pwdChangedDate) {
-		this.pwdChangedDate = pwdChangedDate;
-	}
-	public String getEnteredBy() {
-		return enteredBy;
-	}
-	public void setEnteredBy(String enteredBy) {
-		this.enteredBy = enteredBy;
-	}
-	public LocalDate getEnteredOn() {
-		return enteredOn;
-	}
-	public void setEnteredOn(LocalDate enteredOn) {
-		this.enteredOn = enteredOn;
-	}
+	
+	
 	public boolean isEnabled() {
 		return enabled;
 	}
@@ -143,6 +131,24 @@ public class Users {
 	}
 	public void setProfilePhoto(byte[] profilePhoto) {
 		this.profilePhoto = profilePhoto;
+	}
+	public Users getEnteredBy() {
+		return enteredBy;
+	}
+	public void setEnteredBy(Users enteredBy) {
+		this.enteredBy = enteredBy;
+	}
+	public LocalDateTime getEnteredOn() {
+		return enteredOn;
+	}
+	public void setEnteredOn(LocalDateTime enteredOn) {
+		this.enteredOn = enteredOn;
+	}
+	public LocalDateTime getPwdChangedDate() {
+		return pwdChangedDate;
+	}
+	public void setPwdChangedDate(LocalDateTime pwdChangedDate) {
+		this.pwdChangedDate = pwdChangedDate;
 	}
 	
 	

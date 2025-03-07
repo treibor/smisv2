@@ -31,7 +31,9 @@ public class UsersRoles implements Serializable {
     @ManyToOne
 	@JoinColumn(name="user_id", referencedColumnName = "userId")
 	private Users user;
-	
+    @ManyToOne
+    @JoinColumn(name = "assignedBy", nullable = true)
+    private Users assignedBy;
     
     public long getRoleId() {
 		return roleId;
@@ -55,6 +57,14 @@ public class UsersRoles implements Serializable {
 
 	public void setUser(Users user) {
 		this.user = user;
+	}
+
+	public Users getAssignedBy() {
+		return assignedBy;
+	}
+
+	public void setAssignedBy(Users assignedBy) {
+		this.assignedBy = assignedBy;
 	}
 
 	

@@ -30,7 +30,11 @@ public class ProcessFlowUser implements Serializable {
     private Users user;
 
     private LocalDateTime assignedDate;
-
+    @ManyToOne
+    @JoinColumn(name = "assignedBy", nullable = false)
+    private Users assignedBy;
+    
+    
 	public long getId() {
 		return Id;
 	}
@@ -61,6 +65,14 @@ public class ProcessFlowUser implements Serializable {
 
 	public void setAssignedDate(LocalDateTime assignedDate) {
 		this.assignedDate = assignedDate;
+	}
+
+	public Users getAssignedBy() {
+		return assignedBy;
+	}
+
+	public void setAssignedBy(Users assignedBy) {
+		this.assignedBy = assignedBy;
 	}
 
 	

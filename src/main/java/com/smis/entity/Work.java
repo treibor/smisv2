@@ -3,6 +3,7 @@ package com.smis.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.validator.constraints.Length;
@@ -10,7 +11,6 @@ import org.hibernate.validator.constraints.Length;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,6 +23,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
+
 public class Work implements Serializable{
 	/**
 	 * 
@@ -52,37 +53,54 @@ public class Work implements Serializable{
 	@ManyToOne
 	@JoinColumn(name="yearId")
 	@NotNull(message = "Please select the Year")
+
 	private Year year;
 	@ManyToOne
 	@JoinColumn(name="schemeId")
 	@NotNull(message = "Please select the scheme")
+	
 	private Scheme scheme;
 	@ManyToOne
 	@JoinColumn(name="blockId")
 	@NotNull(message = "Please select the block")
+	
 	private Block block;
 	@ManyToOne
 	@JoinColumn(name="villageId")
 	@NotNull(message = "Please select the village")
+	
 	private Village village;
 	@ManyToOne
 	@JoinColumn(name="constituencyId")
 	@NotNull(message = "Please select the constituency")
+	
 	private Constituency constituency;
 	@ManyToOne
 	@JoinColumn(name="districtId")
 	@NotNull
+	
 	private District district;
 	@ManyToOne
 	@JoinColumn(name="processFlowId")
 	@NotNull
+	
 	private ProcessFlow processflow;
 	
 	@ManyToOne
 	@JoinColumn(name="userId")
 	@NotNull
-	private Users enteredBy;
-	private LocalDate enteredOn;
+	private Users updatedBy;
+	private LocalDateTime updatedOn;
+	
+	
+	@OneToMany(mappedBy = "work", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Installment> installments;
+
+	@OneToMany(mappedBy = "work", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ProcessHistory> processHistory;
+	
+	
+	
 	
 	public Village getVillage() {
 		return village;
@@ -186,29 +204,31 @@ public class Work implements Serializable{
 	public void setDistrict(District district) {
 		this.district = district;
 	}
+	public Users getUpdatedBy() {
+		return updatedBy;
+	}
+	public void setUpdatedBy(Users updatedBy) {
+		this.updatedBy = updatedBy;
+	}
+	public LocalDateTime getUpdatedOn() {
+		return updatedOn;
+	}
+	public void setUpdatedOn(LocalDateTime updatedOn) {
+		this.updatedOn = updatedOn;
+	}
+	public List<Installment> getInstallments() {
+		return installments;
+	}
+	public void setInstallments(List<Installment> installments) {
+		this.installments = installments;
+	}
+	public List<ProcessHistory> getProcessHistory() {
+		return processHistory;
+	}
+	public void setProcessHistory(List<ProcessHistory> processHistory) {
+		this.processHistory = processHistory;
+	}
 	
 	
-	public Users getEnteredBy() {
-		return enteredBy;
-	}
-	public void setEnteredBy(Users enteredBy) {
-		this.enteredBy = enteredBy;
-	}
-	public LocalDate getEnteredOn() {
-		return enteredOn;
-	}
-	public void setEnteredOn(LocalDate enteredOn) {
-		this.enteredOn = enteredOn;
-	}
-	@Override
-	public String toString() {
-		return "Work [workId=" + workId + ", workCode=" + workCode + ", workName=" + workName + ", workAmount="
-				+ workAmount + ", noOfInstallments=" + noOfInstallments + ", sanctionNo=" + sanctionNo
-				+ ", sanctionDate=" + sanctionDate + ", workStatus=" + workStatus + ", workLabel=" + workLabel
-				+ ", year=" + year + ", scheme=" + scheme + ", block=" + block + ", constituency=" + constituency
-				+ ", district=" + district + ", enteredBy=" + enteredBy + ", enteredOn=" + enteredOn + "]";
-	}
 	
-	
-		
 }

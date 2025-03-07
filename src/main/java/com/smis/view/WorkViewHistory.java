@@ -1,13 +1,9 @@
 package com.smis.view;
 
-import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.smis.audit.Audit;
 //import com.identity.views.CheckBox;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
@@ -62,8 +58,8 @@ public class WorkViewHistory extends VerticalLayout {
 	WorkForm workform;
 	boolean isAdmin;
 	boolean isUser;
-	@Autowired
-	private Audit audit;
+	//@Autowired
+	//private AuditTrail audit;
 
 	public WorkViewHistory(Dbservice service) {
 		this.service = service;
@@ -138,6 +134,7 @@ public class WorkViewHistory extends VerticalLayout {
 		gridhistory.addColumn(work -> work.getSanctionNo()).setHeader("Sanc. No").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 		gridhistory.addColumn(
 				work -> work.getSanctionDate() != null ? work.getSanctionDate().format(dateFormatter) : "No Date")
 				.setHeader("Sanc. Date").setResizable(true).setSortable(true).setAutoWidth(true);
@@ -145,11 +142,8 @@ public class WorkViewHistory extends VerticalLayout {
 				.setSortable(true).setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getEnteredBy().getUserName()).setHeader("Updated By").setResizable(true).setSortable(true)
-				.setAutoWidth(true);
-
-		gridhistory.addColumn(work -> work.getEnteredOn() != null ? work.getEnteredOn().format(dateFormatter) : "No Date")
-				.setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
+		//gridhistory.addColumn(work -> work.getUpdatedBy().getUserName()).setHeader("Updated By").setResizable(true).setSortable(true).setAutoWidth(true);
+		//gridhistory.addColumn(work -> work.getUpdatedOn() != null ? work.getUpdatedOn().format(dateFormatter) : "No Date").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
 		//gridhistory.asSingleSelect().addValueChangeListener(e -> editWork(e.getValue()));
 		gridhistory.getHeaderRows().clear();
 //		HeaderRow headerRow = gridhistory.appendHeaderRow();
@@ -158,13 +152,7 @@ public class WorkViewHistory extends VerticalLayout {
 //		headerRow.getCell(schemeColumn).setComponent(scheme);
 //		headerRow.getCell(yearColumn).setComponent(year);
 		gridhistory.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
-		gridhistory.setClassNameGenerator(work -> {
-			if (work.getWorkStatus().equals("Completed"))
-				return "high-rating";
-			if (work.getWorkStatus().equals("Entered"))
-				return "low-rating";
-			return null;
-		});
+		
 		
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(gridhistory);
 
@@ -191,13 +179,14 @@ public class WorkViewHistory extends VerticalLayout {
 		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
 		Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 		installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
 		installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released").setResizable(true);
 		// installmentGrid.addColumn(Installment::getInstallmentDate).setHeader("Released
 		// Date").setResizable(true);
 		installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
 				? installment.getInstallmentDate().format(dateFormatter)
-				: "No Date").setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+				: "Release Order Pending").setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
 
 		installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
 		installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
@@ -206,11 +195,11 @@ public class WorkViewHistory extends VerticalLayout {
 		installmentGrid.addColumn(
 				installment -> installment.getUcDate() != null ? installment.getUcDate().format(dateFormatter) : "")
 				.setHeader("UC. Date").setResizable(true).setSortable(true).setAutoWidth(true);
-		installmentGrid.addColumn(Installment::getEnteredBy).setHeader("Entered By").setResizable(true);
+		installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true);
 		// installmentGrid.addColumn(Installment::getEnteredOn).setHeader("Entered
 		// On").setResizable(true);
 		installmentGrid.addColumn(
-				installment -> installment.getEnteredOn() != null ? installment.getEnteredOn().format(dateFormatter)
+				installment -> installment.getEnteredOn() != null ? installment.getEnteredOn().format(timeFormatter)
 						: "No Date")
 				.setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
 

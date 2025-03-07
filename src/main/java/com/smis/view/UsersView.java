@@ -1,5 +1,9 @@
 package com.smis.view;
 
+import java.time.format.DateTimeFormatter;
+
+import javax.print.attribute.standard.PrinterMoreInfoManufacturer;
+
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.Users;
@@ -25,6 +29,7 @@ public class UsersView extends HorizontalLayout {
 	Dbservice service;
 	UsersForm form;
 	Tab tab1=new Tab("Users");
+	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	public UsersView(Dbservice service) {
 		this.service=service;
 		form=new UsersForm(service);
@@ -61,7 +66,7 @@ public class UsersView extends HorizontalLayout {
 		usergrid.addColumn(users->users.getUserName()).setHeader("User Name").setSortable(true).setResizable(true);
 		usergrid.addColumn(users->users.isEnabled()).setHeader("Enabled?").setSortable(true).setResizable(true);
 		usergrid.addColumn(users->users.getEnteredBy()).setHeader("Entered By").setSortable(true).setResizable(true);
-		usergrid.addColumn(users->users.getEnteredOn()).setHeader("Entered On").setSortable(true).setResizable(true);
+		usergrid.addColumn(users->users.getEnteredOn().format(dateFormatter)).setHeader("Entered On").setSortable(true).setResizable(true);
 		usergrid.setItems(service.findUsersByDistrictAndUserNameNot(service.getLoggedUser().getDistrict(), "SUPERUSER"));
 		usergrid.asSingleSelect().addValueChangeListener(e->editUser(e.getValue()));
 		usergrid.setSizeFull();
@@ -86,13 +91,15 @@ public class UsersView extends HorizontalLayout {
 				form.refreshschemegrid(user);
 			}else {
 				form.pfugrid.removeAllColumns();
+				form.blugrid.removeAllColumns();
+				form.scgrid.removeAllColumns();
 			}
 		}
 	}
 	private void configureForms() {
 		form.setVisible(false);
 		form=new UsersForm(service);
-		form.setWidth("40%");
+		form.setWidth("30%");
 		form.addListener(UsersForm.SaveEvent.class, this::saveUser);
 		
 		

@@ -324,14 +324,15 @@ public class WorkForm extends VerticalLayout {
 				binder.writeBean(work);
 				long newWorkCode = service.getWorkCode() + 1;
 				Users user=service.getLoggedUser();
-				ProcessHistory ph=new ProcessHistory();
+				//ProcessHistory ph=new ProcessHistory();
+				ProcessHistory ph = null;
 				if (singlework == 0) {
 					work.setWorkCode(newWorkCode);
 					work.setWorkStatus("Entered");
-					work.setEnteredBy(user);
-					work.setEnteredOn(LocalDate.now());
+					work.setUpdatedBy(user);
+					work.setUpdatedOn(LocalDateTime.now());
 					work.setProcessflow(service.getProcessFlowByOrder(2));
-					
+					ph = new ProcessHistory();
 					ph.setWork(work);
 					ph.setEnteredOn(LocalDateTime.now());
 					ph.setProcessFlow(service.getProcessFlowByOrder(1));
@@ -340,10 +341,10 @@ public class WorkForm extends VerticalLayout {
 				}
 				work.setDistrict(service.getDistrict());
 				fireEvent(new SaveEvent(this, work));
-				service.saveProcessHistory(ph);
-				// notify.show("New Work Entered Successfully with Work Code: "+newWorkCode,
-				// 5000, Position.TOP_CENTER);
-
+				if (ph != null) {
+			        service.saveProcessHistory(ph);
+			    }
+				
 			} catch (Exception e) {
 				Notification.show("Unable to Save Work. Please Enter All Mandatory Fields" + e, 5000, Position.TOP_CENTER)
 						.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -385,7 +386,7 @@ public class WorkForm extends VerticalLayout {
 				installment.setInstallmentNo(service.getInstallments(work).size() + 1);
 				installment.setInstallmentAmountPrev(calculateReleasedInstAmount(work));
 				installment.setEnteredBy(user);
-				installment.setEnteredOn(LocalDate.now());
+				installment.setEnteredOn(LocalDateTime.now());
 				installment.setWork(work);
 				
 				
