@@ -27,6 +27,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 		login.addForgotPasswordListener(e->new Notification("Please Contact Admin!!"));
 		login.setForgotPasswordButtonVisible(false);
 		add(new H1("SMIS 2.0"), login);
+		addClassName("login-page");
 	}
 
 	@Override

@@ -87,7 +87,8 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		setJustifyContentMode(JustifyContentMode.CENTER);
 		setSizeFull();
 		add(createPasswordForm());
-		getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
+		//getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
+		setClassName("login-view");
 	}
 
 	private String generateDynamicKey() {

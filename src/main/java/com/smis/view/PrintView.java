@@ -30,6 +30,8 @@ import com.smis.entity.District;
 import com.smis.entity.Installment;
 import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
+import com.smis.entity.ProcessFlow;
+import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
@@ -42,6 +44,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -106,11 +109,25 @@ public class PrintView extends HorizontalLayout {
 		isAdmin = service.isAdmin();
 		HorizontalLayout mainLayout = new HorizontalLayout(getLeftLayout(), configureSideLayout());
 		mainLayout.setSizeFull();
+		if (!checkAuthority(service.getProcessFlowByOrder(3))) {
 
-		add(mainLayout);
+			add(new H1("  You Are Not Authorised To View this Page"));
+			//setVisible(false);
+		} else {
+			add(mainLayout);
+		}
+		//System.out.println(checkAuthority(service.getProcessFlowByOrder(3)));
 		setSizeFull();
 	}
-
+	public boolean checkAuthority(ProcessFlow pf) {
+		Users user = service.getLoggedUser();
+		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
+		if (pfu == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 	public Component getLeftLayout() {
 		VerticalLayout vl = new VerticalLayout();
 		vl.add(configureTopLayout(), configureMiddleLayout(), configureBottomLayout());

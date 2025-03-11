@@ -147,7 +147,7 @@ public class WorkViewHistory extends VerticalLayout {
 				.setHeader("Sanc. Date").setResizable(true).setSortable(true).setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getNoOfInstallments()).setHeader("Installments").setResizable(true)
 				.setSortable(true).setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true)
+		gridhistory.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Status").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 		//gridhistory.addColumn(work -> work.getUpdatedBy().getUserName()).setHeader("Updated By").setResizable(true).setSortable(true).setAutoWidth(true);
 		//gridhistory.addColumn(work -> work.getUpdatedOn() != null ? work.getUpdatedOn().format(dateFormatter) : "No Date").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);

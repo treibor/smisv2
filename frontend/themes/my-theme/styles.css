@@ -86,3 +86,10 @@ vaadin-app-layout::part(drawer) {
     text-align: center;
      color: rgb(2, 115, 253);
 }
+
+.login-view {
+    background: url('/images/black.png') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+}
+

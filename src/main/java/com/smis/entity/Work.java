@@ -80,10 +80,10 @@ public class Work implements Serializable{
 	@NotNull
 	
 	private District district;
+	
 	@ManyToOne
 	@JoinColumn(name="processFlowId")
 	@NotNull
-	
 	private ProcessFlow processflow;
 	
 	@ManyToOne

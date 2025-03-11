@@ -29,8 +29,11 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -61,8 +64,9 @@ public class UsersForm extends FormLayout {
 	public ComboBox<Block> blockc=new ComboBox<Block>("Block");
 	public ComboBox<Scheme> scheme=new ComboBox<Scheme>("Scheme");
 	//ComboBox<MasterProcess> schemeprocess=new ComboBox<MasterProcess>("Assigned Task");
-	Button savetask= new Button("Add");
-	Button deletetask= new Button("Delete");
+	Button savetask= new Button(new Icon(VaadinIcon.PLUS));
+	Button savetaskall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
+	Button deletetask= new Button(new Icon(VaadinIcon.MINUS_SQUARE_O));
 	Button saveblock= new Button("Add");
 	Button deleteblock= new Button("Delete");
 	Button savescheme= new Button("Add");
@@ -95,20 +99,22 @@ public class UsersForm extends FormLayout {
 	    save.addClickListener(event -> validateandSave());
 
 	    savetask.addClickListener(e -> addProcess());
+	    savetaskall.addClickListener(e -> addAllProcesses());
 	    saveblock.addClickListener(e -> addBlock());
 	    savescheme.addClickListener(e -> addScheme());
 	    deletetask.addClickListener(e -> deleteProcess());
 	    deleteblock.addClickListener(e -> deleteBlockUser());
 	    deletescheme.addClickListener(e -> deleteSchemeUser());
-
+	    savetask.setTooltipText("Add Process");
+	    savetaskall.setTooltipText("Add All Processes");
 	    deletetask.setEnabled(false);
 	    deleteblock.setEnabled(false);
 	    deletescheme.setEnabled(false);
-
+	    //new Icon(VaadinIcon.TRASH)
 	    checkboxGroup.setVisible(service.isSuperAdmin());
 
 	    // Process Flow Section
-	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask, deletetask);
+	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask,savetaskall, deletetask);
 	    processlayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 	    VerticalLayout processContent = new VerticalLayout(processlayout, pfugrid);
 	    processContent.setSpacing(true);
@@ -157,6 +163,10 @@ public class UsersForm extends FormLayout {
 		refreshpfugrid(user);
 	}
 	private void addProcess() {
+		if(processflow.getValue()==null) {
+			Notification.show("Please Select a Process").addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
 		ProcessFlowUser existingPFU = service.getProcessFlowUser(user, processflow.getValue());
 		if (existingPFU != null) {
 		    // Update existing entry
@@ -176,7 +186,36 @@ public class UsersForm extends FormLayout {
 		Notification.show("Process Assigned to User");
 		refreshpfugrid(user);
 	}
-	
+	private void addAllProcesses() {
+	    List<ProcessFlow> allProcesses = service.getAllProcessFlow(); // Fetch all ProcessFlow entries from DB
+
+	    if (allProcesses.isEmpty()) {
+	        Notification.show("No processes found").addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    for (ProcessFlow process : allProcesses) {
+	        ProcessFlowUser existingPFU = service.getProcessFlowUser(user, process);
+	        
+	        if (existingPFU != null) {
+	            // Update existing entry
+	            existingPFU.setAssignedDate(LocalDateTime.now());
+	            existingPFU.setAssignedBy(service.getLoggedUser());
+	            service.saveProcessFlowUser(existingPFU);
+	        } else {
+	            // Create new entry
+	            ProcessFlowUser pfu = new ProcessFlowUser();
+	            pfu.setUser(user);
+	            pfu.setProcessFlow(process);
+	            pfu.setAssignedDate(LocalDateTime.now());
+	            pfu.setAssignedBy(service.getLoggedUser());
+	            service.saveProcessFlowUser(pfu);
+	        }
+	    }
+
+	    Notification.show("All processes assigned to user");
+	    refreshpfugrid(user);
+	}
 	public void refreshpfugrid(Users user) {
 		pfugrid.removeAllColumns();
 		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepOrder()).setHeader("Order").setResizable(true);
