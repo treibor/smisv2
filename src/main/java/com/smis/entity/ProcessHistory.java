@@ -8,12 +8,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 
 @Entity
 public class ProcessHistory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	 @Id
+	    @GeneratedValue(strategy = GenerationType.AUTO, generator = "ph_generator")
+	    @SequenceGenerator(name = "ph_generator", allocationSize = 1, sequenceName = "ph_seq", initialValue = 1)
     private Long id;
 
     @ManyToOne

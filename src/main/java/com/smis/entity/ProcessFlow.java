@@ -22,7 +22,7 @@ public class ProcessFlow implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "process_generator")
     @SequenceGenerator(name = "process_generator", allocationSize = 1, sequenceName = "process_seq", initialValue = 1)
-    private long processFlowId;
+    private long Id;
 
     private String stepName;
     private int stepOrder;
@@ -36,12 +36,13 @@ public class ProcessFlow implements Serializable {
 
 	
     
-    public long getProcessFlowId() {
-		return processFlowId;
+   
+	public long getId() {
+		return Id;
 	}
 
-	public void setProcessFlowId(long processFlowId) {
-		this.processFlowId = processFlowId;
+	public void setId(long id) {
+		Id = id;
 	}
 
 	public String getStepName() {

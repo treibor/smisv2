@@ -179,7 +179,7 @@ public class UsersForm extends FormLayout {
 	
 	public void refreshpfugrid(Users user) {
 		pfugrid.removeAllColumns();
-		//pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepOrder()).setHeader("Order").setResizable(true);
+		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepOrder()).setHeader("Order").setResizable(true);
 		pfugrid.addColumn(processflowuser->processflowuser.getProcessFlow().getStepName()).setHeader("Process").setResizable(true);
 		pfugrid.addColumn(processflowuser->processflowuser.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<ProcessFlowUser> items = service.getProcessFlowUser(user);

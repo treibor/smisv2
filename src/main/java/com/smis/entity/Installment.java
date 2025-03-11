@@ -4,10 +4,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,6 +18,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -37,14 +41,21 @@ public class Installment implements Serializable {
 	private String installmentLabel;
 	private String ucLetter;
 	private LocalDate ucDate;
-	private byte[] ucDocument;
+	
 	private LocalDateTime enteredOn;
 	@ManyToOne
 	@JoinColumn(name="userId")
 	@NotNull
 	private Users enteredBy;
-	@Column(length=2000)
-	private String copyTo;
+	
+	
+	
+	@ManyToOne 
+	@JoinColumn(name="reportNotes", referencedColumnName = "id")
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private InstallmentReportNotes reportNotes;
+	
+	
 	
 	@ManyToOne 
 	@JoinColumn(name="workId", referencedColumnName = "workId")
@@ -52,12 +63,18 @@ public class Installment implements Serializable {
 	@NotNull
 	private Work work;
 	
-	public String getCopyTo() {
-		return copyTo;
-	}
-	public void setCopyTo(String copyTo) {
-		this.copyTo = copyTo;
-	}
+	@ManyToOne 
+	@JoinColumn(name="releaseorder", referencedColumnName = "id")
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private InstallmentDocument releaseOrder;
+	
+
+	@ManyToOne 
+	@JoinColumn(name="ucdocument", referencedColumnName = "id")
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	private InstallmentDocument ucDocument;
+	
+	
 
 
 	
@@ -139,29 +156,30 @@ public class Installment implements Serializable {
 
 	
 	
-	public byte[] getUcDocument() {
-		return ucDocument;
-	}
-	public void setUcDocument(byte[] ucDocument) {
-		this.ucDocument = ucDocument;
-	}
 	public Work getWork() {
 		return work;
 	}
 	public void setWork(Work work) {
 		this.work = work;
 	}
-	
-
-	@Override
-	public String toString() {
-		return "Installment [installmentId=" + installmentId + ", installmentNo=" + installmentNo
-				+ ", installmentAmountPrev=" + installmentAmountPrev + ", installmentAmount=" + installmentAmount
-				+ ", installmentLetter=" + installmentLetter + ", installmentCheque=" + installmentCheque
-				+ ", installmentDate=" + installmentDate + ", installmentLabel=" + installmentLabel + ", ucLetter="
-				+ ucLetter + ", ucDate=" + ucDate + ", work=" + work + "]";
+	public InstallmentDocument getReleaseOrder() {
+		return releaseOrder;
+	}
+	public void setReleaseOrder(InstallmentDocument releaseOrder) {
+		this.releaseOrder = releaseOrder;
+	}
+	public InstallmentDocument getUcDocument() {
+		return ucDocument;
+	}
+	public void setUcDocument(InstallmentDocument ucDocument) {
+		this.ucDocument = ucDocument;
+	}
+	public InstallmentReportNotes getReportNotes() {
+		return reportNotes;
+	}
+	public void setReportNotes(InstallmentReportNotes reportNotes) {
+		this.reportNotes = reportNotes;
 	}
 	
-
 
 }

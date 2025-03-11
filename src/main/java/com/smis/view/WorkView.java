@@ -1,5 +1,6 @@
 package com.smis.view;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -10,8 +11,10 @@ import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
+import com.smis.entity.InstallmentDocument;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
+import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
@@ -24,16 +27,17 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamResource;
 
 import jakarta.annotation.security.RolesAllowed;
 import software.xdev.vaadin.grid_exporter.GridExporter;
@@ -60,7 +64,8 @@ public class WorkView extends VerticalLayout {
 	WorkForm workform;
 	boolean isAdmin;
 	boolean isUser;
-	
+	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
 	public WorkView(Dbservice service) {
 		this.service = service;
@@ -141,9 +146,10 @@ public class WorkView extends VerticalLayout {
 				.setHeader("Sanc. Date").setResizable(true).setSortable(true).setAutoWidth(true);
 		grid.addColumn(work -> work.getNoOfInstallments()).setHeader("Installments").setResizable(true)
 				.setSortable(true).setAutoWidth(true);
-		grid.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true)
-				.setAutoWidth(true);
-		grid.addColumn(work -> work.getUpdatedBy().getUserName()).setHeader("Sent By").setResizable(true).setSortable(true)
+		grid.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Process").setResizable(true).setSortable(true)
+		.setAutoWidth(true);
+		//grid.addColumn(work -> work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true).setAutoWidth(true);
+		grid.addColumn(work -> work.getUpdatedBy().getProfileName()).setHeader("Sent By").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 
 		grid.addColumn(work -> work.getUpdatedOn() != null ? work.getUpdatedOn().format(timeFormatter) : "No Date")
@@ -168,47 +174,123 @@ public class WorkView extends VerticalLayout {
 				showInstallmentsDialog(work);
 			});
 		});
-
+		contextMenu.addItem("View History", event -> {
+			Optional<Work> selectedWork = event.getItem();
+			selectedWork.ifPresent(work -> {
+				// Show a dialog or a new component with installments
+				showHistoryDialog(work);
+			});
+		});
 	}
 	
-	private void showInstallmentsDialog(Work work) { // Create a dialog
+	private void showInstallmentsDialog(Work work) { 
+	    // Create a dialog
+	    Dialog dialog = new Dialog();
+	    dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
+
+	    Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
+	    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+	    installmentGrid.addColumn(Installment::getInstallmentNo)
+	        .setHeader("Installment Number").setResizable(true);
+	    installmentGrid.addColumn(Installment::getInstallmentAmount)
+	        .setHeader("Amount Released").setResizable(true);
+	    installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
+	        ? installment.getInstallmentDate().format(dateFormatter)
+	        : "Release Order Pending")
+	        .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+	    installmentGrid.addColumn(Installment::getInstallmentLetter)
+	        .setHeader("Letter No.").setResizable(true);
+	    installmentGrid.addComponentColumn(installment -> {
+	        InstallmentDocument doc = installment.getReleaseOrder(); // Get the linked document
+
+	        if (doc != null && doc.getDocument() != null) {
+	            // Create a StreamResource for the PDF
+	            StreamResource resource = new StreamResource("document.pdf",
+	                () -> new ByteArrayInputStream(doc.getDocument()));
+
+	            Anchor downloadLink = new Anchor(resource, "View");
+	            downloadLink.setTarget("_blank"); // Open in a new tab
+
+	            return downloadLink;
+	        } else {
+	            return new Span("No Document"); // Show message if no document exists
+	        }
+	    }).setHeader("Release Order").setAutoWidth(true);
+	    installmentGrid.addColumn(Installment::getUcLetter)
+	        .setHeader("UC Letter No").setResizable(true);
+	    installmentGrid.addColumn(installment -> installment.getUcDate() != null
+	        ? installment.getUcDate().format(dateFormatter) 
+	        : "")
+	        .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
+	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName())
+	        .setHeader("Entered By").setResizable(true);
+	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null
+	        ? installment.getEnteredOn().format(timeFormatter)
+	        : "No Date")
+	        .setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
+
+	    // 🔹 Add "View Document" column
+	    installmentGrid.addComponentColumn(installment -> {
+	        InstallmentDocument doc = installment.getUcDocument(); // Get the linked document
+
+	        if (doc != null && doc.getDocument() != null) {
+	            // Create a StreamResource for the PDF
+	            StreamResource resource = new StreamResource("document.pdf",
+	                () -> new ByteArrayInputStream(doc.getDocument()));
+
+	            Anchor downloadLink = new Anchor(resource, "View");
+	            downloadLink.setTarget("_blank"); // Open in a new tab
+
+	            return downloadLink;
+	        } else {
+	            return new Span("No Document"); // Show message if no document exists
+	        }
+	    }).setHeader("UC Documents").setAutoWidth(true);
+	    Button closeButton = new Button("Close", e -> dialog.close());
+	    Button deleteButton = new Button("Delete", e ->deleteInstallment(installmentGrid.asSingleSelect().getValue()) );
+	    deleteButton.setEnabled(false);
+	    // Load Installments
+	    List<Installment> installments = service.getInstallments(work);
+	    installmentGrid.setItems(installments);
+	    installmentGrid.setAllRowsVisible(true);
+	    installmentGrid.asSingleSelect().addValueChangeListener(event -> {
+		    Installment selectedItem = event.getValue(); // Replace MyObject with your actual item type
+			    if (selectedItem != null ) {
+			        deleteButton.setEnabled(true);
+			    } else {
+			    	deleteButton.setEnabled(false);
+			    }
+			});
+	    // Close button
+	    // Add components to the dialog
+	    dialog.add(installmentGrid);
+	    dialog.getFooter().add(deleteButton,closeButton);
+	    dialog.open();
+	}
+	public void deleteInstallment(Installment inst) {
+		
+	}
+	private void showHistoryDialog(Work work) { // Create a dialog
 		Dialog dialog = new Dialog();
 		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
-		Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
-		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-		installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
-		installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released").setResizable(true);
-		// installmentGrid.addColumn(Installment::getInstallmentDate).setHeader("Released
-		// Date").setResizable(true);
-		installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
-				? installment.getInstallmentDate().format(dateFormatter)
-				: "Release Order Pending").setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
+		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Process").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
+		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
+				? processhistory.getEnteredOn().format(timeFormatter)
+				: "No Date").setHeader("Action Taken On").setResizable(true).setSortable(true).setAutoWidth(true);
 
-		installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
-		installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
-		// installmentGrid.addColumn(Installment::getUcDate).setHeader("UC
-		// Date").setResizable(true);
-		installmentGrid.addColumn(
-				installment -> installment.getUcDate() != null ? installment.getUcDate().format(dateFormatter) : "")
-				.setHeader("UC. Date").setResizable(true).setSortable(true).setAutoWidth(true);
-		installmentGrid.addColumn(installment->installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true);
-		// installmentGrid.addColumn(Installment::getEnteredOn).setHeader("Entered
-		// On").setResizable(true);
-		installmentGrid.addColumn(
-				installment -> installment.getEnteredOn() != null ? installment.getEnteredOn().format(timeFormatter)
-						: "No Date")
-				.setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
-
-		List<Installment> installments = service.getInstallments(work);
-		installmentGrid.setItems(installments);
-		installmentGrid.setAllRowsVisible(true);
+		List<ProcessHistory> history = service.getProcessHistory(work);
+		grid.setItems(history);
+		grid.setAllRowsVisible(true);
 		Button closeButton = new Button("Close", e -> dialog.close());
-		dialog.add(installmentGrid);
+		dialog.add(grid);
 		dialog.getFooter().add(closeButton);
 		dialog.open();
 	}
-
 	public void filterGrid() {
 
 		//grid.setItems(service.getFilteredWorks(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue()));
@@ -228,10 +310,11 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void updateGrid() {
-		//grid.setItems(service.getAllWorks());
-		//grid.setItems(service.getAllWorks());
-		grid.setItems(service.getWorksAssignedToUser());
-		gridhistory.setItems(service.getWorkHistory());
+		
+			//grid.setItems(service.getWorksAssignedToUser());
+			grid.setItems(service.getWorks());
+			gridhistory.setItems(service.getWorkHistory());
+		
 	}
 
 	private Component getToolbar() {
@@ -322,7 +405,7 @@ public class WorkView extends VerticalLayout {
 	public void saveWork(WorkForm.SaveEvent event) {
 		long a = event.getWork().getWorkCode();
 		service.saveWork(event.getWork());
-		Notification.show("Work Entered Sucessfully With Work Code : "+a,5000, Notification.Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+		
 		updateGrid();
 		//updateList();
 		long b = service.getWorkCode();
@@ -391,29 +474,25 @@ public class WorkView extends VerticalLayout {
 	}
 
 	private void editWork(Work work) {
-
 		try {
 			int workinstallment = 0;
 			if (work == null) {
 				closeEditor();
 			} else {
-
 				workform.setWork(work);
 				workform.setVisible(true);
 				workform.save.setEnabled(isUser);
 				enableFields();
 				workinstallment = work.getNoOfInstallments();
-
 				if (work.getWorkAmount() != null) {
 					// check if work is entered or not by checking if installment is greater than 0
 					int tablecount = service.getInstallmentCount(work);
 					int toEnter = tablecount + 1;
-
+					//check if any installment is entered
 					if (tablecount > 0) {
-
-						// check if any installment is entered
 						List<Installment> installments = service.getInstallments(work);
 						workform.delete.setEnabled(isAdmin);
+						workform.save.setEnabled(isAdmin);
 						if (!isAdmin) {
 							disableFields();
 						}

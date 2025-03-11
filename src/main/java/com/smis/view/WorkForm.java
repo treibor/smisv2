@@ -1,13 +1,15 @@
 package com.smis.view;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
+import com.smis.entity.InstallmentDocument;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
@@ -99,6 +101,7 @@ public class WorkForm extends VerticalLayout {
 	boolean isUser;
 	MemoryBuffer buffer = new MemoryBuffer();
 	Upload upload1 = new Upload(buffer);
+	private byte[] uploadedPdf;
 	public WorkForm(Dbservice service) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
@@ -260,21 +263,34 @@ public class WorkForm extends VerticalLayout {
 		return hl1;
 	}
 	private Component createUpload(Upload upload) {
-		upload.setHeight("20%");
-		upload.getStyle().set("font-size", "12px");
-		upload.setMaxFiles(1);
-		
-		upload.setMaxFileSize(5000000);
-		Button uploadButton=new Button("Select Document To Upload");
-		//upload.setDropLabel(uploadButton);
-		uploadButton.getStyle().set("font-size", "12px");
-		upload.setUploadButton(uploadButton);
-		//upload.setDropLabel(new Label("Drop Photo"));
-		 upload.setAcceptedFileTypes("application/pdf");
-		upload.addFileRejectedListener(e -> Notification.show("Invalid File: Please select only image files which are less than 5Mb",3000, Position.TOP_END));
-		//upload.addSucceededListener(event -> showPicture());
-		
-		return upload;
+	    MemoryBuffer buffer = new MemoryBuffer();
+	    upload.setReceiver(buffer);
+	    
+	    upload.setHeight("20%");
+	    upload.getStyle().set("font-size", "12px");
+	    upload.setMaxFiles(1);
+	    upload.setMaxFileSize(5 * 1024 * 1024); // 5MB limit
+	    
+	    Button uploadButton = new Button("Select Document To Upload");
+	    uploadButton.getStyle().set("font-size", "12px");
+	    upload.setUploadButton(uploadButton);
+	    
+	    upload.setAcceptedFileTypes("application/pdf");
+	    
+	    upload.addFileRejectedListener(e -> 
+	        Notification.show("Invalid File: Please select only PDF files less than 5MB", 3000, Position.TOP_END)
+	    );
+
+	    upload.addSucceededListener(event -> {
+	        try (InputStream inputStream = buffer.getInputStream()) {
+	            uploadedPdf = inputStream.readAllBytes(); // Store the uploaded PDF as byte[]
+	            Notification.show("PDF uploaded successfully!", 3000, Position.TOP_END);
+	        } catch (IOException e) {
+	            Notification.show("Error uploading file", 3000, Position.TOP_END);
+	        }
+	    });
+
+	    return upload;
 	}
 	public Component configureUcForm() {
 		FormLayout form2 = new FormLayout();
@@ -344,7 +360,7 @@ public class WorkForm extends VerticalLayout {
 				if (ph != null) {
 			        service.saveProcessHistory(ph);
 			    }
-				
+				Notification.show("Work Entered Sucessfully With Work Code : "+newWorkCode,5000, Notification.Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 			} catch (Exception e) {
 				Notification.show("Unable to Save Work. Please Enter All Mandatory Fields" + e, 5000, Position.TOP_CENTER)
 						.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -380,6 +396,7 @@ public class WorkForm extends VerticalLayout {
 					Position.TOP_CENTER);
 		} else {
 			try {
+				
 				Users user=service.getLoggedUser();
 				Installment installment = new Installment();
 				installment.setInstallmentAmount(installmentAmount.getValue());
@@ -438,13 +455,24 @@ public class WorkForm extends VerticalLayout {
 			Notification.show("UC Date Cannot Be Before Installment Release Date", 5000, Position.TOP_CENTER);
 		} else {
 			try {
+				if (uploadedPdf == null || uploadedPdf.length == 0) {
+			        Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+			        return;
+			    }
 				Users user=service.getLoggedUser();
+				InstallmentDocument instdoc=new InstallmentDocument();
+				instdoc.setDocument(uploadedPdf);
+				instdoc.setUpdatedBy(service.getLoggedUser());
+				instdoc.setUpdatedOn(LocalDateTime.now());
+				service.saveDocuments(instdoc);
 				this.installment = service.getInstallments(work).get(index);
 				installment.setUcDate(ucDate.getValue());
 				installment.setUcLetter(ucletter.getValue());
 				installment.setEnteredBy(user);
+				installment.setUcDocument(instdoc);
+				//installment.setUcDocument(uploadedPdf);
 				service.saveInstallment(installment);
-				//work.setProcessflow(service.getProcessFlowByOrder(5));
+				
 				service.saveWork(work);
 				ProcessHistory ph=new ProcessHistory();
 				ph.setWork(work);

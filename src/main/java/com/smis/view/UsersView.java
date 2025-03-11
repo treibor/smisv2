@@ -30,6 +30,7 @@ public class UsersView extends HorizontalLayout {
 	UsersForm form;
 	Tab tab1=new Tab("Users");
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	public UsersView(Dbservice service) {
 		this.service=service;
 		form=new UsersForm(service);
@@ -62,12 +63,18 @@ public class UsersView extends HorizontalLayout {
 	
 	public void getUsergrid() {
 		usergrid.removeAllColumns();
-		usergrid.addColumn(users->users.getUserId()).setHeader("Id").setSortable(true).setResizable(true);
+		//usergrid.addColumn(users->users.getUserId()).setHeader("Id").setSortable(true).setResizable(true);
+		usergrid.addColumn(users->users.getProfileName()).setHeader("Display Name").setSortable(true).setResizable(true);
 		usergrid.addColumn(users->users.getUserName()).setHeader("User Name").setSortable(true).setResizable(true);
-		usergrid.addColumn(users->users.isEnabled()).setHeader("Enabled?").setSortable(true).setResizable(true);
-		usergrid.addColumn(users->users.getEnteredBy()).setHeader("Entered By").setSortable(true).setResizable(true);
-		usergrid.addColumn(users->users.getEnteredOn().format(dateFormatter)).setHeader("Entered On").setSortable(true).setResizable(true);
-		usergrid.setItems(service.findUsersByDistrictAndUserNameNot(service.getLoggedUser().getDistrict(), "SUPERUSER"));
+		usergrid.addColumn(users->users.getEmail()).setHeader("Email").setSortable(true).setResizable(true);
+		usergrid.addColumn(users -> users.isEnabled() ? "Yes" : "No")
+        .setHeader("Enabled?")
+        .setSortable(true)
+        .setResizable(true);
+		usergrid.addColumn(users->users.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setResizable(true);
+		usergrid.addColumn(users->users.getEnteredBy().getProfileName()).setHeader("Created By").setSortable(true).setResizable(true);
+		usergrid.addColumn(users->users.getEnteredOn().format(timeFormatter)).setHeader("Created On").setSortable(true).setResizable(true);
+		usergrid.setItems(service.findUsers());
 		usergrid.asSingleSelect().addValueChangeListener(e->editUser(e.getValue()));
 		usergrid.setSizeFull();
 		
@@ -111,8 +118,8 @@ public class UsersView extends HorizontalLayout {
 	}
 
 	private void updateGrids() {
-		usergrid.setItems(service.findUsersByDistrict(service.getLoggedUser().getDistrict()));
-		
+		usergrid.setItems(service.findUsers());
+		//usergrid.setItems(service.findUsersByDistrictAndUserNameNot(service.getLoggedUser().getDistrict(), "superadmin"));
 	}
 	private void closeEditor() {
 		form.setUsers(null);

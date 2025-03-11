@@ -22,7 +22,7 @@ public class UsersRoles implements Serializable {
 
 	@Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_generator")
-	@SequenceGenerator(name="role_generator", sequenceName = "role_seq", allocationSize=1)
+	@SequenceGenerator(name="role_generator", sequenceName = "userrole_seq", allocationSize=1)
     private long roleId;
 
     @NotEmpty

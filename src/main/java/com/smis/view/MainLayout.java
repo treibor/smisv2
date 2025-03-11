@@ -59,6 +59,8 @@ public class MainLayout extends AppLayout  {
 	Button cancelButton = new Button("Cancel");
 	Button saveButton = new Button("Save");
 	TextField userName = new TextField("User Name");
+	TextField profileName = new TextField("Profile Name");
+	TextField email=new TextField("Email");
 	String userType;
 	ComboBox<State> state = new ComboBox<>("State");
 	ComboBox<District> district = new ComboBox<>("District");
@@ -347,24 +349,28 @@ public class MainLayout extends AppLayout  {
 
 		if (isSuper) {
 			usertype.setEnabled(true);
+			usertype.setVisible(true);
 			// state.setEnabled(true);
 		} else if (isAdmin) {
-
 			state.setValue(service.getLoggedUser().getDistrict().getState());
 			district.setValue(service.getLoggedUser().getDistrict());
-			// state.setValue(null);
 			usertype.setValue("USER");
 			usertype.setEnabled(false);
+			usertype.setVisible(false);
 		}
 		state.setEnabled(isSuper);
+		state.setVisible(isSuper);
 		district.setEnabled(isSuper);
+		district.setVisible(isSuper);
 		state.setItemLabelGenerator(State::getStateName);
 		district.setItemLabelGenerator(District::getDistrictName);
 		cancelButton.addClickListener(e -> userdialog.close());
 		saveButton.addClickListener(e -> saveNewUser());
 		newpwd = new PasswordField("Password");
 		confirmpwd = new PasswordField("Confirm Password");
-		VerticalLayout fieldLayout1 = new VerticalLayout(state, district, userName, newpwd, confirmpwd, usertype);
+		profileName.setHelperText("This will be used as a display name. Other Users will see this name.");
+		userName.setHelperText("Your Login Name. Only the Admin and the user should know this name.");
+		VerticalLayout fieldLayout1 = new VerticalLayout(state, district, profileName,userName,email, newpwd, confirmpwd, usertype);
 		fieldLayout1.setSpacing(false);
 		fieldLayout1.setPadding(false);
 		fieldLayout1.setAlignItems(FlexComponent.Alignment.STRETCH);
@@ -406,7 +412,7 @@ public class MainLayout extends AppLayout  {
 		}
 	private void saveNewUser() {
 		// TODO Auto-generated method stub
-		if (district.isEmpty()  || state.isEmpty()  || usertype.isEmpty() 
+		if (district.isEmpty()  || state.isEmpty()  || usertype.isEmpty() ||profileName.isEmpty()||email.isEmpty()
 				|| userName.isEmpty() || newpwd.isEmpty() || confirmpwd.getValue().isEmpty()) {
 			Notification.show(" Enter All Values, Please", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}
@@ -424,14 +430,17 @@ public class MainLayout extends AppLayout  {
 						UsersRoles role=new UsersRoles();
 						users.setDistrict(district.getValue());
 						users.setUserName(userName.getValue());
+						users.setProfileName(profileName.getValue());
 						users.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
 						users.setEnteredBy(service.getLoggedUser());
 						users.setEnteredOn(LocalDateTime.now());
 						users.setPwdChangedDate(LocalDateTime.now());
 						users.setEnabled(true);
+						users.setEmail(email.getValue());
 						service.saveUser(users);
 						role.setUser(users);
 						role.setRoleName(usertype.getValue().toString());
+						role.setAssignedBy(service.getLoggedUser());
 						service.saveRole(role);
 						clearUserFields();
 						Notification.show("User Created Successfully", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -443,6 +452,7 @@ public class MainLayout extends AppLayout  {
 					}
 					
 				} catch (Exception e) {
+					e.printStackTrace();
 					Notification.show("Error Encountered. Please Contact The Adminisrator. Error:" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
 				}
 			}

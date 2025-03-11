@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +19,8 @@ import com.smis.entity.Constituency;
 import com.smis.entity.District;
 import com.smis.entity.Impldistrict;
 import com.smis.entity.Installment;
+import com.smis.entity.InstallmentDocument;
+import com.smis.entity.InstallmentReportNotes;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
@@ -34,6 +37,8 @@ import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
 import com.smis.repository.DistrictRepository;
 import com.smis.repository.ImpldistrictRepository;
+import com.smis.repository.InstallmentDocRepository;
+import com.smis.repository.InstallmentReportRepository;
 import com.smis.repository.InstallmentRepository;
 import com.smis.repository.ProcessFlowRepo;
 import com.smis.repository.ProcessFlowUserRepo;
@@ -46,6 +51,7 @@ import com.smis.repository.UserRepository;
 import com.smis.repository.VillageRepository;
 import com.smis.repository.WorkRepository;
 import com.smis.repository.YearRepository;
+import com.smis.security.SecurityService;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -55,6 +61,8 @@ public class Dbservice implements Serializable{
 	/**
 	 * 
 	 */
+	@Autowired
+	SecurityService securityService;
 	private static final long serialVersionUID = 1L;
 	private final WorkRepository wrepo;
 	private final YearRepository yrepo;
@@ -76,9 +84,11 @@ public class Dbservice implements Serializable{
 	private final ProcessHistoryRepo phistoryrrepo;
 	private final BlockUserRepo buserrepo;
 	private final SchemeUserRepo suserrepo;
+	private final InstallmentDocRepository docrepo;
+	private final InstallmentReportRepository reportrepo;
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
-			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,
-			InstallmentRepository irepo, ImpldistrictRepository idrepo, VillageRepository vrepo, RoleRepository rolerepo, 
+			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,InstallmentReportRepository reportrepo,
+			InstallmentRepository irepo, ImpldistrictRepository idrepo, VillageRepository vrepo, RoleRepository rolerepo, InstallmentDocRepository docrepo,
 			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
@@ -92,12 +102,13 @@ public class Dbservice implements Serializable{
 		this.strepo = strepo;
 		this.vtrepo = vrepo;
 		this.rolerepo=rolerepo;
-		
+		this.docrepo=docrepo;
 		this.pflowrepo=pflowrepo;
 		this.pflowuserrepo=pflowuserrepo;
 		this.phistoryrrepo=phistoryrrepo;
 		this.buserrepo=buserrepo;
 		this.suserrepo=suserrepo;
+		this.reportrepo=reportrepo;
 	}
 
 	// Development Phase only
@@ -157,14 +168,27 @@ public class Dbservice implements Serializable{
 	public Users findUser(String username) {
 		return urepo.findByUserName(username);
 	}
-	public List<Users> findUsersByDistrict(District district) {
-		return urepo.findByDistrict(district);
+	public List<Users> findUsers() {
+		if(isSuperAdmin()) {
+			return urepo.findAll();
+		}else if(isAdmin()){
+			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
+			
+		}else {
+			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
+		}
 	}
 	public List<Users> findUsersByDistrictAndUserNameNot(District district, String username) {
 		return urepo.findByDistrictAndUserNameNot(district, username);
 	}
 	public Users getLoggedUser() {
-		return urepo.findByUserName(getloggeduser());
+		Users loggeduser=urepo.findByUserName(getloggeduser());
+		if(loggeduser!=null) {
+			return urepo.findByUserName(getloggeduser());
+		}else {
+			securityService.logout();
+			return null;
+		}
 	}
 	public Users getUser(String user) {
 		return urepo.findByUserName(user);
@@ -261,6 +285,15 @@ public class Dbservice implements Serializable{
 	}
 
 	// Works Queries
+	public List<Work> getWorks() {
+		if (isSuperAdmin()) {
+			return wrepo.findAll();
+		} else if (isAdmin()) {
+			return wrepo.findByDistrictOrderByWorkCodeDesc(getDistrict());
+		} else {
+			return wrepo.findWorksByUser(getLoggedUser());
+		}
+    }
 	
 	public List<Work> getWorksAssignedToUser() {
         return wrepo.findWorksByUser(getLoggedUser());
@@ -640,7 +673,8 @@ public class Dbservice implements Serializable{
 	}
 	
 	public List<ProcessFlow> getAllProcessFlow() {
-		return pflowrepo.findAll();
+		//return pflowrepo.findAll();
+		return pflowrepo.findAllByOrderByIdAsc();
 	}
 	public ProcessFlow getProcessFlowByOrder(int a) {
 		return pflowrepo.findByStepOrder(a);
@@ -704,6 +738,19 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
+	public void saveDocuments(InstallmentDocument doc) {
+		docrepo.save(doc);
+	}
+
+	public void deleteDocuments(InstallmentDocument doc) {
+		docrepo.delete(doc);
+	}
+	public void deleteUnreferencedData() {
+		docrepo.deleteUnreferencedInstallmentDocuments();
+		reportrepo.deleteUnreferencedInstallmentReports();
+	}	
 	
-	
+	public void saveInstallmentReport(InstallmentReportNotes ipn) {
+		reportrepo.save(ipn);
+	}
 }
