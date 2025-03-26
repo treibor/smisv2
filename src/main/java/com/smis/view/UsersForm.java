@@ -67,10 +67,12 @@ public class UsersForm extends FormLayout {
 	Button savetask= new Button(new Icon(VaadinIcon.PLUS));
 	Button savetaskall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
 	Button deletetask= new Button(new Icon(VaadinIcon.MINUS_SQUARE_O));
-	Button saveblock= new Button("Add");
-	Button deleteblock= new Button("Delete");
-	Button savescheme= new Button("Add");
-	Button deletescheme= new Button("Delete");
+	Button saveblock= new Button(new Icon(VaadinIcon.PLUS));
+	Button saveblockall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
+	Button deleteblock= new Button(new Icon(VaadinIcon.MINUS_SQUARE_O));
+	Button savescheme= new Button(new Icon(VaadinIcon.PLUS));
+	Button saveschemeall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
+	Button deletescheme= new Button(new Icon(VaadinIcon.MINUS_CIRCLE_O));
 	private Users user;
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	//private Impldistrict impldist;
@@ -101,12 +103,18 @@ public class UsersForm extends FormLayout {
 	    savetask.addClickListener(e -> addProcess());
 	    savetaskall.addClickListener(e -> addAllProcesses());
 	    saveblock.addClickListener(e -> addBlock());
+	    saveblockall.addClickListener(e -> addAllBlocks());
 	    savescheme.addClickListener(e -> addScheme());
+	    saveschemeall.addClickListener(e -> addAllSchemes());
 	    deletetask.addClickListener(e -> deleteProcess());
 	    deleteblock.addClickListener(e -> deleteBlockUser());
 	    deletescheme.addClickListener(e -> deleteSchemeUser());
 	    savetask.setTooltipText("Add Process");
 	    savetaskall.setTooltipText("Add All Processes");
+	    saveblock.setTooltipText("Add Block");
+	    saveblockall.setTooltipText("Add All Blocks");
+	    savescheme.setTooltipText("Add Scheme");
+	    saveschemeall.setTooltipText("Add All Schemes");
 	    deletetask.setEnabled(false);
 	    deleteblock.setEnabled(false);
 	    deletescheme.setEnabled(false);
@@ -114,21 +122,21 @@ public class UsersForm extends FormLayout {
 	    checkboxGroup.setVisible(service.isSuperAdmin());
 
 	    // Process Flow Section
-	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask,savetaskall, deletetask);
+	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask, deletetask,savetaskall);
 	    processlayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 	    VerticalLayout processContent = new VerticalLayout(processlayout, pfugrid);
 	    processContent.setSpacing(true);
 	    pfugrid.setHeight("400px");
 
 	    // Block Section
-	    HorizontalLayout blocklayout = new HorizontalLayout(blockc, saveblock, deleteblock);
+	    HorizontalLayout blocklayout = new HorizontalLayout(blockc, saveblock, deleteblock, saveblockall);
 	    blocklayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 	    VerticalLayout blockContent = new VerticalLayout(blocklayout, blugrid);
 	    blockContent.setSpacing(true);
 	    blugrid.setHeight("400px");
 
 	    // Scheme Section
-	    HorizontalLayout schemelayout = new HorizontalLayout(scheme, savescheme, deletescheme);
+	    HorizontalLayout schemelayout = new HorizontalLayout(scheme, savescheme, deletescheme,saveschemeall);
 	    schemelayout.setAlignItems(FlexComponent.Alignment.BASELINE);
 	    VerticalLayout schemeContent = new VerticalLayout(schemelayout, scgrid);
 	    schemeContent.setSpacing(true);
@@ -213,7 +221,7 @@ public class UsersForm extends FormLayout {
 	        }
 	    }
 
-	    Notification.show("All processes assigned to user");
+	    Notification.show("All processes assigned to user").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 	    refreshpfugrid(user);
 	}
 	public void refreshpfugrid(Users user) {
@@ -244,6 +252,10 @@ public class UsersForm extends FormLayout {
 		refreshblockgrid(user);
 	}
 	private void addBlock() {
+		if(blockc.getValue()==null) {
+			Notification.show("Please Select a Block").addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
 		BlockUser existingBU = service.getBlockUser(user, blockc.getValue());
 		if (existingBU != null) {
 		    existingBU.setAssignedDate(LocalDateTime.now());
@@ -258,10 +270,39 @@ public class UsersForm extends FormLayout {
 		    pfu.setAssignedBy(service.getLoggedUser());
 		    service.saveBlockUser(pfu);
 		}
-		Notification.show("Block Assigned to User");
+		Notification.show("Block Assigned to User").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 		refreshblockgrid(user);
 	}
-	
+	private void addAllBlocks() {
+	    List<Block> allBlocks = service.getAllBlocks(); // Fetch all Block entries from DB
+
+	    if (allBlocks.isEmpty()) {
+	        Notification.show("No blocks found").addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    for (Block block : allBlocks) {
+	        BlockUser existingBU = service.getBlockUser(user, block);
+
+	        if (existingBU != null) {
+	            // Update existing entry
+	            existingBU.setAssignedDate(LocalDateTime.now());
+	            existingBU.setAssignedBy(service.getLoggedUser());
+	            service.saveBlockUser(existingBU);
+	        } else {
+	            // Create new entry
+	            BlockUser bu = new BlockUser();
+	            bu.setUser(user);
+	            bu.setBlock(block);
+	            bu.setAssignedDate(LocalDateTime.now());
+	            bu.setAssignedBy(service.getLoggedUser());
+	            service.saveBlockUser(bu);
+	        }
+	    }
+
+	    Notification.show("All blocks assigned to user").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+	    refreshblockgrid(user);
+	}
 	public void refreshblockgrid(Users user) {
 		blugrid.removeAllColumns();
 		//blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
@@ -290,6 +331,10 @@ public class UsersForm extends FormLayout {
 		refreshschemegrid(user);
 	}
 	private void addScheme() {
+		if(scheme.getValue()==null) {
+			Notification.show("Please Select a Scheme").addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
 		SchemeUser existingSU = service.getSchemeUser(user, scheme.getValue());
 		if (existingSU != null) {
 		    existingSU.setAssignedDate(LocalDateTime.now());
@@ -304,10 +349,39 @@ public class UsersForm extends FormLayout {
 		    pfu.setAssignedBy(service.getLoggedUser());
 		    service.saveSchemeUser(pfu);
 		}
-		Notification.show("Scheme Assigned to User");
+		Notification.show("Scheme Assigned to User").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 		refreshschemegrid(user);
 	}
-	
+	private void addAllSchemes() {
+	    List<Scheme> allSchemes = service.getAllSchemes(); // Fetch all Scheme entries from DB
+
+	    if (allSchemes.isEmpty()) {
+	        Notification.show("No schemes found").addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    for (Scheme scheme : allSchemes) {
+	        SchemeUser existingSU = service.getSchemeUser(user, scheme);
+
+	        if (existingSU != null) {
+	            // Update existing entry
+	            existingSU.setAssignedDate(LocalDateTime.now());
+	            existingSU.setAssignedBy(service.getLoggedUser());
+	            service.saveSchemeUser(existingSU);
+	        } else {
+	            // Create new entry
+	            SchemeUser su = new SchemeUser();
+	            su.setUser(user);
+	            su.setScheme(scheme);
+	            su.setAssignedDate(LocalDateTime.now());
+	            su.setAssignedBy(service.getLoggedUser());
+	            service.saveSchemeUser(su);
+	        }
+	    }
+
+	    Notification.show("All schemes assigned to user").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+	    refreshschemegrid(user);
+	}
 	public void refreshschemegrid(Users user) {
 		scgrid.removeAllColumns();
 		//scgrid.addColumn(scheme->scheme.getId()).setHeader("No.").setResizable(true);

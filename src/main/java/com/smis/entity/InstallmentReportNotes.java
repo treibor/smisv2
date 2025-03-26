@@ -1,5 +1,6 @@
 package com.smis.entity;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,7 +18,13 @@ import jakarta.validation.constraints.NotNull;
 
 
 @Entity
-public class InstallmentReportNotes {
+public class InstallmentReportNotes implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "inst_report_generator")
 	@SequenceGenerator(name="inst_report_generator", sequenceName = "inst_report_seq", allocationSize=1)

@@ -52,15 +52,19 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 @Route(value = "printing", layout = MainLayout.class)
 @PermitAll
 public class ReportView extends VerticalLayout {
-	ComboBox<Block> block = new ComboBox("Block/MB");
-	ComboBox<Scheme> scheme = new ComboBox("Scheme");
-	ComboBox<Year> year = new ComboBox("Financial Year");
-	ComboBox<Constituency> consti = new ComboBox("Constituency");
-	ComboBox reportTypemla = new ComboBox("Select Report Type");
-	ComboBox reportTypemp = new ComboBox("Select Report Type");
-	ComboBox<Year> yearmp = new ComboBox("Year");
-	ComboBox<Constituencymp> constituencymp = new ComboBox("Constituency");
-	ComboBox<Impldistrict> implDistrict = new ComboBox("Implementing District");
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	ComboBox<Block> block = new ComboBox<Block>("Block/MB");
+	ComboBox<Scheme> scheme = new ComboBox<Scheme>("Scheme");
+	ComboBox<Year> year = new ComboBox<Year>("Financial Year");
+	ComboBox<Constituency> consti = new ComboBox<Constituency>("Constituency");
+	ComboBox<String> reportTypemla = new ComboBox<String>("Select Report Type");
+	ComboBox<String> reportTypemp = new ComboBox<String>("Select Report Type");
+	ComboBox<Year> yearmp = new ComboBox<Year>("Year");
+	ComboBox<Constituencymp> constituencymp = new ComboBox<Constituencymp>("Constituency");
+	ComboBox<Impldistrict> implDistrict = new ComboBox<Impldistrict>("Implementing District");
 	DatePicker fromDate = new DatePicker("Print By Dates");
 	DatePicker toDate = new DatePicker();
 	Notification notify = new Notification();

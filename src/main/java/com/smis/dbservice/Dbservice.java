@@ -731,6 +731,9 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
+	public boolean processHistoryExists(Work work, ProcessFlow processFlow, Users user) {
+	    return phistoryrrepo.existsByWorkAndProcessFlowAndUser(work, processFlow, user);
+	}
 	public List<ProcessHistory> getProcessHistory(Work work) {
 		try {
 			return phistoryrrepo.findByWork(work);

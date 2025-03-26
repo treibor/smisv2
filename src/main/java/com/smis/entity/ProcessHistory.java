@@ -1,5 +1,6 @@
 package com.smis.entity;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
@@ -11,28 +12,35 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 
 @Entity
-public class ProcessHistory {
+public class ProcessHistory implements Serializable {
 
-	 @Id
-	    @GeneratedValue(strategy = GenerationType.AUTO, generator = "ph_generator")
-	    @SequenceGenerator(name = "ph_generator", allocationSize = 1, sequenceName = "ph_seq", initialValue = 1)
-    private Long id;
+	/**
+	* 
+	*/
+	private static final long serialVersionUID = 1L;
 
-    @ManyToOne
-    @JoinColumn(name = "work_id", nullable = false)
-    private Work work; // The work item being processed
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "ph_generator")
+	@SequenceGenerator(name = "ph_generator", allocationSize = 1, sequenceName = "ph_seq", initialValue = 1)
+	private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user; // The user performing the action
+	@ManyToOne
+	@JoinColumn(name = "work_id", nullable = false)
+	private Work work; // The work item being processed
 
-    @ManyToOne
-    @JoinColumn(name = "process_flow_id", nullable = false)
-    private ProcessFlow processFlow; // The process step executed
+	@ManyToOne
+	@JoinColumn(name = "user_id", nullable = false)
+	private Users user; // The user performing the action
 
-    //private String action; // e.g., "Work Created", "Amount Released", "UC Entered"
+	@ManyToOne
+	@JoinColumn(name = "process_flow_id", nullable = false)
+	private ProcessFlow processFlow; // The process step executed
 
-    private LocalDateTime enteredOn; // When the action occurred
+	private String processName;
+	private boolean reversed;
+	private String remarks; 
+
+	private LocalDateTime enteredOn; // When the action occurred
 
 	public Long getId() {
 		return id;
@@ -74,5 +82,28 @@ public class ProcessHistory {
 		this.enteredOn = enteredOn;
 	}
 
-    
+	public String getRemarks() {
+		return remarks;
+	}
+
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+
+	public String getProcessName() {
+		return processName;
+	}
+
+	public void setProcessName(String processName) {
+		this.processName = processName;
+	}
+
+	public boolean isReversed() {
+		return reversed;
+	}
+
+	public void setReversed(boolean reversed) {
+		this.reversed = reversed;
+	}
+
 }

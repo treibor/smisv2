@@ -167,7 +167,7 @@ public class WorkView extends VerticalLayout {
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(grid);
 
 		// Add a menu item for viewing installments
-		contextMenu.addItem("View Installments", event -> {
+		contextMenu.addItem("View Details", event -> {
 			Optional<Work> selectedWork = event.getItem();
 			selectedWork.ifPresent(work -> {
 				// Show a dialog or a new component with installments
@@ -198,7 +198,7 @@ public class WorkView extends VerticalLayout {
 	        .setHeader("Amount Released").setResizable(true);
 	    installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
 	        ? installment.getInstallmentDate().format(dateFormatter)
-	        : "Release Order Pending")
+	        : "")
 	        .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
 	    installmentGrid.addColumn(Installment::getInstallmentLetter)
 	        .setHeader("Letter No.").setResizable(true);
@@ -215,7 +215,7 @@ public class WorkView extends VerticalLayout {
 
 	            return downloadLink;
 	        } else {
-	            return new Span("No Document"); // Show message if no document exists
+	            return new Span(""); // Show message if no document exists
 	        }
 	    }).setHeader("Release Order").setAutoWidth(true);
 	    installmentGrid.addColumn(Installment::getUcLetter)
@@ -224,14 +224,6 @@ public class WorkView extends VerticalLayout {
 	        ? installment.getUcDate().format(dateFormatter) 
 	        : "")
 	        .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName())
-	        .setHeader("Entered By").setResizable(true);
-	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null
-	        ? installment.getEnteredOn().format(timeFormatter)
-	        : "No Date")
-	        .setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
-
-	    // 🔹 Add "View Document" column
 	    installmentGrid.addComponentColumn(installment -> {
 	        InstallmentDocument doc = installment.getUcDocument(); // Get the linked document
 
@@ -245,9 +237,14 @@ public class WorkView extends VerticalLayout {
 
 	            return downloadLink;
 	        } else {
-	            return new Span("No Document"); // Show message if no document exists
+	            return new Span(""); // Show message if no document exists
 	        }
 	    }).setHeader("UC Documents").setAutoWidth(true);
+	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true).setVisible(isAdmin);
+	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null? installment.getEnteredOn().format(timeFormatter): "").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
+
+	    // 🔹 Add "View Document" column
+	    
 	    Button closeButton = new Button("Close", e -> dialog.close());
 	    Button deleteButton = new Button("Delete", e ->deleteInstallment(installmentGrid.asSingleSelect().getValue()) );
 	    deleteButton.setEnabled(false);
@@ -277,7 +274,9 @@ public class WorkView extends VerticalLayout {
 		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
 		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Process").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Task").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getProcessName()).setHeader("Action Performed").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setAutoWidth(true);
 		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
 				? processhistory.getEnteredOn().format(timeFormatter)
@@ -310,11 +309,11 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void updateGrid() {
-		
-			//grid.setItems(service.getWorksAssignedToUser());
-			grid.setItems(service.getWorks());
-			gridhistory.setItems(service.getWorkHistory());
-		
+
+		// grid.setItems(service.getWorksAssignedToUser());
+		grid.setItems(service.getWorks());
+		gridhistory.setItems(service.getWorkHistory());
+
 	}
 
 	private Component getToolbar() {
@@ -466,14 +465,81 @@ public class WorkView extends VerticalLayout {
 	private void addWork() {
 		// workform.save.setEnabled(true);
 		grid.asSingleSelect().clear();
-		workform.installaccordion.setEnabled(false);
-		workform.ucaccordion.setEnabled(false);
+		openWorkAccordion();
 		workform.workSelect.setValue("");
 		editWork(new Work());
 
 	}
 
 	private void editWork(Work work) {
+		try {
+			workform.accordion.close();
+			if (work == null) {
+				closeEditor();
+				//System.out.println("Null Work");
+				return;
+			}
+			workform.setWork(work);
+			workform.setVisible(true);
+			workform.save.setEnabled(isUser);
+			int instcount = service.getInstallmentCount(work);
+			List<Installment> installments = service.getInstallments(work);
+			workform.delete.setEnabled(isAdmin);
+			workform.save.setEnabled(isAdmin);
+			if (!isAdmin)  {
+				disableFields();
+			}
+			int step = work.getProcessflow().getStepOrder();
+			if (step == 2) {
+				workform.instAction.setItems("Forward", "Return to "+	 service.getProcessFlowByOrder(4).getStepName());
+				workform.instAction.setValue("Forward");
+				if (instcount > 0) {
+					workform.installmentAmount.setValue(
+							work.getWorkAmount().subtract(installments.get(instcount - 1).getInstallmentAmount()));
+					workform.installmentmaster.setText("Installment: " + (instcount + 1));
+					workform.instAction.setVisible(true);
+				}else {
+					workform.installmentAmount
+					.setValue(work.getWorkAmount().divide(new BigDecimal(work.getNoOfInstallments())));
+					workform.installmentmaster.setText("Installment: 1" );
+					workform.instAction.setVisible(false);
+				}
+				openInstallAccordion();
+				
+			} else if (step == 3) {
+				openRoAccordion();
+				workform.roAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(2).getStepName());
+				workform.roAction.setValue("Forward");
+			} else if (step == 4) {
+				openUcAccordion();
+				workform.ucAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(3).getStepName());
+				workform.ucAction.setValue("Forward");
+			} else {
+				closeAllAccordion();
+			}
+
+			if (!checkAuthority(service.getProcessFlowByOrder(1))) {
+				workform.workaccordion.setVisible(false);
+			}
+			if (!checkAuthority(service.getProcessFlowByOrder(2))) {
+				workform.installaccordion.setVisible(false);
+			}
+			if (!checkAuthority(service.getProcessFlowByOrder(3))) {
+				workform.roaccordion.setVisible(false);
+			}
+			if (!checkAuthority(service.getProcessFlowByOrder(4))) {
+				workform.ucaccordion.setVisible(false);
+			}
+
+		} catch (ArithmeticException aE) {
+
+		} catch (Exception e) {
+			// System.out.println(e);
+		}
+	}
+	
+	
+	private void editWorkOriginal(Work work) {
 		try {
 			int workinstallment = 0;
 			if (work == null) {
@@ -506,8 +572,10 @@ public class WorkView extends VerticalLayout {
 
 								// workform.ucmaster.setText("UC: " + tablecount);
 							} else if (installments.get(tablecountindex).getUcLetter() == null) {
-								openUcAccordion();
+								workform.ucAction.setItems("Enter UC", "Return to "+service.getProcessFlowByOrder(work.getProcessflow().getStepOrder()).getStepName());
+								workform.ucAction.setValue("Enter UC");
 								workform.ucmaster.setText("UC: " + tablecount);
+								openUcAccordion();
 							} else {
 								// Work is completed
 								closeAllAccordion();
@@ -520,7 +588,8 @@ public class WorkView extends VerticalLayout {
 								// check if release order is not printed
 								closeAllAccordion();
 							} else if (installments.get(tablecountindex).getUcLetter() == null) {
-
+								workform.ucAction.setItems("Enter UC", "Return to "+service.getProcessFlowByOrder(work.getProcessflow().getStepOrder()).getStepName());
+								workform.ucAction.setValue("Enter UC");
 								openUcAccordion();
 								workform.ucmaster.setText("UC: " + tablecount);
 
@@ -564,23 +633,37 @@ public class WorkView extends VerticalLayout {
 			//System.out.println(e);
 		}
 	}
-
 	public void closeAllAccordion() {
-		workform.workaccordion.setOpened(true);
+		workform.workaccordion.setOpened(false);
+		workform.workaccordion.setEnabled(false);
 		workform.installaccordion.setEnabled(false);
 		workform.installaccordion.setOpened(false);
 		workform.ucaccordion.setEnabled(false);
 		workform.ucaccordion.setOpened(false);
+		workform.roaccordion.setOpened(false);
+		workform.roaccordion.setEnabled(false);
 	}
-
-	public void openInstallAccordion() {
+	public void openWorkAccordion() {
+		workform.workaccordion.setOpened(true);
+		workform.workaccordion.setEnabled(true);
+		workform.installaccordion.setEnabled(false);
+		workform.installaccordion.setOpened(false);
+		workform.ucaccordion.setEnabled(false);
+		workform.ucaccordion.setOpened(false);
+		//workform.workaccordion.setOpened(false);
+		workform.roaccordion.setOpened(false);
+		workform.roaccordion.setEnabled(false);
 		
-			workform.workaccordion.setOpened(false);
-			workform.installaccordion.setEnabled(true);
-			workform.installaccordion.setOpened(true);
-			workform.ucaccordion.setEnabled(false);
-			workform.ucaccordion.setOpened(false);
-			workform.workaccordion.setOpened(false);
+	}
+	public void openInstallAccordion() {
+		workform.workaccordion.setOpened(false);
+		workform.installaccordion.setEnabled(true);
+		workform.installaccordion.setOpened(true);
+		workform.ucaccordion.setEnabled(false);
+		workform.ucaccordion.setOpened(false);
+		//workform.workaccordion.setOpened(false);
+		workform.roaccordion.setOpened(false);
+		workform.roaccordion.setEnabled(false);
 		
 	}
 
@@ -590,9 +673,19 @@ public class WorkView extends VerticalLayout {
 		workform.installaccordion.setOpened(false);
 		workform.ucaccordion.setEnabled(true);
 		workform.ucaccordion.setOpened(true);
-		workform.workaccordion.setOpened(false);
+		workform.roaccordion.setOpened(false);
+		workform.roaccordion.setEnabled(false);
 	}
-
+	public void openRoAccordion() {
+		workform.workaccordion.setOpened(false);
+		workform.installaccordion.setEnabled(false);
+		workform.installaccordion.setOpened(false);
+		workform.ucaccordion.setEnabled(false);
+		workform.ucaccordion.setOpened(false);
+		
+		workform.roaccordion.setOpened(true);
+		workform.roaccordion.setEnabled(true);
+	}
 	public void enableFields() {
 		workform.scheme.setEnabled(true);
 		workform.constituency.setEnabled(true);

@@ -16,6 +16,10 @@ import jakarta.validation.constraints.NotNull;
 
 @Entity
 public class Scheme implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "scheme_generator")
 	@SequenceGenerator(name="scheme_generator", initialValue = 1, sequenceName = "scheme_sequence", allocationSize = 1)

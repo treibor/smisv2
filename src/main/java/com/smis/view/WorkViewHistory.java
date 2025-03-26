@@ -164,7 +164,7 @@ public class WorkViewHistory extends VerticalLayout {
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(gridhistory);
 
 		// Add a menu item for viewing installments
-		contextMenu.addItem("View Installments", event -> {
+		contextMenu.addItem("View Details", event -> {
 			Optional<Work> selectedWork = event.getItem();
 			selectedWork.ifPresent(work -> {
 				// Show a dialog or a new component with installments

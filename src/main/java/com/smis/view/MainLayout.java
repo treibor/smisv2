@@ -113,9 +113,9 @@ public class MainLayout extends AppLayout  {
 		// Add navigation items with helper text
 		SideNavItemWithHelperText home = new SideNavItemWithHelperText("", "Home", HomeView.class,
 				LineAwesomeIcon.HOME_SOLID.create());
-		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("", "Works", WorkView.class,
+		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("", "Inbox", WorkView.class,
 				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
-		SideNavItemWithHelperText history = new SideNavItemWithHelperText("", "Works History", WorkViewHistory.class,
+		SideNavItemWithHelperText history = new SideNavItemWithHelperText("", "History", WorkViewHistory.class,
 				LineAwesomeIcon.HISTORY_SOLID.create());
 		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("", "Release Order", PrintView.class,
 				LineAwesomeIcon.DONATE_SOLID.create());
@@ -415,9 +415,8 @@ public class MainLayout extends AppLayout  {
 		if (district.isEmpty()  || state.isEmpty()  || usertype.isEmpty() ||profileName.isEmpty()||email.isEmpty()
 				|| userName.isEmpty() || newpwd.isEmpty() || confirmpwd.getValue().isEmpty()) {
 			Notification.show(" Enter All Values, Please", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}
-		else if (userName.getValue().trim().length() < 7) {
-			Notification.show("User name is too short", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}else if (userName.getValue().trim().length() < 7) {
+			Notification.show("User name must be at leat 6 Characters long", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		} else if(!checkPasswordStrength(newpwd.getValue())){
 			Notification.show("Password is too weak. Please use a combination of Lower case, Upper case, Number and Special Charaters").addThemeVariants(NotificationVariant.LUMO_WARNING);
 		}  else {

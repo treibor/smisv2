@@ -3,6 +3,7 @@ package com.smis.view;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -37,25 +38,36 @@ import com.smis.entity.Scheme;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H6;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.wontlost.ckeditor.Constants.EditorType;
+
+import elemental.json.Json;
+
 import com.wontlost.ckeditor.VaadinCKEditor;
 import com.wontlost.ckeditor.VaadinCKEditorBuilder;
 
@@ -70,7 +82,7 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 @PageTitle("MLA Release Order")
 @Route(value = "releaseordermla", layout = MainLayout.class)
-@RolesAllowed({ "USER", "SUPER","ADMIN" })
+@RolesAllowed({ "USER", "SUPER", "ADMIN" })
 public class PrintView extends HorizontalLayout {
 	// Binder <Work> binder=new BeanValidationBinder<>(Work.class);
 	Dbservice service;
@@ -89,9 +101,13 @@ public class PrintView extends HorizontalLayout {
 	TextField copyTo = new TextField("Copy To:");
 	TextField note = new TextField("Note:");
 	Button printButton = new Button("Print");
+	Button uploadButton = new Button("Upload RO");
+	Button save = new Button("Save");
 	HorizontalLayout hl4 = new HorizontalLayout();
 	Anchor link = new Anchor();
-	// Notification Notification=new Notification();
+	private byte[] uploadedPdf;
+	MemoryBuffer buffer = new MemoryBuffer();
+	Upload upload1=new Upload(buffer);
 	boolean isAdmin;
 	VerticalLayout vlayout = new VerticalLayout();
 
@@ -106,19 +122,21 @@ public class PrintView extends HorizontalLayout {
 		configureGrid();
 		populateAllFields();
 		printButton.setEnabled(false);
+		uploadButton.setEnabled(false);
 		isAdmin = service.isAdmin();
 		HorizontalLayout mainLayout = new HorizontalLayout(getLeftLayout(), configureSideLayout());
 		mainLayout.setSizeFull();
 		if (!checkAuthority(service.getProcessFlowByOrder(3))) {
 
 			add(new H1("  You Are Not Authorised To View this Page"));
-			//setVisible(false);
+			// setVisible(false);
 		} else {
 			add(mainLayout);
 		}
-		//System.out.println(checkAuthority(service.getProcessFlowByOrder(3)));
+		// System.out.println(checkAuthority(service.getProcessFlowByOrder(3)));
 		setSizeFull();
 	}
+
 	public boolean checkAuthority(ProcessFlow pf) {
 		Users user = service.getLoggedUser();
 		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
@@ -128,6 +146,7 @@ public class PrintView extends HorizontalLayout {
 			return true;
 		}
 	}
+
 	public Component getLeftLayout() {
 		VerticalLayout vl = new VerticalLayout();
 		vl.add(configureTopLayout(), configureMiddleLayout(), configureBottomLayout());
@@ -169,10 +188,118 @@ public class PrintView extends HorizontalLayout {
 		vlayout.setWidth("300px"); // Set a fixed width for the side layout
 		// compldate.setHelperText("As Per Scheme Duration");
 		printButton.addClickListener(e -> printReport());
-
-		vlayout.add(instletter, instdate, printButton);
+		uploadButton.addClickListener(e -> openUploadDialog());
+		vlayout.add(instletter, instdate, printButton, uploadButton);
 		vlayout.setHeightFull();
 		return vlayout;
+	}
+
+	private void openUploadDialog() {
+		Dialog dialog = new Dialog();
+		Button closeButton = new Button("Close", e -> dialog.close());
+		dialog.add(createUpload(upload1));
+		dialog.getHeader().add(new H6("Upload Release Order"));
+		dialog.getFooter().add(save, closeButton);
+		dialog.open();
+
+	}
+
+	private Component createUpload(Upload upload) {
+		//upload=new Upload(buffer);
+		
+		save.addClickListener(e -> {
+			uploadRo(); // Save file to DB
+			//clearBuffer();
+			
+		});
+		upload.setHeight("20%");
+		upload.getStyle().set("font-size", "12px");
+		upload.setMaxFiles(1);
+		upload.setMaxFileSize(5 * 1024 * 1024); // 5MB limit
+
+		Button uploadButton = new Button("Select Document To Upload");
+		uploadButton.getStyle().set("font-size", "12px");
+		upload.setUploadButton(uploadButton);
+
+		upload.setAcceptedFileTypes("application/pdf");
+
+		upload.addFileRejectedListener(e -> Notification
+				.show("Invalid File: Please select only PDF files less than 5MB", 3000, Position.TOP_END));
+
+		upload.addSucceededListener(event -> {
+			try (InputStream inputStream = buffer.getInputStream()) {
+				uploadedPdf = inputStream.readAllBytes(); // Store the uploaded PDF as byte[]
+				// Notification.show("PDF uploaded successfully!", 3000, Position.TOP_END);
+			} catch (IOException e) {
+				Notification.show("Error uploading file", 3000, Position.TOP_END);
+			}
+		});
+		var text = new Span("Upload The Release Order for the selected " + grid.getSelectedItems().size()
+				+ " work(s) and click Save'");
+		upload.setSizeFull();
+		return new VerticalLayout(text, upload);
+	}
+	public void clearBuffer() {
+		uploadedPdf=null;
+		buffer=new MemoryBuffer();
+		upload1.setReceiver(buffer);
+		try {
+			upload1.clearFileList();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+	}
+	private void uploadRo() {
+		Users user = service.getLoggedUser();
+		Set<Installment> installmentset = grid.getSelectedItems();
+		List<Installment> installments = new ArrayList<>(installmentset);
+		try {
+			if (uploadedPdf == null || uploadedPdf.length == 0) {
+				Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
+						.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				return;
+			}
+			int selecteditems = installments.size();
+			BigDecimal totalamount = BigDecimal.ZERO;
+			for (int i = 0; i < selecteditems; i++) {
+				totalamount = installments.get(i).getInstallmentAmount().add(totalamount);
+				Installment singleinstallment = installments.get(i);
+				singleinstallment.setInstallmentDate(instdate.getValue());
+				singleinstallment.setInstallmentLetter(instletter.getValue());
+				Work singlework = singleinstallment.getWork();
+				// Users user = service.getLoggedUser();
+				ProcessFlow pf = service.getProcessFlowByOrder(3);
+				boolean exists = service.processHistoryExists(singlework, pf, user);
+				if (!exists) {
+					ProcessHistory ph = new ProcessHistory();
+					ph.setWork(singlework);
+					ph.setProcessFlow(service.getProcessFlowByOrder(3));
+					ph.setUser(user);
+					ph.setEnteredOn(LocalDateTime.now());
+					service.saveProcessHistory(ph);
+				}
+				singlework.setProcessflow(service.getProcessFlowByOrder(4));
+				service.saveWork(singlework);
+
+			}
+			InstallmentDocument instdoc = new InstallmentDocument();
+			instdoc.setUpdatedBy(user);
+			instdoc.setUpdatedOn(LocalDateTime.now());
+			instdoc.setDocument(uploadedPdf);
+			service.saveDocuments(instdoc);
+			for (Installment installment : installments) {
+				installment.setReleaseOrder(instdoc);
+				service.saveInstallment(installment);
+			}
+			Notification.show(" Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+			service.deleteUnreferencedData();
+			clearBuffer();
+		} catch (Exception e) {
+			Notification.show(" Error:" + e, 5000, Position.TOP_CENTER);
+
+		}
+
 	}
 
 	public Component configureMiddleLayout() {
@@ -185,8 +312,6 @@ public class PrintView extends HorizontalLayout {
 	}
 
 	public Component configureBottomLayout() {
-		Button abc = new Button("HTML");
-
 		HorizontalLayout bLayout = new HorizontalLayout(inlineEditor);
 		inlineEditor.setSizeFull();
 		bLayout.setWidthFull();
@@ -206,13 +331,7 @@ public class PrintView extends HorizontalLayout {
 			List<Installment> installments = new ArrayList<>(installmentset);
 			if (installments.get(0).getWork().getSanctionDate().isAfter(instdate.getValue())) {
 				Notification.show("Release Date  Cannot be before the sanction Date", 5000, Position.TOP_CENTER);
-				/*
-				 * }else if
-				 * (installments.get(0).getWork().getSanctionDate().isAfter(compldate.getValue()
-				 * )||instdate.getValue().isAfter(compldate.getValue() )) { Notification.
-				 * show("Invalid Completion Date. Please don not Modify Completion date unless its is Really Necessary"
-				 * , 5000, Position.TOP_CENTER);
-				 */
+
 			} else if (installno > 1 && service.getInstallmentByWorkAndNo(installments.get(0).getInstallmentNo() - 1,
 					installments.get(0).getWork()).getUcDate().isAfter(instdate.getValue())) {
 				Notification.show(
@@ -241,22 +360,11 @@ public class PrintView extends HorizontalLayout {
 						Installment singleinstallment = installments.get(i);
 						singleinstallment.setInstallmentDate(instdate.getValue());
 						singleinstallment.setInstallmentLetter(instletter.getValue());
-						// singleinstallment.setInstallmentCheque(installmentcheque.getValue());
-						// singleinstallment.setCopyTo(inlineEditor.getValue());
-						// service.saveInstallment(singleinstallment);
-
+						//service.saveInstallment(singleinstallment);
 						Work singlework = singleinstallment.getWork();
 						if (singleinstallment.getUcLetter() == null) {
 							singlework.setWorkStatus("Release Order " + singleinstallment.getInstallmentNo());
 						}
-						Users user = service.getLoggedUser();
-						ProcessHistory ph = new ProcessHistory();
-						ph.setWork(singlework);
-						ph.setProcessFlow(service.getProcessFlowByOrder(3));
-						ph.setUser(user);
-						ph.setEnteredOn(LocalDateTime.now());
-						service.saveProcessHistory(ph);
-						singlework.setProcessflow(service.getProcessFlowByOrder(4));
 						service.saveWork(singlework);
 
 					}
@@ -296,30 +404,21 @@ public class PrintView extends HorizontalLayout {
 					JasperExportManager.exportReportToPdfFile(jasperPrint,
 							reportPath + "//" + userid + "releaseorder.pdf");
 					File a = new File(reportPath + "//" + userid + "releaseorder.pdf");
-					Path path = Paths.get(a.getPath());
-					byte[] fileData = Files.readAllBytes(path);
-					InstallmentDocument instdoc = new InstallmentDocument();
 					InstallmentReportNotes notes = new InstallmentReportNotes();
-					instdoc.setDocument(fileData);
-					instdoc.setUpdatedBy(currentUser);
-					instdoc.setUpdatedOn(LocalDateTime.now());
-					service.saveDocuments(instdoc);
 					notes.setCopyTo(inlineEditor.getValue());
 					notes.setUpdatedBy(currentUser);
 					notes.setUpdatedOn(LocalDateTime.now());
 					service.saveInstallmentReport(notes);
 					for (Installment installment : installments) {
-						installment.setReleaseOrder(instdoc);
 						installment.setReportNotes(notes);
 						service.saveInstallment(installment);
 					}
 					addLinkToFile(a);
-					service.deleteUnreferencedData();
 
 				} catch (Exception e) {
 					Notification.show("Unable To Generate Report. Error:" + e, 5000, Position.TOP_CENTER);
 					// Position.TOP_CENTER);
-					e.printStackTrace();
+					// e.printStackTrace();
 
 				}
 			}
@@ -386,10 +485,9 @@ public class PrintView extends HorizontalLayout {
 
 		grid.setSelectionMode(Grid.SelectionMode.MULTI);
 		grid.setColumns("installmentAmount");
-		grid.addColumn(installment -> installment.getWork().getWorkCode() + "-" + installment.getWork().getWorkName())
-				.setHeader("Work").setWidth("20%").setResizable(true); // grid.addColumn(installment->
-																		// installment.getWork().getWorkName()).setHeader("Work
-																		// Name");
+		grid.addColumn(installment -> installment.getWork().getWorkCode()).setHeader("Work Code").setResizable(true).setSortable(true);
+		grid.addColumn(installment -> installment.getWork().getWorkName())
+		.setHeader("Work").setWidth("20%").setResizable(true);
 		grid.addColumn(installment -> installment.getWork().getSanctionDate()).setHeader("Sanction Date")
 				.setAutoWidth(true);
 		grid.addColumn(installment -> installment.getWork().getNoOfInstallments()).setHeader("No of Inst")
@@ -409,6 +507,7 @@ public class PrintView extends HorizontalLayout {
 		if (e.getAllSelectedItems().size() > 0) {
 			hl4.setVisible(false);
 			printButton.setEnabled(true);
+			uploadButton.setEnabled(true);
 			Set<Installment> selected = grid.getSelectedItems();
 			List<Installment> installs = new ArrayList<>(selected);
 			Installment installsingle = installs.get(0);
