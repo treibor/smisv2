@@ -294,7 +294,7 @@ public class WorkView extends VerticalLayout {
 
 		//grid.setItems(service.getFilteredWorks(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue()));
 		grid.setItems(service.getFilteredWorksByUser(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue()));
-		gridhistory.setItems(service.getWorkHistory());
+		//gridhistory.setItems(service.getWorkHistory());
 	}
 
 	private Component getContent() {
@@ -437,8 +437,6 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void deleteWork(WorkForm.DeleteEvent event) {
-		// service.deleteInstallments(event.getWork());
-		//audit.saveAudit(event.getWork(), "Delete");
 		service.deleteWork(event.getWork());
 		updateList();
 		closeEditor();
@@ -486,18 +484,24 @@ public class WorkView extends VerticalLayout {
 			List<Installment> installments = service.getInstallments(work);
 			workform.delete.setEnabled(isAdmin);
 			workform.save.setEnabled(isAdmin);
-			if (!isAdmin)  {
-				disableFields();
+			if (installments.size()>0)  {
+				closeAllAccordion();
+				workform.workaccordion.setOpened(isAdmin);
+				workform.workaccordion.setEnabled(isAdmin);
 			}
+			//Installment installment=service.getByWorkWithLargestInstallment(work);
 			int step = work.getProcessflow().getStepOrder();
 			if (step == 2) {
 				workform.instAction.setItems("Forward", "Return to "+	 service.getProcessFlowByOrder(4).getStepName());
 				workform.instAction.setValue("Forward");
 				if (instcount > 0) {
+					
 					workform.installmentAmount.setValue(
 							work.getWorkAmount().subtract(installments.get(instcount - 1).getInstallmentAmount()));
 					workform.installmentmaster.setText("Installment: " + (instcount + 1));
 					workform.instAction.setVisible(true);
+					
+					
 				}else {
 					workform.installmentAmount
 					.setValue(work.getWorkAmount().divide(new BigDecimal(work.getNoOfInstallments())));
@@ -507,10 +511,13 @@ public class WorkView extends VerticalLayout {
 				openInstallAccordion();
 				
 			} else if (step == 3) {
+				
+				
 				openRoAccordion();
 				workform.roAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(2).getStepName());
 				workform.roAction.setValue("Forward");
 			} else if (step == 4) {
+				
 				openUcAccordion();
 				workform.ucAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(3).getStepName());
 				workform.ucAction.setValue("Forward");
@@ -530,7 +537,9 @@ public class WorkView extends VerticalLayout {
 			if (!checkAuthority(service.getProcessFlowByOrder(4))) {
 				workform.ucaccordion.setVisible(false);
 			}
-
+			if (!checkAuthority(service.getProcessFlowByOrder(5))) {
+				workform.complaccordion.setVisible(false);
+			}
 		} catch (ArithmeticException aE) {
 
 		} catch (Exception e) {
@@ -561,6 +570,7 @@ public class WorkView extends VerticalLayout {
 						workform.save.setEnabled(isAdmin);
 						if (!isAdmin) {
 							disableFields();
+							
 						}
 						// workform.setEnabled(isAdmin);
 						int tablecountindex = tablecount - 1;
@@ -642,6 +652,8 @@ public class WorkView extends VerticalLayout {
 		workform.ucaccordion.setOpened(false);
 		workform.roaccordion.setOpened(false);
 		workform.roaccordion.setEnabled(false);
+		workform.complaccordion.setOpened(true);
+		workform.complaccordion.setEnabled(true);
 	}
 	public void openWorkAccordion() {
 		workform.workaccordion.setOpened(true);
@@ -653,7 +665,8 @@ public class WorkView extends VerticalLayout {
 		//workform.workaccordion.setOpened(false);
 		workform.roaccordion.setOpened(false);
 		workform.roaccordion.setEnabled(false);
-		
+		workform.complaccordion.setOpened(false);
+		workform.complaccordion.setEnabled(false);
 	}
 	public void openInstallAccordion() {
 		workform.workaccordion.setOpened(false);
@@ -664,7 +677,8 @@ public class WorkView extends VerticalLayout {
 		//workform.workaccordion.setOpened(false);
 		workform.roaccordion.setOpened(false);
 		workform.roaccordion.setEnabled(false);
-		
+		workform.complaccordion.setOpened(false);
+		workform.complaccordion.setEnabled(false);
 	}
 
 	public void openUcAccordion() {
@@ -675,6 +689,8 @@ public class WorkView extends VerticalLayout {
 		workform.ucaccordion.setOpened(true);
 		workform.roaccordion.setOpened(false);
 		workform.roaccordion.setEnabled(false);
+		workform.complaccordion.setOpened(false);
+		workform.complaccordion.setEnabled(false);
 	}
 	public void openRoAccordion() {
 		workform.workaccordion.setOpened(false);
@@ -685,6 +701,8 @@ public class WorkView extends VerticalLayout {
 		
 		workform.roaccordion.setOpened(true);
 		workform.roaccordion.setEnabled(true);
+		workform.complaccordion.setOpened(false);
+		workform.complaccordion.setEnabled(false);
 	}
 	public void enableFields() {
 		workform.scheme.setEnabled(true);

@@ -195,6 +195,10 @@ public class PrintView extends HorizontalLayout {
 	}
 
 	private void openUploadDialog() {
+		if (instletter.getValue() == null ||instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
+			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER);
+			return;
+		}
 		Dialog dialog = new Dialog();
 		Button closeButton = new Button("Close", e -> dialog.close());
 		dialog.add(createUpload(upload1));
@@ -259,6 +263,7 @@ public class PrintView extends HorizontalLayout {
 						.addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return;
 			}
+			int install=instNo.getValue();
 			int selecteditems = installments.size();
 			BigDecimal totalamount = BigDecimal.ZERO;
 			for (int i = 0; i < selecteditems; i++) {
@@ -268,17 +273,21 @@ public class PrintView extends HorizontalLayout {
 				singleinstallment.setInstallmentLetter(instletter.getValue());
 				Work singlework = singleinstallment.getWork();
 				// Users user = service.getLoggedUser();
-				ProcessFlow pf = service.getProcessFlowByOrder(3);
-				boolean exists = service.processHistoryExists(singlework, pf, user);
-				if (!exists) {
-					ProcessHistory ph = new ProcessHistory();
-					ph.setWork(singlework);
-					ph.setProcessFlow(service.getProcessFlowByOrder(3));
-					ph.setUser(user);
-					ph.setEnteredOn(LocalDateTime.now());
-					service.saveProcessHistory(ph);
-				}
-				singlework.setProcessflow(service.getProcessFlowByOrder(4));
+				ProcessFlow pf3 = service.getProcessFlowByOrder(3);
+				ProcessFlow pf4 = service.getProcessFlowByOrder(4);
+				// boolean exists = service.processHistoryExists(singlework, pf, user);
+				// if (!exists) {
+				ProcessHistory ph = new ProcessHistory();
+				ph.setWork(singlework);
+				ph.setProcessFlow(pf3);
+				ph.setProcessName(pf3.getStepName());
+				ph.setUser(user);
+				ph.setEnteredOn(LocalDateTime.now());
+				ph.setReversed(false);
+				service.saveProcessHistory(ph);
+				// }
+				singlework.setProcessflow(pf4);
+				singlework.setWorkStatus(pf4.getStepName()+"-"+install);
 				service.saveWork(singlework);
 
 			}
@@ -291,6 +300,7 @@ public class PrintView extends HorizontalLayout {
 				installment.setReleaseOrder(instdoc);
 				service.saveInstallment(installment);
 			}
+			populateGrid();
 			Notification.show(" Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
 					.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 			service.deleteUnreferencedData();
@@ -324,7 +334,7 @@ public class PrintView extends HorizontalLayout {
 		Users currentUser = service.getLoggedUser();
 		int installno = instNo.getValue();
 
-		if (instletter.getValue() == "" || instdate.getValue() == null) {
+		if (instletter.getValue() == null ||instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
 			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER);
 		} else {
 			Set<Installment> installmentset = grid.getSelectedItems();
@@ -497,7 +507,7 @@ public class PrintView extends HorizontalLayout {
 		// grid.addColumn(installment->
 		// installment.getInstallmentCheque()).setHeader("Cheque
 		// No.").setAutoWidth(true);
-		grid.addColumn(installment -> installment.getWork().getWorkStatus()).setHeader("Status").setAutoWidth(true);
+		grid.addColumn(installment -> installment.getWork().getProcessflow().getStepName()).setHeader("Current Process").setAutoWidth(true);
 		// grid.getColumns().forEach(col-> col.setAutoWidth(true));
 		grid.addSelectionListener(event -> doSomething(event));
 	}
@@ -529,7 +539,7 @@ public class PrintView extends HorizontalLayout {
 			}
 		} else {
 			printButton.setEnabled(false);
-			// compldate.setValue(null);
+			uploadButton.setEnabled(false);
 			instletter.setValue("");
 			instdate.setValue(null);
 			// installmentcheque.setValue("");
@@ -647,8 +657,9 @@ public class PrintView extends HorizontalLayout {
 				if (hl4 != null) {
 					hl4.removeAll();
 				}
-				grid.setItems(service.getFilteredInstallments(scheme.getValue(), constituency.getValue(),
-						block.getValue(), year.getValue(), instno));
+				//grid.setItems(service.getFilteredInstallments(scheme.getValue(), constituency.getValue(),block.getValue(), year.getValue(), instno));
+				grid.setItems(service.getFilteredInstallments(scheme.getValue(), constituency.getValue(),service.getProcessFlowByOrder(3),block.getValue(), year.getValue(), instno));
+				
 				configureGrid();
 			}
 		} catch (Exception e) {

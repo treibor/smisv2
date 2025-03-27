@@ -242,7 +242,9 @@ public class Dbservice implements Serializable{
 	public int getInstallmentCount(Work work) {
 		return irepo.countByWork(work);
 	}
-
+	public Installment getByWorkWithLargestInstallment(Work work) {
+		return irepo.findByWorkWithLargestInstallment(work);
+	}
 	public List<Installment> getInstallments(Work work) {
 		return irepo.findByWork(work);
 	}
@@ -255,7 +257,15 @@ public class Dbservice implements Serializable{
 			int installment) {
 		return irepo.getFilteredInstallment(scheme, consti, block, getDistrict(), year, installment);
 	}
-
+	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, ProcessFlow pflow, Block block, Year year,
+			int installment) {
+		
+		return irepo.getFilteredInstallment(scheme, consti,pflow, block, getDistrict(), year, installment);
+	}
+	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, ProcessFlow pflow, Block block, Year year) {
+		
+		return irepo.getFilteredInstallment(scheme, consti,pflow, block, getDistrict(), year);
+	}
 	public Installment getInstallmentByWorkAndNo(int insallment, Work work) {
 		return irepo.getInstallmentByNoAndWork(insallment, work);
 	}
@@ -387,7 +397,7 @@ public class Dbservice implements Serializable{
 		// irepo.deleteByWork(work);
 		try {
 			wrepo.delete(work);
-			Notification.show("Deleted Successfully");
+			Notification.show("Deleted Successfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		} catch (Exception e) {
 			Notification.show("Unable to Delete Work. Error:" + e, 5000, Position.TOP_CENTER);
 		}
