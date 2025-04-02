@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.envers.Audited;
 import org.hibernate.validator.constraints.Length;
 
 import jakarta.persistence.CascadeType;

@@ -2,6 +2,11 @@ package com.smis.entity;
 
 import java.io.Serializable;
 
+import org.hibernate.envers.AuditTable;
+import org.hibernate.envers.Audited;
+
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,7 +17,10 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+
 @Entity
+
+
 public class Block implements Serializable{
 	 private static final long serialVersionUID = 1L;
 	@Id

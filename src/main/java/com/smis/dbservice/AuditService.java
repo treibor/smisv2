@@ -10,16 +10,9 @@ import com.smis.repository.AuditRepository;
 
 @Service
 public class AuditService {
-	@Autowired
-	private AuditRepository auditrepo; 
 	
 	
-	public void updateAudit(AuditTrail entity) {
-		auditrepo.save(entity);
-	}
 	
-	public List<AuditTrail> getAuditTrail() {
-		return auditrepo.findAllByOrderByIdDesc();
-	}
+	
 	
 }

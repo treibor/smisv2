@@ -29,9 +29,24 @@ public class AuditTrail implements Serializable {
 	private LocalDateTime actionOn;
 	@Column(length = 1000)
 	private String details;
+	@Column(length = 500)
+	private String otherDetails;
+	private String process;
+	//private int workCode;
+	
+	
 	public long getId() {
 		return id;
 	}
+	
+	public String getProcess() {
+		return process;
+	}
+
+	public void setProcess(String process) {
+		this.process = process;
+	}
+
 	public void setId(long id) {
 		this.id = id;
 	}
@@ -65,6 +80,12 @@ public class AuditTrail implements Serializable {
 	}
 	public void setActionBy(Users actionBy) {
 		this.actionBy = actionBy;
+	}
+	public String getOtherDetails() {
+		return otherDetails;
+	}
+	public void setOtherDetails(String otherDetails) {
+		this.otherDetails = otherDetails;
 	}
 	
 	

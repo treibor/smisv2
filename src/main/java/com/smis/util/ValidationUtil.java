@@ -4,9 +4,15 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 
 public class ValidationUtil {
-	// private static final String ALLOWED_PATTERN = "[0-9A-Za-z.()@/'&]";
+	private static final String ALLOWED_PATTERN = "[-0-9A-Za-zñÑïÏ.*%_:+,();@/'&\\s]";
+	
+	public static void applyValidation(TextField textField, int length) {
+        textField.setAllowedCharPattern(ALLOWED_PATTERN);
+        textField.setMinLength(0);
+        textField.setMaxLength(length);
+    }
 	public static void applyValidation(TextField textField) {
-        textField.setAllowedCharPattern("[0-9A-Za-z.()@/'&\\s-]");
+        textField.setAllowedCharPattern(ALLOWED_PATTERN);
         textField.setMinLength(0);
         textField.setMaxLength(50);
     }

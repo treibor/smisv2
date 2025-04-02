@@ -3,6 +3,7 @@ package com.smis;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.context.annotation.ComponentScan;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.AppShellSettings;
@@ -10,7 +11,8 @@ import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 
 
-@SpringBootApplication()
+@SpringBootApplication
+
 //@Theme (variant= Lumo.LIGHT)
 //@JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 @Theme(value = "my-theme")

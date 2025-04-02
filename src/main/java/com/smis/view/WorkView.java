@@ -6,6 +6,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.smis.audit.Audit;
 //import com.identity.views.CheckBox;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
@@ -52,6 +55,8 @@ public class WorkView extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = 1L;
 	Dbservice service;
+	@Autowired
+	Audit audit;
 	Grid<Work> grid = new Grid<>(Work.class);
 	Grid<Work> gridhistory = new Grid<>(Work.class);
 	TextField filterText = new TextField();
@@ -67,8 +72,9 @@ public class WorkView extends VerticalLayout {
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-	public WorkView(Dbservice service) {
+	public WorkView(Dbservice service, Audit audit) {
 		this.service = service;
+		this.audit=audit;
 		setSizeFull();
 		isAdmin = service.isAdmin();
 		isUser = service.isUser();
@@ -276,7 +282,7 @@ public class WorkView extends VerticalLayout {
 		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Task").setAutoWidth(true);
 		grid.addColumn(processhistory->processhistory.getProcessName()).setHeader("Action Performed").setAutoWidth(true);
-		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setWidth("20%");
 		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
 				? processhistory.getEnteredOn().format(timeFormatter)
@@ -285,6 +291,7 @@ public class WorkView extends VerticalLayout {
 		List<ProcessHistory> history = service.getProcessHistory(work);
 		grid.setItems(history);
 		grid.setAllRowsVisible(true);
+		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		Button closeButton = new Button("Close", e -> dialog.close());
 		dialog.add(grid);
 		dialog.getFooter().add(closeButton);
@@ -394,7 +401,7 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void configureForm() {
-		workform = new WorkForm(service);
+		workform = new WorkForm(service, audit);
 		workform.setWidth("40%");
 		workform.addListener(WorkForm.SaveEvent.class, this::saveWork);
 		workform.addListener(WorkForm.DeleteEvent.class, this::deleteWork);

@@ -1,11 +1,12 @@
 package com.smis.view;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.smis.audit.Audit;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
@@ -18,6 +19,7 @@ import com.smis.entity.Users;
 import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.util.UploadUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -43,8 +45,6 @@ import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
@@ -58,7 +58,7 @@ public class WorkForm extends VerticalLayout {
 	private static final long serialVersionUID = 1L;
 	Dbservice service;
 	//@Autowired
-	
+	private Audit audit;
 	private Work work;
 	//private WorkView workview;
 	private Installment installment;
@@ -113,15 +113,15 @@ public class WorkForm extends VerticalLayout {
 	public RadioButtonGroup<String> instAction = new RadioButtonGroup<>();
 	boolean isAdmin;
 	boolean isUser;
-	MemoryBuffer buffer = new MemoryBuffer();
-	MemoryBuffer buffer2 = new MemoryBuffer();
-	Upload upload1 = new Upload(buffer);
-	Upload upload2 = new Upload(buffer2);
 	private AtomicReference<byte[]> uploadedPdf1 = new AtomicReference<>();
 	private AtomicReference<byte[]> uploadedPdf2 = new AtomicReference<>();
-	public WorkForm(Dbservice service) {
+	VerticalLayout vlayout1;
+	VerticalLayout vlayout2;
+	public WorkForm(Dbservice service, Audit audit) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
+		this.audit=audit;
+		//System.out.println("Audit"+audit);
 		binder.bindInstanceFields(this);
 		pf1=service.getProcessFlowByOrder(1);
 		pf2=service.getProcessFlowByOrder(2);
@@ -250,6 +250,7 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	public Component configureInstallmentForm() {
+		ValidationUtil.applyValidation(instRemarks);
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(installmentmaster, 2);
@@ -299,13 +300,16 @@ public class WorkForm extends VerticalLayout {
 	
 
 	public Component configureUcForm() {
+		ValidationUtil.applyValidation(ucRemarks);
+		vlayout1=new VerticalLayout();
+		vlayout1.add(UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select Pdf Document"));
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(ucAction, 2);
 		form2.add(ucDate, 1);
 		form2.add(ucletter, 1);
 		//form2.add(createUpload(upload1, buffer), 2);
-		form2.add(createUpload(upload1, buffer, uploadedPdf1), 2);
+		form2.add(vlayout1, 2);
 		form2.add(ucRemarks,2);
 		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
 				// Use two columns, if layout's width exceeds 500px
@@ -319,29 +323,34 @@ public class WorkForm extends VerticalLayout {
 		    	//ucAction.setVisible(true);
 		    	ucDate.setVisible(true);
 		    	ucletter.setVisible(true);
-		    	upload1.setVisible(true);
+		    	vlayout1.setVisible(true);
 		    }else {
 		    	//ucRemarks.setVisible(true);
 		    	//ucAction.setVisible(false);
 		    	ucDate.setVisible(false);
 		    	ucletter.setVisible(false);
-		    	upload1.setVisible(false);
+		    	vlayout1.setVisible(false);
 		    }
 		});
 
 		return form2;
 	}
 	public Component configureROForm() {
+		ValidationUtil.applyValidation(roRemarks);
 		FormLayout form2 = new FormLayout();
+		vlayout2=new VerticalLayout();
+		vlayout2.add(UploadUtil.createPdfUpload(uploadedPdf2,"Upload Document","Select Document"));
 		
 		form2.setWidth("100%");
 		//form2.add(roAction, 2);
 		form2.add(instLetter, 1);
 		form2.add(instDate, 1);
-		form2.add(createUpload(upload2, buffer2, uploadedPdf2), 2);
+		//form2.add(UploadUtil.createPdfUpload(uploadedPdf2,"Upload Document","Select Document"), 2);
+		form2.add(vlayout2, 2);
 		form2.add(roRemarks,2);
 		form2.add(rosave,1);
 		form2.add(roclose,1);
+		 
 		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
 				// Use two columns, if layout's width exceeds 500px
 				new ResponsiveStep("500px", 2));
@@ -358,12 +367,12 @@ public class WorkForm extends VerticalLayout {
 		    String selectedValue = event.getValue();
 		    if ("Forward".equals(selectedValue)) {
 		    	//roRemarks.setVisible(false);
-		    	upload2.setVisible(true);
+		    	vlayout2.setVisible(true);
 		    	instLetter.setVisible(true);
 		    	instDate.setVisible(true);
 		    }else {
 		    	//roRemarks.setVisible(true);
-		    	upload2.setVisible(false);
+		    	vlayout2.setVisible(false);
 		    	instLetter.setVisible(false);
 		    	instDate.setVisible(false);
 		    }
@@ -372,6 +381,7 @@ public class WorkForm extends VerticalLayout {
 		return form2;
 	}
 	public Component configureCompleteForm() {
+		ValidationUtil.applyValidation(complRemarks);
 		FormLayout form2 = new FormLayout();
 		H6 returnlabel=new H6("Return to "+pf4.getStepName());
 		Button complsave=new Button("Save");
@@ -475,10 +485,17 @@ public class WorkForm extends VerticalLayout {
 					
 				}
 				work.setDistrict(service.getDistrict());
+				//audit=new Audit(service);
+				if(singlework == 0) {
+					audit.saveAudit(work,pf1.getStepName(), "Entry");
+				}else {
+					audit.saveAudit(work, pf1.getStepName(), "Update");
+				}
 				fireEvent(new SaveEvent(this, work));
 				if (ph != null) {
 			        service.saveProcessHistory(ph);
 			    }
+				
 				String message = (singlework == 0) 
 				        ? "Work Entered Successfully With Work Code: " + newWorkCode
 				        : "Work Updated Successfully";
@@ -489,7 +506,7 @@ public class WorkForm extends VerticalLayout {
 			} catch (Exception e) {
 				Notification.show("Unable to Save Work. Please Enter All Mandatory Fields" + e, 5000, Position.TOP_CENTER)
 						.addThemeVariants(NotificationVariant.LUMO_ERROR);
-
+				e.printStackTrace();
 			}
 		}
 	}
@@ -536,6 +553,8 @@ public class WorkForm extends VerticalLayout {
 				ph.setRemarks(instRemarks.getValue());
 				service.saveInstallment(installment);
 				service.saveProcessHistory(ph);
+				
+				audit.saveAudit(work, installment, pf2.getStepName()+"-"+toEnterInstallment, "Entry");
 				updateWork("Installment " + toEnterInstallment + "",pf3);
 				Notification.show(pf2.getStepName()+ "-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 				clearFields();
@@ -560,7 +579,8 @@ public class WorkForm extends VerticalLayout {
 				ph.setRemarks(instRemarks.getValue());
 				ph.setEnteredOn(LocalDateTime.now());
 				service.saveProcessHistory(ph);
-				updateWork("Return To "+pf4.getStepName(),pf3);
+				audit.saveAuditReturn(work, "Return To "+pf4.getStepName(), "Return");
+				updateWork("Return To "+pf4.getStepName(),pf4);
 				Notification.show("Returned Successfully to "+pf4.getStepName(), 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 				clearFields();
 			} catch (Exception e) {
@@ -600,6 +620,7 @@ public class WorkForm extends VerticalLayout {
 				installment.setUcLetter(ucletter.getValue());
 				installment.setEnteredBy(user);
 				installment.setUcDocument(instdoc);
+				//audit.saveAudit(work,installment, pf4.getStepName()+"-"+toEnterInstallment, "Entry");
 				service.saveInstallment(installment);
 				service.saveWork(work);
 				ProcessHistory ph=new ProcessHistory();
@@ -611,6 +632,7 @@ public class WorkForm extends VerticalLayout {
 				ph.setProcessFlow(pf4);
 				ph.setProcessName(pf4.getStepName()+"-"+toEnterInstallment);
 				service.saveProcessHistory(ph);
+				audit.saveAudit(work,installment, pf4.getStepName()+"-"+toEnterInstallment, "Entry");
 				if (work.getNoOfInstallments() == tableinstallments) {
 					ProcessHistory ph1=new ProcessHistory();
 					ph1.setWork(work);
@@ -631,7 +653,10 @@ public class WorkForm extends VerticalLayout {
 				Notification.show(pf2.getStepName()+ "-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 				clearFields();
 				service.deleteUnreferencedData();
-			} catch (Exception e) {
+			} catch (NullPointerException e) {
+				Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+			}catch (Exception e) {
 				Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
 
 			}
@@ -639,7 +664,7 @@ public class WorkForm extends VerticalLayout {
 	}
 	public void returnUc() {
 		if (ucRemarks.getValue() == null|| ucRemarks.getValue().trim().isEmpty()) {
-			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
+			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}else {
 			try {
 				Users user=service.getLoggedUser();
@@ -652,6 +677,7 @@ public class WorkForm extends VerticalLayout {
 				ph.setEnteredOn(LocalDateTime.now());
 				ph.setRemarks(ucRemarks.getValue());
 				service.saveProcessHistory(ph);
+				audit.saveAuditReturn(work, "Return To "+pf3.getStepName(), "Entry");
 				updateWork("Returned to "+pf3.getStepName(), pf3);
 				Notification.show("Returned to "+pf3.getStepName()+" Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 				clearFields();
@@ -697,12 +723,16 @@ public class WorkForm extends VerticalLayout {
 			ph.setUser(user);
 			ph.setEnteredOn(LocalDateTime.now());
 			ph.setRemarks(roRemarks.getValue());
+			audit.saveAudit(work, installment, pf3.getStepName()+"-"+toEnterInstallment, "Entry");
 			service.saveProcessHistory(ph);
 			updateWork(pf3.getStepName() + toEnterInstallment + "", pf4);
 			Notification.show(pf3.getStepName()+"-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 			clearFields();
 			service.deleteUnreferencedData();
-		} catch (Exception e) {
+		} catch (NullPointerException e) {
+			Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+		}catch (Exception e) {
 			Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}
 	}
@@ -747,22 +777,7 @@ public class WorkForm extends VerticalLayout {
 	    uploadedPdf1.set(null);
 	    uploadedPdf2.set(null);
 
-	    buffer = new MemoryBuffer();
-	    buffer2 = new MemoryBuffer();
-
-	    upload1.setReceiver(buffer);
-	    upload2.setReceiver(buffer2);
-
-	    // 🔹 Reattach the succeeded listener to ensure new uploads work
-	    attachUploadListener(upload1, buffer, uploadedPdf1);
-	    attachUploadListener(upload2, buffer2, uploadedPdf2);
-
-	    try {
-	        upload1.clearFileList();
-	        upload2.clearFileList();
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+	   
 	}
 	private void updateWork(String text, ProcessFlow pf ) {
 		try {
@@ -777,35 +792,6 @@ public class WorkForm extends VerticalLayout {
 
 		}
 
-	}
-	private void attachUploadListener(Upload upload, MemoryBuffer buffer, AtomicReference<byte[]> uploadedPdfRef) {
-	    upload.addSucceededListener(event -> {
-	        try (InputStream inputStream = buffer.getInputStream()) {
-	            uploadedPdfRef.set(inputStream.readAllBytes());
-	        } catch (IOException e) {
-	            Notification.show("Error uploading file", 3000, Position.TOP_CENTER)
-	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	        }
-	    });
-	}
-	private Component createUpload(Upload upload, MemoryBuffer buffer, AtomicReference<byte[]> uploadedPdfRef) {
-	    upload.setReceiver(buffer);
-
-	    Button uploadButton = new Button("Select Document To Upload");
-	    uploadButton.getStyle().set("font-size", "12px");
-	    upload.setUploadButton(uploadButton);
-	    upload.setMaxFiles(1);
-	    upload.setMaxFileSize(5 * 1024 * 1024);
-	    upload.setAcceptedFileTypes("application/pdf");
-
-	    upload.addFileRejectedListener(e -> 
-	        Notification.show("Invalid File: Please select only PDF files less than 5MB", 3000, Position.TOP_CENTER)
-	            .addThemeVariants(NotificationVariant.LUMO_ERROR)
-	    );
-
-	    attachUploadListener(upload, buffer, uploadedPdfRef);
-
-	    return upload;
 	}
 	
 	public BigDecimal calculateReleasedInstAmount(Work work) {

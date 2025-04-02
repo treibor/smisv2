@@ -10,6 +10,8 @@ import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.District;
+import com.smis.entity.ProcessFlow;
+import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.State;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
@@ -105,6 +107,15 @@ public class MainLayout extends AppLayout  {
 	public void populateDistricts() {
 		district.setItems(service.getAllDistricts(state.getValue()));
 	}
+	public boolean checkAuthority(ProcessFlow pf) {
+		Users user = service.getLoggedUser();
+		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
+		if (pfu == null) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 
 	private void createDrawer() {
 
@@ -133,7 +144,7 @@ public class MainLayout extends AppLayout  {
 		
 		master.setVisible(isAdmin);
 		distmaster.setVisible(isSuper);
-		releaseorder.setVisible(isUser);
+		releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
 		audit.setVisible(isAdmin);
 		users.setVisible(isAdmin);
 		// nav.setWidth("5%");

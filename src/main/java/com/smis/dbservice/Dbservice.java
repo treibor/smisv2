@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.smis.entity.AuditTrail;
 import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
@@ -32,6 +33,7 @@ import com.smis.entity.UsersRoles;
 import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.repository.AuditRepository;
 import com.smis.repository.BlockRepository;
 import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
@@ -63,6 +65,8 @@ public class Dbservice implements Serializable{
 	 */
 	@Autowired
 	SecurityService securityService;
+	@Autowired
+	private AuditRepository auditrepo; 
 	private static final long serialVersionUID = 1L;
 	private final WorkRepository wrepo;
 	private final YearRepository yrepo;
@@ -110,7 +114,13 @@ public class Dbservice implements Serializable{
 		this.suserrepo=suserrepo;
 		this.reportrepo=reportrepo;
 	}
-
+	public void updateAudit(AuditTrail entity) {
+		auditrepo.save(entity);
+	}
+	
+	public List<AuditTrail> getAuditTrail() {
+		return auditrepo.findAllByOrderByIdDesc();
+	}
 	// Development Phase only
 	public List<Village> getVillage(Block block) {
 		return vtrepo.findByBlock(block);

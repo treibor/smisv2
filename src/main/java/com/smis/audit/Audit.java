@@ -1,58 +1,110 @@
 package com.smis.audit;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.smis.dbservice.AuditService;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.AuditTrail;
+import com.smis.entity.Installment;
 import com.smis.entity.Work;
-
 import com.vaadin.flow.server.VaadinRequest;
+
 @Service
 public class Audit {
 	private static final long serialVersionUID = 1L;
-	@Autowired
-	private AuditService auditservice;
-	//@Autowired
+
 	AuditTrail audit;
+	@Autowired
 	private Dbservice uservice;
-	
-	
-	
-	public Audit(Dbservice uservice) {
-		this.uservice=uservice;
-		// TODO Auto-generated constructor stub
-	}
-	public String getRealClientIp() {
-	    VaadinRequest request = VaadinRequest.getCurrent();
-	    String xForwardedForHeader = request.getHeader("X-Forwarded-For");
-	    if (xForwardedForHeader == null || xForwardedForHeader.isEmpty()) {
-	        return request.getRemoteAddr();
-	    } else {
-	        return xForwardedForHeader.split(",")[0].trim();
-	    }
+	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+	private static final int MAX_DETAILS_LENGTH = 1000;
+	private static final int MAX_WORK_NAME_LENGTH = 900;
+
+	public Audit(Dbservice service) {
+		this.uservice = service;
 	}
 
-	public void saveAudit(Work work, String action) {
-		audit=new AuditTrail();
+	public String getRealClientIp() {
+		VaadinRequest request = VaadinRequest.getCurrent();
+		String xForwardedForHeader = request.getHeader("X-Forwarded-For");
+		if (xForwardedForHeader == null || xForwardedForHeader.isEmpty()) {
+			return request.getRemoteAddr();
+		} else {
+			return xForwardedForHeader.split(",")[0].trim();
+		}
+	}
+
+	public void saveAuditReturn(Work work, String entity, String action) {
+
+		audit = new AuditTrail();
 		audit.setAction(action);
 		audit.setActionBy(uservice.getLoggedUser());
 		audit.setActionOn(LocalDateTime.now());
 		audit.setIpAddress(getRealClientIp());
-		//String villageText=work.getSanctionNo() == null ? "Master Data" : crop.getVillage().getVillageName();
-		audit.setDetails(work.getWorkCode()+"- Sanction No:" +work.getSanctionNo() +", Sanction Date-"+work.getSanctionDate()+",Name-"+ work.getWorkName()+", Previous User-"+work.getUpdatedBy()+", Previous Entry Date-"+work.getUpdatedOn());
-		auditservice.updateAudit(audit);
+		audit.setProcess(entity);
+		String workName = work.getWorkName();
+		if (workName.length() > MAX_WORK_NAME_LENGTH) {
+			workName = workName.substring(0, MAX_WORK_NAME_LENGTH - 3) + "..."; // Add ellipsis
+		}
+		String details = work.getWorkCode() + "-" + workName;
+		audit.setDetails(details);
+		
+		uservice.updateAudit(audit);
 	}
-	
+
+	public void saveAudit(Work work, String entity, String action) {
+
+		audit = new AuditTrail();
+		audit.setAction(action);
+		audit.setActionBy(uservice.getLoggedUser());
+		audit.setActionOn(LocalDateTime.now());
+		audit.setIpAddress(getRealClientIp());
+		audit.setProcess(entity);
+		String workName = work.getWorkName();
+		if (workName.length() > MAX_WORK_NAME_LENGTH) {
+			workName = workName.substring(0, MAX_WORK_NAME_LENGTH - 3) + "..."; // Add ellipsis
+		}
+		String details = work.getWorkCode() + "-" + workName;
+		audit.setDetails(details);
+		audit.setOtherDetails("Sanction No-" + work.getSanctionNo() + ", Sanction Date-"
+				+ work.getSanctionDate().format(dateFormatter) + ", Amount-" + work.getWorkAmount() + ", Installments"
+				+ work.getNoOfInstallments() + ", Previous User-" + work.getUpdatedBy().getUserName()
+				+ ", Previous Entry Date-" + work.getUpdatedOn().format(timeFormatter) + ", Current Process-"
+				+ work.getProcessflow().getStepName() + " /" + work.getBlock().getBlockName() + " /"
+				+ work.getConstituency().getConstituencyName() + " /" + work.getScheme().getSchemeName() + " /"
+				+ work.getYear().getYearName());
+		uservice.updateAudit(audit);
+	}
+
+	public void saveAudit(Work work, Installment inst, String entity, String action) {
+
+		audit = new AuditTrail();
+		audit.setAction(action);
+		audit.setActionBy(uservice.getLoggedUser());
+		audit.setActionOn(LocalDateTime.now());
+		audit.setIpAddress(getRealClientIp());
+		audit.setProcess(entity);
+		String workName = work.getWorkName();
+		if (workName.length() > MAX_WORK_NAME_LENGTH) {
+			workName = workName.substring(0, MAX_WORK_NAME_LENGTH - 3) + "..."; // Add ellipsis
+		}
+		String details = work.getWorkCode() + "-" + workName;
+		audit.setDetails(details);
+		audit.setOtherDetails("Amount-" + inst.getInstallmentAmount() +", Letter No-" + inst.getInstallmentLetter() + ", Date-"
+				+ inst.getInstallmentDate() + ", UC Letter-" + inst.getUcLetter() + ", UC Date-" + inst.getUcDate());
+		uservice.updateAudit(audit);
+	}
+
 	public void saveLoginAudit(String action, String details) {
-		audit=new AuditTrail();
+		audit = new AuditTrail();
 		audit.setAction(action);
 		audit.setActionOn(LocalDateTime.now());
 		audit.setDetails(details);
 		audit.setIpAddress(getRealClientIp());
-		auditservice.updateAudit(audit);
+		uservice.updateAudit(audit);
 	}
 }
