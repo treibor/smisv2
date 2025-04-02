@@ -1,6 +1,7 @@
 package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
+import com.smis.entity.Block;
 import com.smis.entity.Year;
 import com.smis.util.ValidationUtil;
 import com.smis.entity.Year;
@@ -15,6 +16,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -37,6 +39,7 @@ public class YearForm extends FormLayout{
 	Button delete= new Button("Delete");
 	Checkbox inUse=new Checkbox("In Use");
 	private Year year;
+	public Button addButton=new  Button("New");
 	public YearForm(Dbservice service) {
 		this.service=service;
 		binder.bindInstanceFields(this);
@@ -44,7 +47,8 @@ public class YearForm extends FormLayout{
 		ValidationUtil.applyValidation(yearLabel);
 		ValidationUtil.applyValidation(yearName);
 		yearName.addValueChangeListener(e->yearLabel.setValue(e.getValue()));
-		add(yearName, yearLabel, inUse, createButtonsLayout());
+		
+		add(new Span("* Click New Button To Add New Item"),yearName, yearLabel, inUse, createButtonsLayout());
 	}
 	
 	private Component createButtonsLayout() {
@@ -54,7 +58,8 @@ public class YearForm extends FormLayout{
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, year)));
 		delete.setEnabled(service.isAdmin());
-		return new HorizontalLayout(save, delete);
+		addButton.addClickListener(event->setYear(new Year()));
+		return new HorizontalLayout(save, delete, addButton);
 	}
 	private void validateandSave() {
 		try {

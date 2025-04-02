@@ -18,14 +18,14 @@ public class Audit {
 
 	AuditTrail audit;
 	@Autowired
-	private Dbservice uservice;
+	private Dbservice aservice;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	private static final int MAX_DETAILS_LENGTH = 1000;
 	private static final int MAX_WORK_NAME_LENGTH = 900;
 
 	public Audit(Dbservice service) {
-		this.uservice = service;
+		this.aservice = service;
 	}
 
 	public String getRealClientIp() {
@@ -42,7 +42,7 @@ public class Audit {
 
 		audit = new AuditTrail();
 		audit.setAction(action);
-		audit.setActionBy(uservice.getLoggedUser());
+		audit.setActionBy(aservice.getLoggedUser());
 		audit.setActionOn(LocalDateTime.now());
 		audit.setIpAddress(getRealClientIp());
 		audit.setProcess(entity);
@@ -53,14 +53,14 @@ public class Audit {
 		String details = work.getWorkCode() + "-" + workName;
 		audit.setDetails(details);
 		
-		uservice.updateAudit(audit);
+		aservice.updateAudit(audit);
 	}
 
 	public void saveAudit(Work work, String entity, String action) {
 
 		audit = new AuditTrail();
 		audit.setAction(action);
-		audit.setActionBy(uservice.getLoggedUser());
+		audit.setActionBy(aservice.getLoggedUser());
 		audit.setActionOn(LocalDateTime.now());
 		audit.setIpAddress(getRealClientIp());
 		audit.setProcess(entity);
@@ -77,14 +77,14 @@ public class Audit {
 				+ work.getProcessflow().getStepName() + " /" + work.getBlock().getBlockName() + " /"
 				+ work.getConstituency().getConstituencyName() + " /" + work.getScheme().getSchemeName() + " /"
 				+ work.getYear().getYearName());
-		uservice.updateAudit(audit);
+		aservice.updateAudit(audit);
 	}
 
 	public void saveAudit(Work work, Installment inst, String entity, String action) {
 
 		audit = new AuditTrail();
 		audit.setAction(action);
-		audit.setActionBy(uservice.getLoggedUser());
+		audit.setActionBy(aservice.getLoggedUser());
 		audit.setActionOn(LocalDateTime.now());
 		audit.setIpAddress(getRealClientIp());
 		audit.setProcess(entity);
@@ -96,15 +96,18 @@ public class Audit {
 		audit.setDetails(details);
 		audit.setOtherDetails("Amount-" + inst.getInstallmentAmount() +", Letter No-" + inst.getInstallmentLetter() + ", Date-"
 				+ inst.getInstallmentDate() + ", UC Letter-" + inst.getUcLetter() + ", UC Date-" + inst.getUcDate());
-		uservice.updateAudit(audit);
+		aservice.updateAudit(audit);
 	}
 
-	public void saveLoginAudit(String action, String details) {
+	public void saveLoginAudit(String action, String process, String details, String otherDetails) {
 		audit = new AuditTrail();
 		audit.setAction(action);
-		audit.setActionOn(LocalDateTime.now());
+		audit.setProcess(process);
+		audit.setOtherDetails(otherDetails);
 		audit.setDetails(details);
+		audit.setActionOn(LocalDateTime.now());
+		audit.setActionBy(aservice.getLoggedUser());
 		audit.setIpAddress(getRealClientIp());
-		uservice.updateAudit(audit);
+		aservice.updateAudit(audit);
 	}
 }

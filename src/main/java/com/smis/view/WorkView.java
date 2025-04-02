@@ -319,7 +319,7 @@ public class WorkView extends VerticalLayout {
 
 		// grid.setItems(service.getWorksAssignedToUser());
 		grid.setItems(service.getWorks());
-		gridhistory.setItems(service.getWorkHistory());
+		//gridhistory.setItems(service.getWorkHistory());
 
 	}
 
@@ -327,7 +327,7 @@ public class WorkView extends VerticalLayout {
 		filterText.setPlaceholder("Filter By Work Code, Name or Sanction Number");
 		filterText.setClearButtonVisible(true);
 		filterText.setValueChangeMode(ValueChangeMode.LAZY);
-		filterText.addValueChangeListener(e -> updateList());
+		filterText.addValueChangeListener(e -> updateGrid());
 		filterText.setWidth("10%");
 		expButton.addClickListener(e -> GridExporter.newWithDefaults(grid).open());
 		expButton.setIcon(new Icon(VaadinIcon.EXTERNAL_LINK));
@@ -444,13 +444,16 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void deleteWork(WorkForm.DeleteEvent event) {
-		service.deleteWork(event.getWork());
-		updateList();
+		Work work=event.getWork();
+		audit.saveAudit(work, "Delete Work", "Delete");
+		service.deleteWork(work);
+		//updateList();
+		updateGrid();
 		closeEditor();
 
 	}
 
-	private void updateList() {
+	private void updateLists() {
 		block.clear();
 		scheme.clear();
 		consti.clear();

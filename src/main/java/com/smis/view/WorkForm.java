@@ -741,19 +741,20 @@ public class WorkForm extends VerticalLayout {
 			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
 		}else {
 			try {
-				work.setProcessflow(service.getProcessFlowByOrder(2));
+				work.setProcessflow(pf2);
 				service.saveWork(work);
 				Users user=service.getLoggedUser();
 				ProcessHistory ph=new ProcessHistory();
 				//String prevTask=service.getProcessFlowByOrder(2).getStepName();
 				ph.setWork(work);
-				ph.setProcessFlow(service.getProcessFlowByOrder(3));
+				ph.setProcessFlow(pf3);
 				ph.setProcessName("Return To "+pf2.getStepName());
 				ph.setReversed(true);
 				ph.setUser(user);
 				ph.setEnteredOn(LocalDateTime.now());
 				ph.setRemarks(roRemarks.getValue());
 				service.saveProcessHistory(ph);
+				audit.saveAuditReturn(work, "Return To "+pf2.getStepName(), "Return");
 				Notification.show("Returned to "+pf2.getStepName()+" Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 				clearFields();
 			} catch (Exception e) {

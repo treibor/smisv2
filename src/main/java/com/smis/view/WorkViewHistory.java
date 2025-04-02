@@ -196,8 +196,10 @@ public class WorkViewHistory extends VerticalLayout {
 	        .setHeader("Amount Released").setResizable(true);
 	    installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
 	        ? installment.getInstallmentDate().format(dateFormatter)
-	        : "Release Order Pending")
+	        : "")
 	        .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+	    installmentGrid.addColumn(Installment::getInstallmentLetter)
+	        .setHeader("Letter No.").setResizable(true);
 	    installmentGrid.addComponentColumn(installment -> {
 	        InstallmentDocument doc = installment.getReleaseOrder(); // Get the linked document
 
@@ -211,25 +213,15 @@ public class WorkViewHistory extends VerticalLayout {
 
 	            return downloadLink;
 	        } else {
-	            return new Span("No Document"); // Show message if no document exists
+	            return new Span(""); // Show message if no document exists
 	        }
 	    }).setHeader("Release Order").setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getInstallmentLetter)
-	        .setHeader("Letter No.").setResizable(true);
 	    installmentGrid.addColumn(Installment::getUcLetter)
 	        .setHeader("UC Letter No").setResizable(true);
 	    installmentGrid.addColumn(installment -> installment.getUcDate() != null
 	        ? installment.getUcDate().format(dateFormatter) 
 	        : "")
 	        .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName())
-	        .setHeader("Entered By").setResizable(true);
-	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null
-	        ? installment.getEnteredOn().format(timeFormatter)
-	        : "No Date")
-	        .setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
-
-	    // 🔹 Add "View Document" column
 	    installmentGrid.addComponentColumn(installment -> {
 	        InstallmentDocument doc = installment.getUcDocument(); // Get the linked document
 
@@ -243,29 +235,46 @@ public class WorkViewHistory extends VerticalLayout {
 
 	            return downloadLink;
 	        } else {
-	            return new Span("No Document"); // Show message if no document exists
+	            return new Span(""); // Show message if no document exists
 	        }
 	    }).setHeader("UC Documents").setAutoWidth(true);
+	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true).setVisible(isAdmin);
+	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null? installment.getEnteredOn().format(timeFormatter): "").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
 
+	    // 🔹 Add "View Document" column
+	    
+	    Button closeButton = new Button("Close", e -> dialog.close());
+	    Button deleteButton = new Button("Delete", e ->deleteInstallment(installmentGrid.asSingleSelect().getValue()) );
+	    deleteButton.setEnabled(false);
 	    // Load Installments
 	    List<Installment> installments = service.getInstallments(work);
 	    installmentGrid.setItems(installments);
 	    installmentGrid.setAllRowsVisible(true);
-
+	    installmentGrid.asSingleSelect().addValueChangeListener(event -> {
+		    Installment selectedItem = event.getValue(); // Replace MyObject with your actual item type
+			    if (selectedItem != null ) {
+			        deleteButton.setEnabled(true);
+			    } else {
+			    	deleteButton.setEnabled(false);
+			    }
+			});
 	    // Close button
-	    Button closeButton = new Button("Close", e -> dialog.close());
-
 	    // Add components to the dialog
 	    dialog.add(installmentGrid);
-	    dialog.getFooter().add(closeButton);
+	    dialog.getFooter().add(deleteButton,closeButton);
 	    dialog.open();
+	}
+	public void deleteInstallment(Installment inst) {
+		
 	}
 	private void showHistoryDialog(Work work) { // Create a dialog
 		Dialog dialog = new Dialog();
 		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
 		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Process").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Task").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getProcessName()).setHeader("Action Performed").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setWidth("20%");
 		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
 				? processhistory.getEnteredOn().format(timeFormatter)
@@ -274,12 +283,12 @@ public class WorkViewHistory extends VerticalLayout {
 		List<ProcessHistory> history = service.getProcessHistory(work);
 		grid.setItems(history);
 		grid.setAllRowsVisible(true);
+		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		Button closeButton = new Button("Close", e -> dialog.close());
 		dialog.add(grid);
 		dialog.getFooter().add(closeButton);
 		dialog.open();
 	}
-	
 
 	public void filterGrid() {
 

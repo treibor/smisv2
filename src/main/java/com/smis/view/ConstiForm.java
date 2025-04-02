@@ -12,6 +12,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -34,6 +35,7 @@ public class ConstiForm extends FormLayout{
 	Button delete= new Button("Delete");
 	Notification notify=new Notification();
 	Checkbox inUse=new Checkbox("In Use");
+	public Button addButton=new  Button("New");
 	private Constituency consti;
 	public ConstiForm(Dbservice service) {
 		this.service=service;
@@ -41,7 +43,7 @@ public class ConstiForm extends FormLayout{
 		ValidationUtil.applyTextOnly(constituencyLabel);
 		ValidationUtil.applyTextOnly(constituencyMLA);
 		
-		add(constituencyNo, constituencyName, constituencyMLA, inUse,createButtonsLayout());
+		add(new Span("* Click New Button To Add New Item"),constituencyNo, constituencyName, constituencyMLA, inUse,createButtonsLayout());
 	}
 	
 	private Component createButtonsLayout() {
@@ -51,12 +53,13 @@ public class ConstiForm extends FormLayout{
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, consti)));
 		delete.setEnabled(service.isAdmin());
-		return new HorizontalLayout(save, delete);
+		addButton.addClickListener(event->setConstituency(new Constituency()));
+		return new HorizontalLayout(save, delete, addButton);
 	}
 	private void validateandSave() {
 		try {
 			if (constituencyNo.getValue()==null||constituencyNo.getValue() < 1) {
-				notify.show("Constituency Number is Invalid. Please Check", 5000, Position.TOP_CENTER);
+				Notification.show("Constituency Number is Invalid. Please Check", 5000, Position.TOP_CENTER);
 			} else {
 				binder.writeBean(consti);
 				consti.setDistrict(service.getDistrict());

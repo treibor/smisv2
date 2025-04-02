@@ -1,6 +1,5 @@
 package com.smis.view;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -16,6 +15,7 @@ import com.smis.entity.State;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
 import com.smis.security.SecurityService;
+import com.smis.util.EmailValidator;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -37,13 +37,14 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 
 import jakarta.annotation.security.PermitAll;
 
 @PermitAll
-public class MainLayout extends AppLayout  {
+public class MainLayout extends AppLayout {
 	/**
 	 * 
 	 */
@@ -54,7 +55,7 @@ public class MainLayout extends AppLayout  {
 	Dialog dialog;
 	Dialog userdialog;
 	Dialog aboutdialog;
-	//Notification notify;
+	// Notification notify;
 	PasswordField oldpwd;
 	PasswordField newpwd;
 	PasswordField confirmpwd;
@@ -62,7 +63,7 @@ public class MainLayout extends AppLayout  {
 	Button saveButton = new Button("Save");
 	TextField userName = new TextField("User Name");
 	TextField profileName = new TextField("Profile Name");
-	TextField email=new TextField("Email");
+	EmailField email = new EmailField("Email");
 	String userType;
 	ComboBox<State> state = new ComboBox<>("State");
 	ComboBox<District> district = new ComboBox<>("District");
@@ -72,7 +73,7 @@ public class MainLayout extends AppLayout  {
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
-	//private boolean isPasswordExpired;
+	// private boolean isPasswordExpired;
 	Anchor anchor = new Anchor("", "SMIS 2.0");
 
 	public MainLayout(Dbservice dbservice) {
@@ -89,8 +90,6 @@ public class MainLayout extends AppLayout  {
 		// setPrimarySection(Section.DRAWER);
 	}
 
-	
-
 	private void checkPasswordExpiry() {
 		user = service.getLoggedUser();
 		LocalDateTime expiryDate = user.getPwdChangedDate();
@@ -102,11 +101,10 @@ public class MainLayout extends AppLayout  {
 		}
 	}
 
-	
-
 	public void populateDistricts() {
 		district.setItems(service.getAllDistricts(state.getValue()));
 	}
+
 	public boolean checkAuthority(ProcessFlow pf) {
 		Users user = service.getLoggedUser();
 		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
@@ -132,7 +130,7 @@ public class MainLayout extends AppLayout  {
 				LineAwesomeIcon.DONATE_SOLID.create());
 		SideNavItemWithHelperText master = new SideNavItemWithHelperText("", "Master", MasterView.class,
 				LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
-		
+
 		SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("", "District Master", DistView.class,
 				LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
 		SideNavItemWithHelperText report = new SideNavItemWithHelperText("", "Reports", ReportView.class,
@@ -141,18 +139,13 @@ public class MainLayout extends AppLayout  {
 				LineAwesomeIcon.CALENDAR.create());
 		SideNavItemWithHelperText users = new SideNavItemWithHelperText("", "Users", UsersView.class,
 				LineAwesomeIcon.USER.create());
-		
+
 		master.setVisible(isAdmin);
 		distmaster.setVisible(isSuper);
 		releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
 		audit.setVisible(isAdmin);
 		users.setVisible(isAdmin);
-		// nav.setWidth("5%");
-		// getElement().getStyle().set("--_vaadin-app-layout-drawer-width", "2px");
-		// addToDrawer(new VerticalLayout(nav));
-		// addToDrawer(nav);
-		drawerContent.add(home, mla,history, releaseorder, master, distmaster, report, audit, users);
-		//drawerContent.add(home, mla, releaseorder, master, distmaster, report, audit, users);
+		drawerContent.add(home, mla, history, releaseorder, master, distmaster, report, audit, users);
 		addToDrawer(drawerContent);
 	}
 
@@ -221,6 +214,7 @@ public class MainLayout extends AppLayout  {
 		dialog.add(dialogLayout);
 		dialog.open();
 	}
+
 	private void openMandatoryPasswordDialog() {
 		if (dialog != null) {
 			dialog = null;
@@ -229,7 +223,7 @@ public class MainLayout extends AppLayout  {
 		dialog.setModal(true);
 		dialog.setCloseOnEsc(false);
 		dialog.setCloseOnOutsideClick(false);
-		//VerticalLayout dialogLayout = createDialogLayout(dialog);
+		// VerticalLayout dialogLayout = createDialogLayout(dialog);
 		H2 headline = new H2("Password Expired - Change Password");
 		headline.getStyle().set("margin", "var(--lumo-space-m) 0 0 0").set("font-size", "1.5em").set("font-weight",
 				"bold");
@@ -241,7 +235,7 @@ public class MainLayout extends AppLayout  {
 		newpwd.setRevealButtonVisible(false);
 		confirmpwd.setRevealButtonVisible(false);
 		// oldpwd.setValue("");
-		//cancelButton.setText(//userType);
+		// cancelButton.setText(//userType);
 		cancelButton.addClickListener(e -> securityService.logout());
 		saveButton.addClickListener(e -> changePassword());
 		VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
@@ -260,6 +254,7 @@ public class MainLayout extends AppLayout  {
 		dialog.add(dialogLayout);
 		dialog.open();
 	}
+
 	private VerticalLayout createDialogLayout(Dialog dialog) {
 		H2 headline = new H2("Change Password");
 		headline.getStyle().set("margin", "var(--lumo-space-m) 0 0 0").set("font-size", "1.5em").set("font-weight",
@@ -287,7 +282,7 @@ public class MainLayout extends AppLayout  {
 		dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
 		dialogLayout.getStyle().set("width", "300px").set("max-width", "100%");
 		clearDialog();
-		
+
 		return dialogLayout;
 	}
 
@@ -298,45 +293,52 @@ public class MainLayout extends AppLayout  {
 	}
 
 	private void changePassword() {
-		// notify.show("Under Development", 3000, Position.TOP_CENTER);
-		if (oldpwd.getValue() == "" || newpwd.getValue() == "" || confirmpwd.getValue() == "") {
-			Notification.show("Error: Enter All Values, Please", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}  else if(!checkPasswordStrength(newpwd.getValue())){
-			Notification.show("Password is too weak. Please use a combination of Lower case, Upper case, Number and Special Charaters").addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else {
-			if (newpwd.getValue().trim().equals(confirmpwd.getValue().trim())) {
-				String pwd = oldpwd.getValue();
+		if (oldpwd.getValue().trim().isEmpty() || newpwd.getValue().trim().isEmpty()
+				|| confirmpwd.getValue().trim().isEmpty()) {
+			Notification.show("Error: Enter All Values, Please", 3000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
+		if (!checkPasswordStrength(newpwd.getValue())) {
+			Notification.show(
+					"Password is too weak. Please use a combination of Lower case, Upper case, Number and Special Charaters")
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
+		if (newpwd.getValue().trim().equals(confirmpwd.getValue().trim())) {
+			String pwd = oldpwd.getValue();
+			if (passwordEncoder.matches(pwd, service.getLoggedUser().getPassword())) {
+				user = service.getLoggedUser();
+				user.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
+				user.setPwdChangedDate(LocalDateTime.now());
+				service.saveUser(user);
+				showConfirmationDialog();
 
-				if (passwordEncoder.matches(pwd, service.getLoggedUser().getPassword())) {
-					user = service.getLoggedUser();
-					user.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-					user.setPwdChangedDate(LocalDateTime.now());
-					service.saveUser(user);
-					showConfirmationDialog();
-
-				} else {
-
-					Notification.show("Unauthorised User", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-				}
 			} else {
-				Notification.show("Please check and confirm your passwords", 3000, Position.TOP_CENTER)
+				Notification.show("Unauthorised User", 3000, Position.TOP_CENTER)
 						.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			}
+		} else {
+			Notification.show("Please check and confirm your passwords", 3000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}
 	}
-	private void showConfirmationDialog() {
-        ConfirmDialog dialog = new ConfirmDialog();
-        dialog.setHeader("Password Changed");
-        dialog.setText("Password has been successfully changed. You will be now be logged out. Please Login again with your new Password");
-        
-        dialog.setConfirmText("OK");
-        dialog.addConfirmListener(event -> {
-            securityService.logout(); // Call the logout method
-            //getUI().ifPresent(ui -> ui.navigate("login")); // Redirect to the login page
-        });
 
-        dialog.open(); // Open the dialog
-    }
+	private void showConfirmationDialog() {
+		ConfirmDialog dialog = new ConfirmDialog();
+		dialog.setHeader("Password Changed");
+		dialog.setText(
+				"Password has been successfully changed. You will be now be logged out. Please Login again with your new Password");
+
+		dialog.setConfirmText("OK");
+		dialog.addConfirmListener(event -> {
+			securityService.logout(); // Call the logout method
+			// getUI().ifPresent(ui -> ui.navigate("login")); // Redirect to the login page
+		});
+
+		dialog.open(); // Open the dialog
+	}
+
 	private void createUser() {
 		// TODO Auto-generated method stub
 
@@ -381,7 +383,8 @@ public class MainLayout extends AppLayout  {
 		confirmpwd = new PasswordField("Confirm Password");
 		profileName.setHelperText("This will be used as a display name. Other Users will see this name.");
 		userName.setHelperText("Your Login Name. Only the Admin and the user should know this name.");
-		VerticalLayout fieldLayout1 = new VerticalLayout(state, district, profileName,userName,email, newpwd, confirmpwd, usertype);
+		VerticalLayout fieldLayout1 = new VerticalLayout(state, district, profileName, userName, email, newpwd,
+				confirmpwd, usertype);
 		fieldLayout1.setSpacing(false);
 		fieldLayout1.setPadding(false);
 		fieldLayout1.setAlignItems(FlexComponent.Alignment.STRETCH);
@@ -396,78 +399,96 @@ public class MainLayout extends AppLayout  {
 		// clearDialog();
 		return dialogLayout1;
 	}
-	 private boolean checkPasswordStrength(String password) {
-			boolean containsLowerChar= false, containsUpperChar = false;
-			boolean containsDigit = false, containsSpecialChar = false;
-			char[] ch= password.toCharArray();
-			//System.out.println(password);
-			String special_chars = "!(){}[]:;<>?,@#$%^&*+=_-~`|./'";
-			for (int i = 0; i < password.length(); i++) {
-				if (Character.isLowerCase(ch[i])) {
-					containsLowerChar= true;
-				}	
-				if (Character.isUpperCase(ch[i])) {
-					containsUpperChar= true;
-				}
-				if (Character.isDigit(ch[i])) {
-					containsDigit= true;
-				}
-				if (special_chars.contains(String.valueOf(ch[i]))) {
-					containsSpecialChar=true;
-				}
+
+	private boolean checkPasswordStrength(String password) {
+		boolean containsLowerChar = false, containsUpperChar = false;
+		boolean containsDigit = false, containsSpecialChar = false;
+		char[] ch = password.toCharArray();
+		// System.out.println(password);
+		String special_chars = "!(){}[]:;<>?,@#$%^&*+=_-~`|./'";
+		for (int i = 0; i < password.length(); i++) {
+			if (Character.isLowerCase(ch[i])) {
+				containsLowerChar = true;
 			}
-			if(containsDigit && containsUpperChar && containsSpecialChar && containsLowerChar){
-				return true;
+			if (Character.isUpperCase(ch[i])) {
+				containsUpperChar = true;
 			}
-			return false;
+			if (Character.isDigit(ch[i])) {
+				containsDigit = true;
+			}
+			if (special_chars.contains(String.valueOf(ch[i]))) {
+				containsSpecialChar = true;
+			}
 		}
+		if (containsDigit && containsUpperChar && containsSpecialChar && containsLowerChar) {
+			return true;
+		}
+		return false;
+	}
+
 	private void saveNewUser() {
 		// TODO Auto-generated method stub
-		if (district.isEmpty()  || state.isEmpty()  || usertype.isEmpty() ||profileName.isEmpty()||email.isEmpty()
-				|| userName.isEmpty() || newpwd.isEmpty() || confirmpwd.getValue().isEmpty()) {
-			Notification.show(" Enter All Values, Please", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}else if (userName.getValue().trim().length() < 7) {
-			Notification.show("User name must be at leat 6 Characters long", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if(!checkPasswordStrength(newpwd.getValue())){
-			Notification.show("Password is too weak. Please use a combination of Lower case, Upper case, Number and Special Charaters").addThemeVariants(NotificationVariant.LUMO_WARNING);
-		}  else {
-			if (!newpwd.getValue().equals(confirmpwd.getValue())) {
-				Notification.show("Check Your Passwords, Please", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-			} else {
-				try {
-					if (service.findUser(userName.getValue()) == null) {
-						Users users = new Users();
-						UsersRoles role=new UsersRoles();
-						users.setDistrict(district.getValue());
-						users.setUserName(userName.getValue());
-						users.setProfileName(profileName.getValue());
-						users.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-						users.setEnteredBy(service.getLoggedUser());
-						users.setEnteredOn(LocalDateTime.now());
-						users.setPwdChangedDate(LocalDateTime.now());
-						users.setEnabled(true);
-						users.setEmail(email.getValue());
-						service.saveUser(users);
-						role.setUser(users);
-						role.setRoleName(usertype.getValue().toString());
-						role.setAssignedBy(service.getLoggedUser());
-						service.saveRole(role);
-						clearUserFields();
-						Notification.show("User Created Successfully", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-						userdialog.close();
-					} else {
-						Notification.show("Username Already Taken. Enter Another Username", 3000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-						userName.setValue("");
-						userName.focus();
-					}
-					
-				} catch (Exception e) {
-					e.printStackTrace();
-					Notification.show("Error Encountered. Please Contact The Adminisrator. Error:" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
-				}
-			}
+		if (district.isEmpty() || state.isEmpty() || usertype.isEmpty() || profileName.getValue().trim().isEmpty() || email.getValue().trim().isEmpty()
+				|| userName.getValue().trim().isEmpty() || newpwd.getValue().trim().isEmpty() || confirmpwd.getValue().trim().isEmpty()) {
+			Notification.show("Please Enter All Values", 3000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
 		}
+		if (userName.getValue().trim().length() < 6) {
+			Notification.show("User name must be at leat 6 Characters long", 3000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
+		if (!checkPasswordStrength(newpwd.getValue())) {
+			Notification.show(
+					"Weak Password Detected. Please use a combination of Lower case, Upper case, Number and Special Charaters")
+					.addThemeVariants(NotificationVariant.LUMO_WARNING);
+			return;
+		}
+		if (!newpwd.getValue().equals(confirmpwd.getValue())) {
+			Notification.show("Check Your Passwords, Please", 3000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
+		if(!EmailValidator.isValidEmail(email.getValue())) {
+			Notification.show("Please Enter a Valid Email", 3000, Position.TOP_CENTER)
+			.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			return;
+		}
+		try {
+			if (service.findUser(userName.getValue()) == null) {
+				Users users = new Users();
+				UsersRoles role = new UsersRoles();
+				users.setDistrict(district.getValue());
+				users.setUserName(userName.getValue());
+				users.setProfileName(profileName.getValue());
+				users.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
+				users.setEnteredBy(service.getLoggedUser());
+				users.setEnteredOn(LocalDateTime.now());
+				users.setPwdChangedDate(LocalDateTime.now());
+				users.setEnabled(true);
+				users.setEmail(email.getValue());
+				service.saveUser(users);
+				role.setUser(users);
+				role.setRoleName(usertype.getValue().toString());
+				role.setAssignedBy(service.getLoggedUser());
+				service.saveRole(role);
+				clearUserFields();
+				Notification.show("User Created Successfully", 3000, Position.TOP_CENTER)
+						.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+				userdialog.close();
+			} else {
+				Notification.show("Username Already Taken. Enter Another Username", 3000, Position.TOP_CENTER)
+						.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				userName.setValue("");
+				userName.focus();
+			}
 
+		} catch (Exception e) {
+			e.printStackTrace();
+			Notification.show("Error Encountered. Please Contact The Adminisrator. Error:" + e)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}
 	}
 
 	public void clearUserFields() {

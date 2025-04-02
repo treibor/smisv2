@@ -13,6 +13,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -45,12 +46,13 @@ public class SchemeForm extends FormLayout{
 	IntegerField schemeReport=new IntegerField("Type of Report");
 	Button save= new Button("Save");
 	Button delete= new Button("Delete");
+	public Button addButton=new  Button("New");
+	
+	
 	Checkbox inUse=new Checkbox("In Use");
 	private Scheme scheme;
 	Notification notify=new Notification();
-	Accordion accordion = new Accordion();
-	AccordionPanel schememasteraccordion = new AccordionPanel();
-	AccordionPanel schemeprocessaccordion = new AccordionPanel();
+	
 	
 	//AccordionPanel ucaccordion = new AccordionPanel();
 	public SchemeForm(Dbservice service) {
@@ -68,43 +70,18 @@ public class SchemeForm extends FormLayout{
 		ValidationUtil.applyValidation(schemeNameLong);
 		
 		//add(schemeName, schemeNameLong, schemeDept, schemeDuration,  schemeLabel, schemeReport,inUse, createButtonsLayout());
-		add (createFinalPanel());
-	}
-	
-	public Component createFinalPanel() {
-		schememasteraccordion = accordion.add("Master", createSchemeLayout());
-		//schemeprocessaccordion = accordion.add("Scheme Process", createSchemeProcessLayout());
-		return accordion;
+		add (createSchemeLayout());
 	}
 	
 	
-	public Component createSchemeProcessLayout() {
-	    // Fetch and initialize the list of SchemeProcess objects
-		
-		/*
-		 * //System.out.println("Scheme"+this.scheme); List<MasterProcess>
-		 * schemeProcesses = new ArrayList<>(service.getSchemeProcess(scheme));
-		 * 
-		 * // Create a ListBox for SchemeProcess ListBox<MasterProcess> listBox = new
-		 * ListBox<>(); listBox.setItems(schemeProcesses);
-		 * listBox.setItemLabelGenerator(MasterProcess::getProcessName); // Adjust the
-		 * method as needed listBox.setSizeFull();
-		 */
-		/*
-		 * // Create buttons Button moveUp = new Button("Move Up", event ->
-		 * moveItemUp(listBox, schemeProcesses)); Button moveDown = new
-		 * Button("Move Down", event -> moveItemDown(listBox, schemeProcesses));
-		 */
-	    
-	    // Layout and return
-	    VerticalLayout layout = new VerticalLayout();
-	    return layout;
-	}
+	
 	
 	
 	
 	private Component createSchemeLayout() {
-		return new VerticalLayout(schemeName, schemeNameLong, schemeDept, schemeDuration,  schemeLabel, schemeReport,inUse, createButtonsLayout());
+		VerticalLayout layout=new VerticalLayout(new Span("* Click New Button To Add New Item"),schemeName, schemeNameLong, schemeDept, schemeDuration,  schemeLabel, schemeReport,inUse, createButtonsLayout());
+		layout.setSizeFull();
+		return layout;
 	}
 	private Component createButtonsLayout() {
 		// TODO Auto-generated method stub
@@ -113,11 +90,12 @@ public class SchemeForm extends FormLayout{
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, scheme)));
 		delete.setEnabled(service.isAdmin());
-		return new HorizontalLayout(save, delete);
+		addButton.addClickListener(event->setScheme(new Scheme()));
+		return new HorizontalLayout(save, delete, addButton);
 	}
 	private void validateandSave() {
 		if(schemeReport.getValue()<1 || schemeReport.getValue()>4) {
-			notify.show("Invalid Report Type Entered. Please Select a Valid Report Type", 5000, Position.TOP_CENTER);
+			Notification.show("Invalid Report Type Entered. Please Select a Valid Report Type", 5000, Position.TOP_CENTER);
 		}else {
 		try {
 			binder.writeBean(scheme);

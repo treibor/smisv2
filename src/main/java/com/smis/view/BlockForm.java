@@ -2,6 +2,7 @@ package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
+import com.smis.entity.Constituency;
 import com.smis.util.ValidationUtil;
 import com.smis.view.BlockForm.BlockFormEvent;
 import com.smis.view.BlockForm.DeleteEvent;
@@ -14,6 +15,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -33,6 +35,7 @@ public class BlockForm extends FormLayout{
 	Checkbox inUse=new Checkbox("In Use");
 	private Block block;
 	boolean isAdmin;
+	public Button addButton=new  Button("New");
 	public BlockForm(Dbservice service) {
 		this.service=service;
 		binder.bindInstanceFields(this);
@@ -44,7 +47,7 @@ public class BlockForm extends FormLayout{
 		ValidationUtil.applyTextOnly(blockDevelopmentOfficer);
 		ValidationUtil.applyTextOnly(blockLabel);
 		ValidationUtil.applyTextOnly(blockName);
-		add(blockName, blockDevelopmentOfficer, blockLabel, inUse, createButtonsLayout());
+		add(new Span("* Click New Button To Add New Item"),blockName, blockDevelopmentOfficer, blockLabel, inUse, createButtonsLayout());
 	}
 	
 	private Component createButtonsLayout() {
@@ -55,7 +58,8 @@ public class BlockForm extends FormLayout{
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, block)));
 		//delete.setEnabled(isadmin);
 		delete.setEnabled(isAdmin);
-		return new HorizontalLayout(save, delete);
+		addButton.addClickListener(event->setBlock(new Block()));
+		return new HorizontalLayout(save, delete, addButton);
 		
 	}
 	private void validateandSave() {
