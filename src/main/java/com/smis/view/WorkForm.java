@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.smis.audit.Audit;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
@@ -19,12 +17,14 @@ import com.smis.entity.Users;
 import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.util.NotificationUtil;
 import com.smis.util.UploadUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -45,6 +45,7 @@ import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
@@ -115,6 +116,8 @@ public class WorkForm extends VerticalLayout {
 	boolean isUser;
 	private AtomicReference<byte[]> uploadedPdf1 = new AtomicReference<>();
 	private AtomicReference<byte[]> uploadedPdf2 = new AtomicReference<>();
+	Upload ucUpload;
+	Upload roUpload;
 	VerticalLayout vlayout1;
 	VerticalLayout vlayout2;
 	public WorkForm(Dbservice service, Audit audit) {
@@ -302,7 +305,8 @@ public class WorkForm extends VerticalLayout {
 	public Component configureUcForm() {
 		ValidationUtil.applyValidation(ucRemarks);
 		vlayout1=new VerticalLayout();
-		vlayout1.add(UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select Pdf Document"));
+		Upload ucUpload=UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select UC Document");
+		vlayout1.add(ucUpload);
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(ucAction, 2);
@@ -339,7 +343,8 @@ public class WorkForm extends VerticalLayout {
 		ValidationUtil.applyValidation(roRemarks);
 		FormLayout form2 = new FormLayout();
 		vlayout2=new VerticalLayout();
-		vlayout2.add(UploadUtil.createPdfUpload(uploadedPdf2,"Upload Document","Select Document"));
+		roUpload = UploadUtil.createPdfUpload(uploadedPdf2, "Upload Document", "Select Signed Release Order");
+		vlayout2.add(roUpload);
 		
 		form2.setWidth("100%");
 		//form2.add(roAction, 2);
@@ -400,6 +405,12 @@ public class WorkForm extends VerticalLayout {
 		    if (complRemarks.getValue()==null||complRemarks.getValue().trim().isEmpty()) {
 		    	Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		    } else {
+		    	work = service.getWorkById(work.getWorkId());
+				if(work.getProcessflow().getStepOrder()!=5) {
+					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+					return;
+				}
 		    	try {
 					Users user=service.getLoggedUser();
 					ProcessHistory ph=new ProcessHistory();
@@ -534,6 +545,13 @@ public class WorkForm extends VerticalLayout {
 					+ " & Amount To Be Released has Exceeded The Sanctioned Amount:" + work.getWorkAmount() + "", 5000,
 					Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
 		} else {
+			work = service.getWorkById(work.getWorkId());
+			
+			if(work.getProcessflow().getStepOrder()!=2) {
+				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+				return;
+			}
 			try {
 				Users user=service.getLoggedUser();
 				Installment installment = new Installment();
@@ -568,6 +586,12 @@ public class WorkForm extends VerticalLayout {
 		if (instRemarks.getValue() == null || instRemarks.getValue().trim().isEmpty()) {
 			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}else {
+			work = service.getWorkById(work.getWorkId());
+			if(work.getProcessflow().getStepOrder()!=2) {
+				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+				return;
+			}
 			try {
 				Users user=service.getLoggedUser();
 				ProcessHistory ph=new ProcessHistory();
@@ -603,6 +627,12 @@ public class WorkForm extends VerticalLayout {
 			Notification.show("UC Date Cannot Be Before Installment Release Date", 5000, Position.TOP_CENTER);
 		} else {
 			try {
+				work = service.getWorkById(work.getWorkId());
+				if(work.getProcessflow().getStepOrder()!=4) {
+					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+					return;
+				}
 				if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
 				    Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
 				                .addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -666,6 +696,12 @@ public class WorkForm extends VerticalLayout {
 		if (ucRemarks.getValue() == null|| ucRemarks.getValue().trim().isEmpty()) {
 			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}else {
+			work = service.getWorkById(work.getWorkId());
+			if(work.getProcessflow().getStepOrder()!=4) {
+				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+				return;
+			}
 			try {
 				Users user=service.getLoggedUser();
 				ProcessHistory ph=new ProcessHistory();
@@ -693,6 +729,12 @@ public class WorkForm extends VerticalLayout {
 		int toEnterInstallment = tableinstallments;
 		int index = tableinstallments - 1;
 		try {
+			work = service.getWorkById(work.getWorkId());
+			if(work.getProcessflow().getStepOrder()!=3) {
+				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+				return;
+			}
 			if (instLetter.getValue() == "" || instDate.getValue() == null) {
 				Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return;
@@ -729,17 +771,25 @@ public class WorkForm extends VerticalLayout {
 			Notification.show(pf3.getStepName()+"-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 			clearFields();
 			service.deleteUnreferencedData();
-		} catch (NullPointerException e) {
+		} catch (NullPointerException npe) {
 			Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
+			//npe.printStackTrace();
 		}catch (Exception e) {
 			Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
+			//e.printStackTrace();
 		}
 	}
 	public void returnRo() {
 		if (ucRemarks.getValue() == null ||ucRemarks.getValue().trim().isEmpty()) {
 			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
 		}else {
+			work = service.getWorkById(work.getWorkId());
+			
+			if(work.getProcessflow().getStepOrder()!=3) {
+				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+				return;
+			}
 			try {
 				work.setProcessflow(pf2);
 				service.saveWork(work);
@@ -773,12 +823,24 @@ public class WorkForm extends VerticalLayout {
 		ucDate.setValue(null);
 		fireEvent(new CloseEvent(this));
 		clearBuffer();
+		instRemarks.setValue("");
+		ucRemarks.setValue("");
+		complRemarks.setValue("");
+		roRemarks.setValue("");
+		
 	}
 	public void clearBuffer() {
 	    uploadedPdf1.set(null);
 	    uploadedPdf2.set(null);
-
-	   
+	    
+	    try {
+			roUpload.clearFileList();
+			ucUpload.clearFileList();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		}
+	    
 	}
 	private void updateWork(String text, ProcessFlow pf ) {
 		try {

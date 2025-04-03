@@ -36,8 +36,10 @@ import com.smis.entity.Scheme;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.util.NotificationUtil;
 import com.smis.util.UploadUtil;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -54,8 +56,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -214,7 +214,14 @@ public class PrintView extends HorizontalLayout {
 		dialog.open();
 
 	}
-
+	public boolean checkProcessFlow(Work work, int flow) {
+		if (work.getProcessflow().getStepOrder() != 3) {
+	        NotificationUtil.showError("This Page Has Expired. Please Refresh.");
+	        UI.getCurrent().getPage().reload();
+	        return false; // Indicate that the page expired
+	    }
+	    return true; 
+	}
 	private void uploadRo() {
 		Users user = service.getLoggedUser();
 		Set<Installment> installmentset = grid.getSelectedItems();
@@ -231,9 +238,15 @@ public class PrintView extends HorizontalLayout {
 			for (int i = 0; i < selecteditems; i++) {
 				totalamount = installments.get(i).getInstallmentAmount().add(totalamount);
 				Installment singleinstallment = installments.get(i);
+				Work singlework = singleinstallment.getWork();
+				singlework = service.getWorkById(singlework.getWorkId());
+				if (singlework.getProcessflow().getStepOrder() != 3) {
+					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+					return;
+				}
 				singleinstallment.setInstallmentDate(instdate.getValue());
 				singleinstallment.setInstallmentLetter(instletter.getValue());
-				Work singlework = singleinstallment.getWork();
 				// Users user = service.getLoggedUser();
 				ProcessFlow pf3 = service.getProcessFlowByOrder(3);
 				ProcessFlow pf4 = service.getProcessFlowByOrder(4);

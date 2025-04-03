@@ -521,8 +521,7 @@ public class WorkView extends VerticalLayout {
 				openInstallAccordion();
 				
 			} else if (step == 3) {
-				
-				
+
 				openRoAccordion();
 				workform.roAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(2).getStepName());
 				workform.roAction.setValue("Forward");

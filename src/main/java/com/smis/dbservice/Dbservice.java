@@ -314,7 +314,9 @@ public class Dbservice implements Serializable{
 			return wrepo.findWorksByUser(getLoggedUser());
 		}
     }
-	
+	public Work getWorkById(long id) {
+		return wrepo.findById(id);
+	}
 	public List<Work> getWorksAssignedToUser() {
         return wrepo.findWorksByUser(getLoggedUser());
     }

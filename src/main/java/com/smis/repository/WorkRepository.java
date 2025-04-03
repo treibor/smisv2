@@ -18,7 +18,7 @@ import com.smis.entity.Year;
 
 
 public interface WorkRepository extends JpaRepository<Work, Long> {
-	
+	Work findById(long id);
 	List<Work> findByDistrictOrderByWorkCodeDesc(District district);
 	List<Work> findByConstituency(Constituency constituency);	
 	List<Work> findByScheme(Scheme scheme);	
