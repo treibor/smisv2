@@ -29,7 +29,7 @@ public class SuperMasterView extends VerticalLayout {
 	Grid<Users> ugrid=new Grid<>(Users.class);
 	StateForm stateform;
 	DistrictForm distform;
-	ImpldistrictForm impldistform;
+	//ImpldistrictForm impldistform;
 	public SuperMasterView(Dbservice service) {
 		setSizeFull();
 		this.service=service;
@@ -63,13 +63,9 @@ public class SuperMasterView extends VerticalLayout {
 		distform=new DistrictForm(service);
 		distform.setWidth("40%");
 		distform.addListener(DistrictForm.SaveEvent.class, this::saveDistrict);
-		distform.addListener(DistrictForm.DeleteEvent.class, this::deleteDistrict);
+		//distform.addListener(DistrictForm.DeleteEvent.class, this::deleteDistrict);
 		distform.addListener(DistrictForm.CloseEvent.class, e->closeDistrictEditor());
-		impldistform=new ImpldistrictForm(service);
-		impldistform.setWidth("40%");
-		impldistform.addListener(ImpldistrictForm.SaveEvent.class, this::saveImplDistrict);
-		//impldistform.addListener(ImpldistrictForm.DeleteEvent.class, this::deleteDistrict);
-		impldistform.addListener(ImpldistrictForm.DeleteEvent.class, e->closeDistrictEditor());
+		
 		
 	}
 	private void configureGrids() {
@@ -96,18 +92,18 @@ public class SuperMasterView extends VerticalLayout {
 	private Component getContent() {
 		VerticalLayout vlayout=new VerticalLayout(sgrid, ugrid);
 		vlayout.setSizeFull();
-		HorizontalLayout content=new HorizontalLayout(vlayout, dgrid, idgrid, stateform, distform, impldistform);
+		HorizontalLayout content=new HorizontalLayout(vlayout, dgrid, idgrid, stateform, distform);
 		content.setFlexGrow(1, vlayout);
 		content.setFlexGrow(1, dgrid);
 		content.setFlexGrow(1, distform);
-		content.setFlexGrow(1, impldistform);
+		//content.setFlexGrow(1, impldistform);
 		content.setSizeFull();
 		return content;
 	}
 	
 	public void updateGrids() {
 		dgrid.setItems(service.getAllDistrictsOfAllStates());
-		idgrid.setItems(service.getAllImplDistricts());
+		//idgrid.setItems(service.getAllImplDistricts());
 		sgrid.setItems(service.getAllStates());
 		ugrid.setItems(service.getAllUsers());
 	}
@@ -124,8 +120,8 @@ public class SuperMasterView extends VerticalLayout {
 		
 	}
 	private void closeImplDistrictEditor() {
-		impldistform.setImpldistrict(null);
-		impldistform.setVisible(false);
+		//impldistform.setImpldistrict(null);
+		//impldistform.setVisible(false);
 		// TODO Auto-generated method stub
 		
 	}
@@ -149,7 +145,7 @@ public class SuperMasterView extends VerticalLayout {
 	private void editState(State state) {
 		// TODO Auto-generated method stub
 		stateform.setVisible(false);
-		impldistform.setVisible(false);
+		///impldistform.setVisible(false);
 		distform.setVisible(false);
 		if (state == null) {
 			closeStateEditor();
@@ -168,11 +164,7 @@ public class SuperMasterView extends VerticalLayout {
 		closeDistrictEditor();
 	}
 
-	public void deleteDistrict(DistrictForm.DeleteEvent event) {
-		service.deleteDistrict(event.getDistrict());
-		updateGrids();
-		closeDistrictEditor();
-	}
+
 
 	private void addDistrict() {
 		sgrid.asSingleSelect().clear();
@@ -182,7 +174,7 @@ public class SuperMasterView extends VerticalLayout {
 	private void editDistrict(District district) {
 		// TODO Auto-generated method stub
 		stateform.setVisible(false);
-		impldistform.setVisible(false);
+		//impldistform.setVisible(false);
 		if (district == null) {
 			closeDistrictEditor();
 		} else {
@@ -192,13 +184,7 @@ public class SuperMasterView extends VerticalLayout {
 				//constiform.setVisible(false);
 		}
 	}
-	public void saveImplDistrict(ImpldistrictForm.SaveEvent event) {
-		service.saveImplDistrict(event.getImpldistrict());
-		updateGrids();
-		closeDistrictEditor();
-		closeImplDistrictEditor();
-	}
-
+	
 	
 
 	private void addImplDistrict() {
@@ -213,9 +199,6 @@ public class SuperMasterView extends VerticalLayout {
 		if (district == null) {
 			closeImplDistrictEditor();
 		} else {
-			impldistform.setImpldistrict(district);
-			impldistform.setVisible(true);
-			//stateform.inUse.setValue(true);
 				//constiform.setVisible(false);
 		}
 	}

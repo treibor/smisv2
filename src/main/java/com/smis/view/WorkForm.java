@@ -239,7 +239,7 @@ public class WorkForm extends VerticalLayout {
 
 		} else {
 			dialog.setHeader("Delete??");
-			dialog.setText("Are You sure you want to delete this item.You will loose all details and you will not be able to undo this Action");
+			dialog.setText("Are You sure you want to delete this item.You will lose all details and you will not be able to undo this Action");
 			dialog.setCancelable(true);
 			dialog.addCancelListener(event -> dialog.close());
 			dialog.setRejectable(true);
@@ -874,6 +874,10 @@ public class WorkForm extends VerticalLayout {
 	}
 	
 	public static abstract class WorkFormEvent extends ComponentEvent<WorkForm> {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		private Work work;
 
 		protected WorkFormEvent(WorkForm source, Work work) {
@@ -887,12 +891,22 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	public static class SaveEvent extends WorkFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		SaveEvent(WorkForm source, Work work) {
 			super(source, work);
 		}
 	}
 
 	public static class DeleteEvent extends WorkFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		DeleteEvent(WorkForm source, Work work) {
 			super(source, work);
 		}
@@ -900,6 +914,11 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	public static class CloseEvent extends WorkFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		CloseEvent(WorkForm source) {
 			super(source, null);
 		}

@@ -13,17 +13,14 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.dbservice.DbserviceMp;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
-import com.smis.entity.Constituencymp;
 import com.smis.entity.Impldistrict;
 import com.smis.entity.Installment;
-import com.smis.entity.Installmentmp;
 import com.smis.entity.Scheme;
 import com.smis.entity.Work;
-import com.smis.entity.Workmp;
 import com.smis.entity.Year;
+import com.smis.util.NotificationUtil;
 import com.vaadin.componentfactory.pdfviewer.PdfViewer;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.accordion.Accordion;
@@ -33,7 +30,6 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
@@ -63,13 +59,13 @@ public class ReportView extends VerticalLayout {
 	ComboBox<String> reportTypemla = new ComboBox<String>("Select Report Type");
 	ComboBox<String> reportTypemp = new ComboBox<String>("Select Report Type");
 	ComboBox<Year> yearmp = new ComboBox<Year>("Year");
-	ComboBox<Constituencymp> constituencymp = new ComboBox<Constituencymp>("Constituency");
+	
 	ComboBox<Impldistrict> implDistrict = new ComboBox<Impldistrict>("Implementing District");
 	DatePicker fromDate = new DatePicker("Print By Dates");
 	DatePicker toDate = new DatePicker();
 	Notification notify = new Notification();
 	private Dbservice service;
-	private DbserviceMp dbservice;
+	
 	HorizontalLayout hl4 = new HorizontalLayout();
 	DatePicker fromDatep = new DatePicker("Print By Dates");
 	DatePicker toDatep = new DatePicker();
@@ -77,11 +73,11 @@ public class ReportView extends VerticalLayout {
 	PdfViewer pdfViewerrange;
 	String user;
 	
-	public ReportView(Dbservice service, DbserviceMp dbservice) {
-		this.dbservice = dbservice;
+	public ReportView(Dbservice service) {
+		
 		this.service = service;
 		initializeMlaItems();
-		initializeMpItems();
+		
 		reportTypemla.setItems("General Report", "Detailed Report");
 		reportTypemp.setItems("General Report", "Detailed Report");
 		// candi.addValueChangeListener(e-> removePdfViewer());
@@ -89,20 +85,7 @@ public class ReportView extends VerticalLayout {
 		add(createFinalPanel(), hl4);
 	}
 
-	private void initializeMpItems() {
-		constituencymp.setItems(dbservice.getAllConstituencies());
-		implDistrict.setItems(dbservice.getAllImplDistricts());
-		yearmp.setItems(dbservice.getAllYears());
-		constituencymp.setItemLabelGenerator(Constituencymp::getConstituencyType);
-		implDistrict.setItemLabelGenerator(Impldistrict::getDistrictName);
-		yearmp.setItemLabelGenerator(Year::getYearName);
-		constituencymp.addValueChangeListener(e->removePdfViewer());
-		implDistrict.addValueChangeListener(e->removePdfViewer());
-		year.addValueChangeListener(e->removePdfViewer());
-		constituencymp.setClearButtonVisible(true);
-		implDistrict.setClearButtonVisible(true);
-		yearmp.setClearButtonVisible(true);
-	}
+	
 
 	public void initializeMlaItems() {
 		block.setItems(service.getAllBlocks());
@@ -163,10 +146,10 @@ public class ReportView extends VerticalLayout {
 	public Component createMpPanel() {
 		FormLayout fl2 = new FormLayout();
 		Button printMp = new Button("Print");
-		printMp.addClickListener(e -> printMpReport());
+		//printMp.addClickListener(e -> printMpReport());
 		fl2.add(reportTypemp, 2);
 		fl2.add(implDistrict, 2);
-		fl2.add(constituencymp, 2);
+		//fl2.add(constituencymp, 2);
 		fl2.add(yearmp, 2);
 		fl2.add(printMp, 2);
 		fl2.setSizeFull();
@@ -179,73 +162,12 @@ public class ReportView extends VerticalLayout {
 		return fl2;
 	}
 
-	private void printMpReport() {
-
-		if (reportTypemp.getValue() == null || reportTypemp.getValue() == "") {
-			notify.show("Please Select The Type of Report", 5000, Position.TOP_CENTER);
-		} else {
-			removePdfViewer();
-			try {
-				//String reportPath = "D:";
-				URL res = getClass().getClassLoader().getResource("report/Detailsmp.jrxml");
-				File file = Paths.get(res.toURI()).toFile();
-				String absolutePath = file.getAbsolutePath();
-				String reportPath = absolutePath.substring(0, absolutePath.length() - 15);
-
-				if (reportTypemp.getValue() == "Detailed Report") {
-					List<Installmentmp> installment = dbservice.getFilteredInstallmentMpForReport(
-							constituencymp.getValue(), yearmp.getValue(), implDistrict.getValue());
-					Resource resource = new ClassPathResource("report/Detailsmp.jrxml");
-					InputStream employeeReportStream = resource.getInputStream();
-					JasperReport jasperReport = JasperCompileManager.compileReport(employeeReportStream);
-					JRBeanCollectionDataSource jrBeanCollectionDataSource = new JRBeanCollectionDataSource(installment);
-					Map<String, Object> parameters = new HashMap<>();
-					JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters,
-							jrBeanCollectionDataSource);
-					JasperExportManager.exportReportToPdfFile(jasperPrint, reportPath + "//detailreport.pdf");
-					File a = new File(reportPath + "//detailreport.pdf");
-					StreamResource resourcerange = new StreamResource("DetailedReport.pdf", () -> createResource(a));
-					PdfViewer pdfViewerrange = new PdfViewer();
-					pdfViewerrange.setSrc(resourcerange);
-					hl4.setVisible(true);
-					hl4.setSizeFull();
-					hl4.add(pdfViewerrange);
-				} else if (reportTypemp.getValue() == "General Report") {
-					List<Workmp> works = dbservice.getFilteredWorksForReport(implDistrict.getValue(), year.getValue(),
-							constituencymp.getValue());
-					Resource resource = new ClassPathResource("report/Generalmp.jrxml");
-					InputStream employeeReportStream = resource.getInputStream();
-					JasperReport jasperReport = JasperCompileManager.compileReport(employeeReportStream);
-					JRBeanCollectionDataSource jrBeanCollectionDataSource = new JRBeanCollectionDataSource(works);
-					Map<String, Object> parameters = new HashMap<>();
-					JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters,
-							jrBeanCollectionDataSource);
-					JasperExportManager.exportReportToPdfFile(jasperPrint, reportPath + "//generalreport.pdf");
-					File a = new File(reportPath + "//generalreport.pdf");
-					StreamResource resourcerange = new StreamResource("GeneralReport.pdf", () -> createResource(a));
-					PdfViewer pdfViewerrange = new PdfViewer();
-					pdfViewerrange.setSrc(resourcerange);
-					hl4.setVisible(true);
-					hl4.setSizeFull();
-					hl4.add(pdfViewerrange);
-				} else {
-					
-					notify.show("Fatal Error: Contact Programmer ");
-				}
-
-				// removePdfViewer();
-
-			} catch (Exception e) {
-				notify.show("Error:" + e, 5000, Position.TOP_CENTER);
-				
-			}
-		}
-	}
-
+	
 	private void printReport() {
 
 		if (reportTypemla.getValue() == null || reportTypemla.getValue() == "") {
-			notify.show("Please Select The Type of Report", 5000, Position.TOP_CENTER);
+			//notify.show("Please Select The Type of Report", 5000, Position.TOP_CENTER);
+			NotificationUtil.showError("Please Select The Type of Report");
 		} else {
 			removePdfViewer();
 			try {
@@ -299,7 +221,7 @@ public class ReportView extends VerticalLayout {
 				// removePdfViewer();
 
 			} catch (Exception e) {
-				notify.show("Error:" + e, 5000, Position.TOP_CENTER);
+				NotificationUtil.showError("Please Select The Type of Report. Error: "+e);
 				
 			}
 		}

@@ -57,12 +57,12 @@ public class Work implements Serializable{
 	private Year year;
 	@ManyToOne
 	@JoinColumn(name="schemeId")
-	@NotNull(message = "Please select the scheme")
+	@NotNull(message = "Please select the Scheme")
 	
 	private Scheme scheme;
 	@ManyToOne
 	@JoinColumn(name="blockId")
-	@NotNull(message = "Please select the block")
+	@NotNull(message = "Please select the Block")
 	
 	private Block block;
 	@ManyToOne

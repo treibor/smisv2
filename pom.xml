@@ -146,11 +146,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>
-				com.xdev-software</groupId>
-			<artifactId>vaadin-grid-exporter</artifactId>
-			<version>
-				3.0.3</version>
+   	 		<groupId>software.xdev</groupId>
+    		<artifactId>vaadin-grid-exporter</artifactId>
+    			<version>3.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.vaadin.addons.componentfactory</groupId>

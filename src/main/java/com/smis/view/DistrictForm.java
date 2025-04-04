@@ -4,6 +4,7 @@ import com.smis.dbservice.Dbservice;
 import com.smis.entity.District;
 import com.smis.entity.Impldistrict;
 import com.smis.entity.State;
+import com.smis.util.NotificationUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -82,41 +83,12 @@ public class DistrictForm extends FormLayout {
 	
 	private void validateandSave() {
 		try {
-			long dist_code=service.getMaxDistrictCode(state.getValue())+1;
+			
 			binder.writeBean(district);
 			
-			//check if new entry
-			if (district.getDistrictCode() < 1) {
-				
-				district.setDistrictCode(dist_code);
-				if (service.getImpldistrict(dist_code-1) == null) {
-					
-					impldist = new Impldistrict();
-					impldist.setDistrictCode(dist_code);
-					//impldist.setDistrictId(service.getMaxDistrictCode());
-					impldist.setState(state.getValue());
-					impldist.setDistrictName(districtName.getValue());
-					impldist.setDeputyCommissioner(deputyCommissioner.getValue());
-					impldist.setDistrictHq(districtHq.getValue());
-					service.saveImplDistrict(impldist);
-				}
-			}else {
-				if (service.getImpldistrict(dist_code-1) == null) {
-					
-					impldist = new Impldistrict();
-					impldist.setDistrictCode(district.getDistrictCode());
-					//impldist.setDistrictId(service.getMaxDistrictCode());
-					impldist.setState(state.getValue());
-					impldist.setDistrictName(districtName.getValue());
-					impldist.setDeputyCommissioner(deputyCommissioner.getValue());
-					impldist.setDistrictHq(districtHq.getValue());
-					service.saveImplDistrict(impldist);
-				}
-			}
 			fireEvent(new SaveEvent(this, district));
 		} catch (ValidationException e) {
-			notify.show("Please Enter All Required Fields", 3000, Position.TOP_CENTER);
-			
+			NotificationUtil.showError("Please Enter All Required Fields");
 		} catch (Exception e) {
 			
 		}

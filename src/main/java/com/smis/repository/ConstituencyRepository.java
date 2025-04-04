@@ -5,9 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.smis.entity.Constituency;
-import com.smis.entity.Constituencymp;
 import com.smis.entity.District;
-import com.smis.entity.Year;
 
 public interface ConstituencyRepository extends JpaRepository<Constituency, Long>{
 	

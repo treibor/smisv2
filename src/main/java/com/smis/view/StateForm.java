@@ -2,23 +2,17 @@ package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.State;
+import com.smis.util.NotificationUtil;
 import com.smis.util.ValidationUtil;
-import com.smis.entity.State;
-import com.smis.view.ConstimpForm.ConstiFormEvent;
-import com.smis.view.ConstimpForm.DeleteEvent;
-import com.smis.view.ConstimpForm.SaveEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -26,6 +20,10 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.shared.Registration;
 
 public class StateForm extends FormLayout{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	Dbservice service;
 	Binder<State> binder=new BeanValidationBinder<>(State.class);
 	//IntegerField schemeDuration=new IntegerField("Scheme Duration");
@@ -62,8 +60,8 @@ public class StateForm extends FormLayout{
 			fireEvent(new SaveEvent(this, state));
 
 		} catch (ValidationException e) {
-			notify.show("Please Enter All Required Fields", 3000, Position.TOP_CENTER);
 			
+			NotificationUtil.showError("Please Enter All Required Fields");
 		} catch (Exception e) {
 			
 		}
@@ -76,6 +74,10 @@ public class StateForm extends FormLayout{
 	}
 	
 	public static abstract class StateFormEvent extends ComponentEvent<StateForm> {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		private State state;
 
 		protected StateFormEvent(StateForm source, State state) {
@@ -89,12 +91,22 @@ public class StateForm extends FormLayout{
 	}
 
 	public static class SaveEvent extends StateFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		SaveEvent(StateForm source, State state) {
 			super(source, state);
 		}
 	}
 
 	public static class DeleteEvent extends StateFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		DeleteEvent(StateForm source, State state) {
 			super(source, state);
 		}
@@ -102,6 +114,11 @@ public class StateForm extends FormLayout{
 	}
 
 	public static class CloseEvent extends StateFormEvent {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		CloseEvent(StateForm source) {
 			super(source, null);
 		}

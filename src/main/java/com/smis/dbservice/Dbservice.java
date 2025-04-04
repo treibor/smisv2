@@ -38,7 +38,6 @@ import com.smis.repository.BlockRepository;
 import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
 import com.smis.repository.DistrictRepository;
-import com.smis.repository.ImpldistrictRepository;
 import com.smis.repository.InstallmentDocRepository;
 import com.smis.repository.InstallmentReportRepository;
 import com.smis.repository.InstallmentRepository;
@@ -75,7 +74,7 @@ public class Dbservice implements Serializable{
 	private final BlockRepository brepo;
 	private final DistrictRepository drepo;
 	private final InstallmentRepository irepo;
-	private final ImpldistrictRepository idrepo;
+	
 	private final UserRepository urepo;
 	private final StateRepository strepo;
 	private final VillageRepository vtrepo;
@@ -92,7 +91,7 @@ public class Dbservice implements Serializable{
 	private final InstallmentReportRepository reportrepo;
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
 			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,InstallmentReportRepository reportrepo,
-			InstallmentRepository irepo, ImpldistrictRepository idrepo, VillageRepository vrepo, RoleRepository rolerepo, InstallmentDocRepository docrepo,
+			InstallmentRepository irepo,  VillageRepository vrepo, RoleRepository rolerepo, InstallmentDocRepository docrepo,
 			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
@@ -101,7 +100,7 @@ public class Dbservice implements Serializable{
 		this.brepo = brepo;
 		this.drepo = drepo;
 		this.irepo = irepo;
-		this.idrepo = idrepo;
+		//this.idrepo = idrepo;
 		this.urepo = urepo;
 		this.strepo = strepo;
 		this.vtrepo = vrepo;
@@ -529,34 +528,15 @@ public class Dbservice implements Serializable{
 		drepo.save(dist);
 	}
 
-	public void deleteDistrict(District dist) {
-		try {
-			Impldistrict impdist = idrepo.findByDistrictCodeAndStateOrderByDistrictNameAsc(dist.getDistrictCode(),
-					dist.getState());
-			idrepo.delete(impdist);
-			drepo.delete(dist);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete District " + e, 5000, Position.TOP_CENTER);
-		}
-
-	}
+	
 
 	public long getMaxDistrictCode(State state) {
 		return drepo.findMaxDistrictCode(state);
 	}
 
 	// save & Delete impldistrict
-	public void saveImplDistrict(Impldistrict dist) {
-		if (dist == null) {
-
-			return;
-		}
-		idrepo.save(dist);
-	}
-
-	public Impldistrict getImpldistrict(long id) {
-		return idrepo.findByDistrictIdOrderByDistrictName(id);
-	}
+	
+	
 
 	// Methods to Get All Data from Individual Tables
 	public List<Work> getAllWorks() {
@@ -669,9 +649,6 @@ public class Dbservice implements Serializable{
 		return irepo.findAll();
 	}
 
-	public List<Impldistrict> getAllImplDistricts() {
-		return idrepo.findAll();
-	}
 	
 	public void saveRole(UsersRoles role) {
 	    try {
