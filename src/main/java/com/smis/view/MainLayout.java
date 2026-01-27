@@ -2,8 +2,12 @@ package com.smis.view;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
@@ -16,6 +20,7 @@ import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
 import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -27,8 +32,13 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
@@ -114,64 +124,180 @@ public class MainLayout extends AppLayout {
 			return true;
 		}
 	}
+	private Component createDrawerUserInfo() {
 
+	    String username = service.getLoggedUser().getProfileName();
+	    String roles = currentRolesText(); // the method you already fixed
+	    Span name = new Span(username);
+	    name.getStyle()
+	        .set("font-size", "var(--lumo-font-size-s)")
+	        .set("font-weight", "600");
+
+	    Span role = new Span(roles);
+	    role.getStyle()
+	        .set("font-size", "var(--lumo-font-size-xs)")
+	        .set("color", "var(--lumo-secondary-text-color)");
+
+	    VerticalLayout text = new VerticalLayout(name, role);
+	    text.setPadding(false);
+	    text.setSpacing(false);
+
+	    HorizontalLayout userInfo = new HorizontalLayout(text);
+	    userInfo.setAlignItems(FlexComponent.Alignment.CENTER);
+	    userInfo.setPadding(true);
+	    userInfo.setSpacing(true);
+
+	    userInfo.getStyle()
+        .set("padding", "var(--lumo-space-s)")   // not default padding
+        .set("border-top", "1px solid var(--lumo-contrast-10pct)");
+
+	    return userInfo;
+	}
 	private void createDrawer() {
 
-		VerticalLayout drawerContent = new VerticalLayout();
+	    VerticalLayout drawerContent = new VerticalLayout();
+	    drawerContent.setSizeFull();
+	    drawerContent.setPadding(false);     // important: root no padding
+	    drawerContent.setSpacing(false);
 
-		// Add navigation items with helper text
-		SideNavItemWithHelperText home = new SideNavItemWithHelperText("", "Home", HomeView.class,
-				LineAwesomeIcon.HOME_SOLID.create());
-		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("", "Inbox", WorkView.class,
-				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
-		SideNavItemWithHelperText history = new SideNavItemWithHelperText("", "History", WorkViewHistory.class,
-				LineAwesomeIcon.HISTORY_SOLID.create());
-		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("", "Release Order", PrintView.class,
-				LineAwesomeIcon.DONATE_SOLID.create());
-		SideNavItemWithHelperText master = new SideNavItemWithHelperText("", "Master", MasterView.class,
-				LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
+	    // Add navigation items with helper text
+	    SideNavItemWithHelperText home = new SideNavItemWithHelperText("Home", "", HomeView.class,
+	            LineAwesomeIcon.HOME_SOLID.create());
 
-		SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("", "District Master", DistView.class,
-				LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
-		SideNavItemWithHelperText report = new SideNavItemWithHelperText("", "Reports", ReportView.class,
-				LineAwesomeIcon.CALCULATOR_SOLID.create());
-		SideNavItemWithHelperText audit = new SideNavItemWithHelperText("", "Audit Trail", AuditView.class,
-				LineAwesomeIcon.CALENDAR.create());
-		SideNavItemWithHelperText users = new SideNavItemWithHelperText("", "Users", UsersView.class,
-				LineAwesomeIcon.USER.create());
+	    SideNavItemWithHelperText mla = new SideNavItemWithHelperText("Inbox", "", WorkView.class,
+	            LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
 
-		master.setVisible(isAdmin);
-		distmaster.setVisible(isSuper);
-		releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
-		audit.setVisible(isAdmin);
-		users.setVisible(isAdmin);
-		drawerContent.add(home, mla, history, releaseorder, master, distmaster, report, audit, users);
-		addToDrawer(drawerContent);
+	    SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
+	            LineAwesomeIcon.HISTORY_SOLID.create());
+
+	    SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Release Order", "", PrintView.class,
+	            LineAwesomeIcon.DONATE_SOLID.create());
+
+	    SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,
+	            LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
+
+	    SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("District Master", "", DistView.class,
+	            LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
+
+	    SideNavItemWithHelperText report = new SideNavItemWithHelperText("Reports", "", ReportView.class,
+	            LineAwesomeIcon.CALCULATOR_SOLID.create());
+
+	    SideNavItemWithHelperText audit = new SideNavItemWithHelperText("Audit Trail", "", AuditView.class,
+	            LineAwesomeIcon.CALENDAR.create());
+
+	    SideNavItemWithHelperText users = new SideNavItemWithHelperText("Users", "", UsersView.class,
+	            LineAwesomeIcon.USER.create());
+
+	    master.setVisible(isAdmin);
+	    distmaster.setVisible(isSuper);
+	    releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
+	    audit.setVisible(isAdmin);
+	    users.setVisible(isAdmin);
+
+	  
+	    VerticalLayout navItems = new VerticalLayout(
+	            home, mla, history, releaseorder, master, distmaster, report, audit, users
+	    );
+	    navItems.setPadding(true);
+	    navItems.setSpacing(true);          
+	    navItems.setWidthFull();
+	    navItems.addClassName("drawer-nav"); 
+
+	    Div spacer = new Div();
+	    drawerContent.expand(spacer);
+
+	    Component userInfo = createDrawerUserInfo();
+
+	    drawerContent.add(navItems, spacer, userInfo);
+
+	    addToDrawer(drawerContent);
 	}
 
+	private Component menuItem(VaadinIcon icon, String text) {
+	    Icon i = icon.create();
+	    i.setSize("12px");
+	    i.getStyle()
+	     .set("margin-right", "var(--lumo-space-s)")
+	     .set("color", "var(--lumo-secondary-text-color)");
+
+	    Span label = new Span(text);
+	    label.getStyle()
+	         .set("font-size", "var(--lumo-font-size-s)") //
+	         .set("line-height", "1.2");
+
+	    HorizontalLayout layout = new HorizontalLayout(i, label);
+	    layout.setAlignItems(FlexComponent.Alignment.CENTER);
+	    layout.setPadding(false);
+	    layout.setSpacing(false);
+
+	    return layout;
+	}
+	private String currentRolesText() {
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    if (auth == null) return "";
+
+	    return auth.getAuthorities().stream()
+	            .map(GrantedAuthority::getAuthority)
+	            .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r) // remove ROLE_
+	            .sorted()
+	            .collect(Collectors.joining(", "));
+	}
 	private void createHeader() {
 
-		Avatar avatarImage = new Avatar(service.getloggeduser());
-		avatarImage.setColorIndex(2);
-		// avatarImage.addThemeVariants(AvatarVariant.LUMO_LARGE);
-		MenuBar menuBar = new MenuBar();
-		menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
-		MenuItem item = menuBar.addItem(avatarImage);
-		SubMenu subMenu = item.getSubMenu();
-		subMenu.addItem("About", e -> openAboutDialog());
-		subMenu.addItem("Change Password", e -> openPasswordDialog());
-		subMenu.addItem("Create User", e -> createUser()).setVisible(isAdmin);
-		subMenu.addItem("Logout", e -> securityService.logout());
-		// SubMenu shareSubMenu = share.getSubMenu();
-		// anchor.setTarget("/");
-		H3 logo = new H3("SMIS 2.0  || " + service.getDistrict().getDistrictName().toUpperCase());
-		// logo.addClassNames("text-s", "m-m");
-		HorizontalLayout header = new HorizontalLayout(new DrawerToggle(), logo, menuBar);
-		header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-		header.expand(logo);
-		header.setWidthFull();
-		header.addClassNames("py-0", "px-m");
-		addToNavbar(header);
+	    Avatar avatarImage = new Avatar(service.getloggeduser());
+	    avatarImage.setColorIndex(2);
+
+	    MenuBar menuBar = new MenuBar();
+	    menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+
+	    MenuItem item = menuBar.addItem(avatarImage);
+	    SubMenu subMenu = item.getSubMenu();
+
+	    // --- User info (non-clickable) ---
+	    String username = service.getLoggedUser().getProfileName();
+	    String role = currentRolesText();
+	    Span userNameSpan = new Span(username);
+	    userNameSpan.getStyle().set("font-weight", "600");
+
+	    Span roleSpan = new Span(role);
+	    roleSpan.getStyle()
+	            .set("font-size", "var(--lumo-font-size-xs)")
+	            .set("color", "var(--lumo-secondary-text-color)");
+
+	    VerticalLayout userInfo = new VerticalLayout(userNameSpan, roleSpan);
+	    userInfo.setPadding(false);
+	    userInfo.setSpacing(false);
+	    userInfo.getStyle().set("pointer-events", "none");
+
+	    subMenu.addItem(userInfo);
+	    subMenu.add(new Hr());
+
+	    // --- Actions ---
+	    subMenu.addItem(menuItem(VaadinIcon.INFO_CIRCLE, "About"),
+	            e -> openAboutDialog());
+
+	    subMenu.addItem(menuItem(VaadinIcon.KEY, "Change Password"),
+	            e -> openPasswordDialog());
+
+	    subMenu.addItem(menuItem(VaadinIcon.USER_CHECK, "Create User"),
+	            e -> createUser())
+	            .setVisible(isAdmin);
+
+	    subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"),
+	            e -> securityService.logout());
+
+	    H3 logo = new H3("SMIS 2.0  || " +
+	            service.getDistrict().getDistrictName().toUpperCase());
+
+	    HorizontalLayout header =
+	            new HorizontalLayout(new DrawerToggle(), logo, menuBar);
+
+	    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+	    header.expand(logo);
+	    header.setWidthFull();
+	    header.addClassNames("py-0", "px-m");
+
+	    addToNavbar(header);
 	}
 
 	private void openAboutDialog() {

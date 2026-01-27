@@ -128,6 +128,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 		http
 		//.addFilterBefore(rateLimitingFilter, ChannelProcessingFilter.class)
         .addFilterBefore(disableOptionsMethodFilter(), ChannelProcessingFilter.class)
+        //.addFilterBefore(new CSPNonceFilter(), ChannelProcessingFilter.class)
         //.addFilterAfter(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
 		.headers(headers -> headers
 				.addHeaderWriter(new StaticHeadersWriter("Strict-Transport-Security", "max-age=31536000"))

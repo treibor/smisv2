@@ -109,26 +109,39 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 		                                    @Param("searchTerm") String searchTerm);
 	
 	
-	@Query("SELECT c FROM Work c " +
-		       "WHERE c.processflow IN " +
-		       "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user) " +
-		       "AND c.district = :district " +
-		       "AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = c.block) " +  // Block check
-		       "AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = c.scheme) " +  // Scheme check
-		       "AND (:scheme IS NULL OR c.scheme = :scheme) " +
-		       "AND (:year IS NULL OR c.year = :year) " +
-		       "AND (:block IS NULL OR c.block = :block) " +
-		       "AND (:consti IS NULL OR c.constituency = :consti) " +
-		       "ORDER BY c.workCode DESC")
-		List<Work> getFilteredWorksByUser(@Param("user") Users user, 
-		                                  @Param("scheme") Scheme scheme, 
-		                                  @Param("district") District district, 
-		                                  @Param("year") Year year,
-		                                  @Param("consti") Constituency consti, 
-		                                  @Param("block") Block block);
+	@Query("""
+			SELECT c
+			FROM Work c
+			WHERE EXISTS (
+			    SELECT 1 FROM ProcessFlowUser pfu
+			    WHERE pfu.user = :user
+			      AND pfu.processFlow.id = c.processflow.id
+			)
+			AND c.district = :district
+			AND c.block IS NOT NULL
+			AND EXISTS (
+			    SELECT 1 FROM BlockUser bu
+			    WHERE bu.user = :user
+			      AND bu.block.id = c.block.id
+			)
+			AND EXISTS (
+			    SELECT 1 FROM SchemeUser su
+			    WHERE su.user = :user
+			      AND su.scheme.id = c.scheme.id
+			)
+			AND (:scheme IS NULL OR c.scheme = :scheme)
+			AND (:year   IS NULL OR c.year = :year)
+			AND (:block  IS NULL OR c.block = :block)
+			AND (:consti IS NULL OR c.constituency = :consti)
+			ORDER BY c.workCode DESC
+			""")
+			List<Work> getFilteredWorksByUser(@Param("user") Users user,
+			                                  @Param("scheme") Scheme scheme,
+			                                  @Param("district") District district,
+			                                  @Param("year") Year year,
+			                                  @Param("consti") Constituency consti,
+			                                  @Param("block") Block block);
 
-	
-	
 
 	@Query("SELECT DISTINCT ph.work FROM ProcessHistory ph " +
 		       "WHERE ph.user = :user " +

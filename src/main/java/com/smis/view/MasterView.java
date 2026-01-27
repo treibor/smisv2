@@ -185,6 +185,8 @@ public class MasterView extends VerticalLayout{
 	
 	private void closeConstiEditor() {
 		constiform.setConstituency(null);
+		constiform.save.setEnabled(false);
+		constiform.delete.setEnabled(false);
 		//constiform.setVisible(false);
 
 	}
@@ -216,11 +218,15 @@ public class MasterView extends VerticalLayout{
 		} else {
 			constiform.setConstituency(consti);
 			constiform.inUse.setValue(consti.isInUse());
+			constiform.save.setEnabled(true);
+			constiform.delete.setEnabled(true);
 		}
 	}
 	
 	private void closeYearEditor() {
 		yearform.setYear(null);
+		yearform.save.setEnabled(false);
+		yearform.delete.setEnabled(false);
 	}
 
 	public void saveYear(YearForm.SaveEvent event) {
@@ -256,11 +262,14 @@ public class MasterView extends VerticalLayout{
 		} else {
 			yearform.setYear(year);
 			yearform.inUse.setValue(year.isInUse());
+			yearform.save.setEnabled(true);
+			yearform.delete.setEnabled(true);
 		}
 	}
 	private void closeSchemeEditor() {
 		schemeform.setScheme(null);
-		
+		schemeform.save.setEnabled(false);
+		schemeform.delete.setEnabled(false);
 	}
 
 	public void saveScheme(SchemeForm.SaveEvent event) {
@@ -291,11 +300,15 @@ public class MasterView extends VerticalLayout{
 		} else {
 			schemeform.setScheme(year);
 			schemeform.inUse.setValue(year.isInUse());
+			schemeform.save.setEnabled(true);
+			schemeform.delete.setEnabled(true);
 			//schemeform.schemeprocessaccordion.add(schemeform.createSchemeProcessLayout(year));
 		}
 	}
 	private void closeBlockEditor() {
 		blockform.setBlock(null);
+		blockform.save.setEnabled(false);
+		blockform.delete.setEnabled(false);
 		
 	}
 
@@ -328,6 +341,8 @@ public class MasterView extends VerticalLayout{
 		} else {
 			blockform.setBlock(block);
 			blockform.inUse.setValue(block.isInUse());
+			blockform.save.setEnabled(true);
+			blockform.delete.setEnabled(true);
 		}
 	}
 }

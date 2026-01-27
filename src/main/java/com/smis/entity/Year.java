@@ -19,9 +19,9 @@ public class Year implements Serializable{
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "year_generator")
 	@SequenceGenerator(name="year_generator", initialValue = 1, sequenceName = "year_sequence", allocationSize = 1)
 	private long yearId;
-	@NotEmpty
+	@NotEmpty(message = "Year is required")
 	private String yearName;
-	@NotEmpty
+	@NotEmpty(message = "Year Label is required")
 	private String yearLabel;
 	@ManyToOne
 	@JoinColumn(name="districtId")

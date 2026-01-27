@@ -3,6 +3,7 @@ package com.smis.view;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Year;
+import com.smis.util.ButtonUtil;
 import com.smis.util.ValidationUtil;
 import com.smis.entity.Year;
 import com.smis.view.YearForm.YearFormEvent;
@@ -53,6 +54,9 @@ public class YearForm extends FormLayout{
 	
 	private Component createButtonsLayout() {
 		// TODO Auto-generated method stub
+		ButtonUtil.applySaveStyle(save);
+		ButtonUtil.applyDeleteStyle(delete);
+		ButtonUtil.applyNewStyle(addButton);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 		save.addClickShortcut(Key.ENTER);
 		save.addClickListener(event-> validateandSave());
@@ -78,6 +82,8 @@ public class YearForm extends FormLayout{
 	public void setYear(Year year) {
 		this.year=year;
 		binder.readBean(year);
+		save.setEnabled(true);
+		delete.setEnabled(false);
 	}
 	
 	public static abstract class YearFormEvent extends ComponentEvent<YearForm> {

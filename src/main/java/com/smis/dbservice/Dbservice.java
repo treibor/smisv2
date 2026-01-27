@@ -307,9 +307,11 @@ public class Dbservice implements Serializable{
 	public List<Work> getWorks() {
 		if (isSuperAdmin()) {
 			return wrepo.findAll();
-		} else if (isAdmin()) {
+		} 
+		/*else if (isAdmin()) {
 			return wrepo.findByDistrictOrderByWorkCodeDesc(getDistrict());
-		} else {
+		}*/ 
+		else {
 			return wrepo.findWorksByUser(getLoggedUser());
 		}
     }
@@ -615,10 +617,12 @@ public class Dbservice implements Serializable{
 	public List<Block> getAllBlocks() {
 		if (isSuperAdmin()) {
 			return brepo.findAll();
-		} else if (isAdmin()){
+		}/* 
+		else if (isAdmin()){
 			// return brepo.findByDistrictAndInUse(getDistrict(), true);
 			return brepo.findByDistrictAndInUseOrderByBlockNameAsc(getDistrict(), true);
-		}else {
+		}*/
+		else {
 			return brepo.findBlocksByUserAndStatus(getLoggedUser(), true);
 		}
 

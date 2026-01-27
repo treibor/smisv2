@@ -93,3 +93,47 @@ vaadin-app-layout::part(drawer) {
     height: 100vh;
 }
 
+a.drawer-tile-item {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 6px 0 !important;
+  text-decoration: none !important;
+
+  color: var(--lumo-body-text-color) !important;
+  border-radius: var(--lumo-border-radius-s) !important;
+}
+
+/* Make all children follow the link color */
+a.drawer-tile-item * {
+  color: inherit !important;
+}
+
+/* LineAwesome SVG icons must follow currentColor */
+a.drawer-tile-item svg {
+  fill: currentColor !important;
+}
+
+/* Hover */
+a.drawer-tile-item:hover {
+  color: var(--lumo-primary-color) !important;
+  background-color: var(--lumo-contrast-5pct) !important;
+}
+
+/* Selected (active route) */
+a.drawer-tile-item[highlight],
+a.drawer-tile-item[aria-current="page"] {
+  color: var(--lumo-primary-color) !important;
+  background-color: var(--lumo-contrast-10pct) !important;
+  font-weight: 600 !important;
+}
+
+.history-dialog::part(header) {
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-base-color);
+}
+
+.history-dialog::part(title) {
+  color: var(--lumo-base-color);
+}

@@ -24,15 +24,15 @@ public class Scheme implements Serializable{
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "scheme_generator")
 	@SequenceGenerator(name="scheme_generator", initialValue = 1, sequenceName = "scheme_sequence", allocationSize = 1)
 	private long schemeId;
-	@NotEmpty
+	@NotEmpty(message = "Scheme name is required")
 	private String schemeName;
-	@NotEmpty
+	@NotEmpty(message = "Scheme full name is required")
 	private String schemeNameLong;
-	@NotEmpty
+	@NotEmpty(message = "Label is required")
 	private String schemeLabel;
 	@Digits(integer=12, fraction=2)
 	private BigDecimal schemeAllocation;
-	@NotEmpty
+	@NotEmpty(message = "Dept name is required")
 	private String schemeDept;
 	private String schemeDeptLong;
 	private int schemeDuration;

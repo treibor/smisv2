@@ -3,6 +3,7 @@ package com.smis.view;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
+import com.smis.util.ButtonUtil;
 import com.smis.util.ValidationUtil;
 import com.smis.view.BlockForm.BlockFormEvent;
 import com.smis.view.BlockForm.DeleteEvent;
@@ -45,7 +46,7 @@ public class BlockForm extends FormLayout{
 		blockDevelopmentOfficer.setHelperText("Eg: Block Development Officer");
 		blockLabel.setHelperText("Eg: Mawlai C&RD Block");
 		ValidationUtil.applyTextOnly(blockDevelopmentOfficer);
-		ValidationUtil.applyTextOnly(blockLabel);
+		ValidationUtil.applyValidation(blockLabel);
 		ValidationUtil.applyTextOnly(blockName);
 		add(new Span("* Click New Button To Add New Item"),blockName, blockDevelopmentOfficer, blockLabel, inUse, createButtonsLayout());
 	}
@@ -58,6 +59,9 @@ public class BlockForm extends FormLayout{
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, block)));
 		//delete.setEnabled(isadmin);
 		delete.setEnabled(isAdmin);
+		ButtonUtil.applySaveStyle(save);
+		ButtonUtil.applyDeleteStyle(delete);
+		ButtonUtil.applyNewStyle(addButton);
 		addButton.addClickListener(event->setBlock(new Block()));
 		return new HorizontalLayout(save, delete, addButton);
 		
@@ -79,6 +83,8 @@ public class BlockForm extends FormLayout{
 	public void setBlock(Block block) {
 		this.block=block;
 		binder.readBean(block);
+		save.setEnabled(true);
+		delete.setEnabled(false);
 	}
 	
 	public static abstract class BlockFormEvent extends ComponentEvent<BlockForm> {

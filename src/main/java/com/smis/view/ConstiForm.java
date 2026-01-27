@@ -3,6 +3,7 @@ package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Constituency;
+import com.smis.util.ButtonUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
@@ -49,8 +50,11 @@ public class ConstiForm extends FormLayout{
 	private Component createButtonsLayout() {
 		// TODO Auto-generated method stub
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		ButtonUtil.applySaveStyle(save);
 		save.addClickShortcut(Key.ENTER);
 		save.addClickListener(event-> validateandSave());
+		ButtonUtil.applyDeleteStyle(delete);
+		ButtonUtil.applyNewStyle(addButton);
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, consti)));
 		delete.setEnabled(service.isAdmin());
 		addButton.addClickListener(event->setConstituency(new Constituency()));
@@ -75,6 +79,8 @@ public class ConstiForm extends FormLayout{
 	}
 
 	public void setConstituency(Constituency consti) {
+		save.setEnabled(true);
+		delete.setEnabled(false);
 		this.consti=consti;
 		binder.readBean(consti);
 	}

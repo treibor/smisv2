@@ -22,6 +22,7 @@ import com.smis.entity.Scheme;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.util.ButtonUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -193,7 +194,8 @@ public class WorkView extends VerticalLayout {
 	    // Create a dialog
 	    Dialog dialog = new Dialog();
 	    dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
-
+	    dialog.setWidth("90vw");
+		dialog.addClassName("history-dialog");
 	    Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
 	    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
@@ -248,12 +250,11 @@ public class WorkView extends VerticalLayout {
 	    }).setHeader("UC Documents").setAutoWidth(true);
 	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true).setVisible(isAdmin);
 	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null? installment.getEnteredOn().format(timeFormatter): "").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
-
-	    // 🔹 Add "View Document" column
-	    
 	    Button closeButton = new Button("Close", e -> dialog.close());
 	    Button deleteButton = new Button("Delete", e ->deleteInstallment(installmentGrid.asSingleSelect().getValue()) );
 	    deleteButton.setEnabled(false);
+	    ButtonUtil.applyCloseStyle(closeButton);
+	    ButtonUtil.applyDeleteStyle(deleteButton);
 	    // Load Installments
 	    List<Installment> installments = service.getInstallments(work);
 	    installmentGrid.setItems(installments);
@@ -263,11 +264,13 @@ public class WorkView extends VerticalLayout {
 			    if (selectedItem != null ) {
 			        deleteButton.setEnabled(true);
 			    } else {
-			    	deleteButton.setEnabled(false);
+			    	deleteButton.setVisible(isAdmin);
 			    }
 			});
-	    // Close button
-	    // Add components to the dialog
+		dialog.setModal(true);
+		dialog.setCloseOnOutsideClick(false);
+		dialog.setCloseOnEsc(false);
+
 	    dialog.add(installmentGrid);
 	    dialog.getFooter().add(deleteButton,closeButton);
 	    dialog.open();
@@ -277,12 +280,14 @@ public class WorkView extends VerticalLayout {
 	}
 	private void showHistoryDialog(Work work) { // Create a dialog
 		Dialog dialog = new Dialog();
-		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
+		dialog.setWidth("90vw");
+		dialog.addClassName("history-dialog");
+		dialog.setHeaderTitle("History :"+work.getWorkCode() + "-" + work.getWorkName());
 		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Task").setAutoWidth(true);
 		grid.addColumn(processhistory->processhistory.getProcessName()).setHeader("Action Performed").setAutoWidth(true);
-		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setWidth("20%");
+		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setWidth("40%").setResizable(true);
 		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
 				? processhistory.getEnteredOn().format(timeFormatter)
@@ -293,8 +298,13 @@ public class WorkView extends VerticalLayout {
 		grid.setAllRowsVisible(true);
 		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		Button closeButton = new Button("Close", e -> dialog.close());
+		ButtonUtil.applyCloseStyle(closeButton);
 		dialog.add(grid);
 		dialog.getFooter().add(closeButton);
+	
+		dialog.setModal(true);
+		dialog.setCloseOnOutsideClick(false);
+		dialog.setCloseOnEsc(false);
 		dialog.open();
 	}
 	public void filterGrid() {

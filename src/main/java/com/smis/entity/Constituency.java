@@ -22,11 +22,11 @@ public class Constituency implements Serializable{
 	private long constituencyId;
 	private int constituencyNo;
 	
-	@NotEmpty
+	@NotEmpty(message = "Constituency name is required")
 	private String constituencyName;
 	
 	private String constituencyLabel;
-	@NotEmpty
+	@NotEmpty(message = "MLA name is required")
 	private String constituencyMLA;
 	@ManyToOne
 	@JoinColumn(name="districtId")
