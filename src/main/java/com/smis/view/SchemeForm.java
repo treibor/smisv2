@@ -84,7 +84,7 @@ public class SchemeForm extends FormLayout{
 		save.addClickShortcut(Key.ENTER);
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, scheme)));
-		delete.setEnabled(service.isAdmin());
+		delete.setEnabled(service.hasRole("ADMIN"));
 		addButton.addClickListener(event->setScheme(new Scheme()));
 		ButtonUtil.applySaveStyle(save);
 		ButtonUtil.applyDeleteStyle(delete);

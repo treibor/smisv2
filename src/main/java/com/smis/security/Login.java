@@ -327,7 +327,7 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		if (authenticatedUser.get().isPresent()) {
 			// Already logged in
 			// loginOverlay.setOpened(false);
-			event.forwardTo("");
+			event.forwardTo(HomeView.class);
 		}
 
 		// loginOverlay.setError(event.getLocation().getQueryParameters().getParameters().containsKey("error"));

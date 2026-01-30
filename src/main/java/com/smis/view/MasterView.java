@@ -21,7 +21,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 
 @PageTitle("Master Data")
-@Route(value="mlamaster", layout=MainLayout.class)
+@Route(value="master", layout=MainLayout.class)
 @RolesAllowed({"ADMIN","SUPER"})
 
 public class MasterView extends VerticalLayout{

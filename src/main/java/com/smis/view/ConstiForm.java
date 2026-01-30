@@ -56,7 +56,7 @@ public class ConstiForm extends FormLayout{
 		ButtonUtil.applyDeleteStyle(delete);
 		ButtonUtil.applyNewStyle(addButton);
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, consti)));
-		delete.setEnabled(service.isAdmin());
+		delete.setEnabled(service.hasRole("ADMIN"));
 		addButton.addClickListener(event->setConstituency(new Constituency()));
 		return new HorizontalLayout(save, delete, addButton);
 	}

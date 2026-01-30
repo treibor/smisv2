@@ -46,8 +46,8 @@ import com.vaadin.flow.server.StreamResource;
 import jakarta.annotation.security.RolesAllowed;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 
-@PageTitle("MLA Schemes")
-@Route(value = "mlaschemes", layout = MainLayout.class)
+@PageTitle("Inbox")
+@Route(value = "inbox", layout = MainLayout.class)
 @RolesAllowed({ "USER", "SUPER", "ADMIN" })
 //@CssImport(value = "../components/vaadin-grid.css", themeFor = "vaadin-grid")
 public class WorkView extends VerticalLayout {
@@ -68,18 +68,20 @@ public class WorkView extends VerticalLayout {
 	Button expButton = new Button("Export");
 	// Checkbox displayFilter= new Checkbox("Show More Filters");
 	WorkForm workform;
-	boolean isAdmin;
-	boolean isUser;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
+	boolean isUser;
+	boolean isAdmin;
+	boolean isSuper;
+	private Users loggedUser;
 	public WorkView(Dbservice service, Audit audit) {
 		this.service = service;
 		this.audit=audit;
 		setSizeFull();
-		isAdmin = service.isAdmin();
-		isUser = service.isUser();
-		// displayFilter.addValueChangeListener(e-> displayFilters());
+		this.loggedUser=service.getLoggedUser();
+		isAdmin = service.hasRole("ADMIN");
+		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
+		isUser  = service.hasRole("USER");
 		configureGrid();
 		//configureGridHistory();
 		configureForm();
@@ -89,7 +91,7 @@ public class WorkView extends VerticalLayout {
 
 	}
 
-	public boolean checkAuthority(ProcessFlow pf) {
+	public boolean checkAuthorityx(ProcessFlow pf) {
 		Users user = service.getLoggedUser();
 		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
 		if (pfu == null) {
@@ -344,7 +346,7 @@ public class WorkView extends VerticalLayout {
 		Button addButton = new Button("New Work");
 		addButton.setIcon(new Icon(VaadinIcon.PLUS_CIRCLE_O));
 		addButton.addClickListener(e -> addWork());
-		addButton.setVisible(checkAuthority(service.getProcessFlowByOrder(1)));
+		addButton.setVisible(service.hasAuthorityForStep(loggedUser, 1));
 		Button testButton = new Button("Generate Test Data");
 
 		testButton.addClickListener(e -> generateTestData());
@@ -544,21 +546,21 @@ public class WorkView extends VerticalLayout {
 				closeAllAccordion();
 			}
 
-			if (!checkAuthority(service.getProcessFlowByOrder(1))) {
-				workform.workaccordion.setVisible(false);
-			}
-			if (!checkAuthority(service.getProcessFlowByOrder(2))) {
-				workform.installaccordion.setVisible(false);
-			}
-			if (!checkAuthority(service.getProcessFlowByOrder(3))) {
-				workform.roaccordion.setVisible(false);
-			}
-			if (!checkAuthority(service.getProcessFlowByOrder(4))) {
-				workform.ucaccordion.setVisible(false);
-			}
-			if (!checkAuthority(service.getProcessFlowByOrder(5))) {
-				workform.complaccordion.setVisible(false);
-			}
+			workform.workaccordion.setVisible(
+			        service.hasAuthorityForStep(loggedUser, 1)
+			);
+			workform.installaccordion.setVisible(
+			        service.hasAuthorityForStep(loggedUser, 2)
+			);
+			workform.roaccordion.setVisible(
+			        service.hasAuthorityForStep(loggedUser, 3)
+			);
+			workform.ucaccordion.setVisible(
+			        service.hasAuthorityForStep(loggedUser, 4)
+			);
+			workform.complaccordion.setVisible(
+			        service.hasAuthorityForStep(loggedUser, 5)
+			);
 		} catch (ArithmeticException aE) {
 
 		} catch (Exception e) {
@@ -646,15 +648,10 @@ public class WorkView extends VerticalLayout {
 					closeAllAccordion();
 					enableFields();
 				}
-				if(!checkAuthority(service.getProcessFlowByOrder(1))) {
-					workform.workaccordion.setVisible(false);
-				}
-				if(!checkAuthority(service.getProcessFlowByOrder(2))) {
-					workform.installaccordion.setVisible(false);
-				}
-				if(!checkAuthority(service.getProcessFlowByOrder(4))) {
-					workform.ucaccordion.setVisible(false);
-				}
+				workform.workaccordion.setVisible(service.hasAuthorityForStep(1));
+				workform.installaccordion.setVisible(service.hasAuthorityForStep(2));
+				workform.ucaccordion.setVisible(service.hasAuthorityForStep(4));
+				
 			}
 		} catch (ArithmeticException aE) {
 

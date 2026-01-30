@@ -90,8 +90,7 @@ public class UsersView extends HorizontalLayout {
 			form.setVisible(true);
 			form.checkboxGroup.clear();
 			form.checkboxGroup.select(service.fetchRolesForSelectedUser(user));
-			// ProcessFlowUser processFlow = null;
-			//form.block.setVisible(false);
+			
 			if (service.getProcessFlowUser(user).size() > 0) {
 				form.refreshpfugrid(user);
 				form.refreshblockgrid(user);

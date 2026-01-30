@@ -1,11 +1,10 @@
 package com.smis.view;
 
-import java.time.Month;
-import java.time.Year;
-import java.time.YearMonth;
+import java.util.List;
 
 import com.smis.dbservice.DashboardService;
 import com.smis.dbservice.Dbservice;
+import com.smis.entity.Scheme;
 import com.storedobject.chart.BarChart;
 import com.storedobject.chart.CategoryData;
 import com.storedobject.chart.Data;
@@ -20,15 +19,11 @@ import com.storedobject.chart.XAxis;
 import com.storedobject.chart.YAxis;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
-import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
@@ -176,15 +171,11 @@ public class HomeView extends VerticalLayout {
     	SOChart soChart2 = new SOChart();
     	CategoryData labels = new CategoryData();
     	Data data = new Data();
-        //soChart.setSizeFull();
-        //soChart2.setSizeFull();
-        int i=service.getAllSchemes().size();
-        for(int index=0; index<i; index++) {
-        	
-        	labels.add(service.getAllSchemesWIthNotInUse().get(index).getSchemeName());
-        	//service.getWorkCount(null)
-        	data.add(service.getWorkCount(service.getAllSchemes().get(index)));
-        }
+    	List<Scheme> schemes = service.getAllSchemesWIthNotInUse(); // or getAllSchemes()
+    	for (Scheme sc : schemes) {
+    	    labels.add(sc.getSchemeName());
+    	    data.add(service.getWorkCount(sc));
+    	}
         BarChart bc = new BarChart(labels, data);
         bc.setName("Works");
         RectangularCoordinate rc;

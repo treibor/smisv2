@@ -59,6 +59,7 @@ public class MainLayout extends AppLayout {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	Anchor anchor = new Anchor("", "SMIS 2.0");
 	Dbservice service;
 	@Autowired
 	SecurityService securityService;
@@ -79,19 +80,17 @@ public class MainLayout extends AppLayout {
 	ComboBox<District> district = new ComboBox<>("District");
 	final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 	ComboBox<String> usertype = new ComboBox<>("Role");
-	private Users user;
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
-	// private boolean isPasswordExpired;
-	Anchor anchor = new Anchor("", "SMIS 2.0");
-
+	private Users loggedUser;
 	public MainLayout(Dbservice dbservice) {
 		this.service = dbservice;
+		this.loggedUser=service.getLoggedUser();
 		usertype.setItems("ADMIN", "USER");
-		isAdmin = service.isAdmin();
-		isSuper = service.isSuperAdmin();
-		isUser = service.isUser();
+		isAdmin = service.hasRole("ADMIN");
+		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
+		isUser  = service.hasRole("USER");
 		createHeader();
 		createDrawer();
 		checkPasswordExpiry();
@@ -99,10 +98,10 @@ public class MainLayout extends AppLayout {
 
 		// setPrimarySection(Section.DRAWER);
 	}
-
+	
 	private void checkPasswordExpiry() {
-		user = service.getLoggedUser();
-		LocalDateTime expiryDate = user.getPwdChangedDate();
+		
+		LocalDateTime expiryDate = loggedUser.getPwdChangedDate();
 		LocalDateTime expiryDatePlus180Days = expiryDate.plus(180, ChronoUnit.DAYS);
 		LocalDateTime today = LocalDateTime.now();
 		boolean isExpiryDateValid = expiryDatePlus180Days.isAfter(today);
@@ -115,18 +114,10 @@ public class MainLayout extends AppLayout {
 		district.setItems(service.getAllDistricts(state.getValue()));
 	}
 
-	public boolean checkAuthority(ProcessFlow pf) {
-		Users user = service.getLoggedUser();
-		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
-		if (pfu == null) {
-			return false;
-		} else {
-			return true;
-		}
-	}
+	
 	private Component createDrawerUserInfo() {
 
-	    String username = service.getLoggedUser().getProfileName();
+	    String username = loggedUser.getProfileName();
 	    String roles = currentRolesText(); // the method you already fixed
 	    Span name = new Span(username);
 	    name.getStyle()
@@ -190,7 +181,8 @@ public class MainLayout extends AppLayout {
 
 	    master.setVisible(isAdmin);
 	    distmaster.setVisible(isSuper);
-	    releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
+	    //releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
+	    releaseorder.setVisible(service.hasAuthorityForStep(loggedUser, 3));
 	    audit.setVisible(isAdmin);
 	    users.setVisible(isAdmin);
 
@@ -244,7 +236,7 @@ public class MainLayout extends AppLayout {
 	}
 	private void createHeader() {
 
-	    Avatar avatarImage = new Avatar(service.getloggeduser());
+	    Avatar avatarImage = new Avatar(loggedUser.getProfileName());
 	    avatarImage.setColorIndex(2);
 
 	    MenuBar menuBar = new MenuBar();
@@ -254,7 +246,7 @@ public class MainLayout extends AppLayout {
 	    SubMenu subMenu = item.getSubMenu();
 
 	    // --- User info (non-clickable) ---
-	    String username = service.getLoggedUser().getProfileName();
+	    String username = loggedUser.getProfileName();
 	    String role = currentRolesText();
 	    Span userNameSpan = new Span(username);
 	    userNameSpan.getStyle().set("font-weight", "600");
@@ -287,8 +279,8 @@ public class MainLayout extends AppLayout {
 	            e -> securityService.logout());
 
 	    H3 logo = new H3("SMIS 2.0  || " +
-	            service.getDistrict().getDistrictName().toUpperCase());
-
+	            //service.getDistrict().getDistrictName().toUpperCase());
+	            loggedUser.getDistrict().getDistrictName());
 	    HorizontalLayout header =
 	            new HorizontalLayout(new DrawerToggle(), logo, menuBar);
 
@@ -433,8 +425,8 @@ public class MainLayout extends AppLayout {
 		}
 		if (newpwd.getValue().trim().equals(confirmpwd.getValue().trim())) {
 			String pwd = oldpwd.getValue();
-			if (passwordEncoder.matches(pwd, service.getLoggedUser().getPassword())) {
-				user = service.getLoggedUser();
+			if (passwordEncoder.matches(pwd, loggedUser.getPassword())) {
+				Users user = loggedUser;
 				user.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
 				user.setPwdChangedDate(LocalDateTime.now());
 				service.saveUser(user);
@@ -491,8 +483,8 @@ public class MainLayout extends AppLayout {
 			usertype.setVisible(true);
 			// state.setEnabled(true);
 		} else if (isAdmin) {
-			state.setValue(service.getLoggedUser().getDistrict().getState());
-			district.setValue(service.getLoggedUser().getDistrict());
+			state.setValue(loggedUser.getDistrict().getState());
+			district.setValue(loggedUser.getDistrict());
 			usertype.setValue("USER");
 			usertype.setEnabled(false);
 			usertype.setVisible(false);
@@ -589,7 +581,7 @@ public class MainLayout extends AppLayout {
 				users.setUserName(userName.getValue());
 				users.setProfileName(profileName.getValue());
 				users.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-				users.setEnteredBy(service.getLoggedUser());
+				users.setEnteredBy(loggedUser);
 				users.setEnteredOn(LocalDateTime.now());
 				users.setPwdChangedDate(LocalDateTime.now());
 				users.setEnabled(true);
@@ -597,7 +589,7 @@ public class MainLayout extends AppLayout {
 				service.saveUser(users);
 				role.setUser(users);
 				role.setRoleName(usertype.getValue().toString());
-				role.setAssignedBy(service.getLoggedUser());
+				role.setAssignedBy(loggedUser);
 				service.saveRole(role);
 				clearUserFields();
 				Notification.show("User Created Successfully", 3000, Position.TOP_CENTER)

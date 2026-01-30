@@ -101,7 +101,9 @@ public class PrintView extends HorizontalLayout {
 	private AtomicReference<byte[]> uploadedPdf1;
 	//MemoryBuffer buffer = new MemoryBuffer();
 	//Upload upload1 = new Upload(buffer);
+	boolean isUser;
 	boolean isAdmin;
+	boolean isSuper;
 	VerticalLayout vlayout = new VerticalLayout();
 	Dialog dialog;
 	VaadinCKEditor inlineEditor = new VaadinCKEditorBuilder().with(builder -> {
@@ -116,29 +118,23 @@ public class PrintView extends HorizontalLayout {
 		populateAllFields();
 		printButton.setEnabled(false);
 		uploadButton.setEnabled(false);
-		isAdmin = service.isAdmin();
+		isAdmin = service.hasRole("ADMIN");
+		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
+		isUser  = service.hasRole("USER");
 		HorizontalLayout mainLayout = new HorizontalLayout(getLeftLayout(), configureSideLayout());
 		mainLayout.setSizeFull();
-		if (!checkAuthority(service.getProcessFlowByOrder(3))) {
+		Users u = service.getLoggedUser();
+		boolean allowed = (u != null) && service.hasAuthorityForStep(u, 3);
 
-			add(new H1("  You Are Not Authorised To View this Page"));
-			// setVisible(false);
+		if (!allowed) {
+		    add(new H1("You Are Not Authorised To View this Page"));
 		} else {
-			add(mainLayout);
+		    add(mainLayout);
 		}
-		// System.out.println(checkAuthority(service.getProcessFlowByOrder(3)));
 		setSizeFull();
 	}
 
-	public boolean checkAuthority(ProcessFlow pf) {
-		Users user = service.getLoggedUser();
-		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
-		if (pfu == null) {
-			return false;
-		} else {
-			return true;
-		}
-	}
+	
 
 	public Component getLeftLayout() {
 		VerticalLayout vl = new VerticalLayout();

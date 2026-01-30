@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 
 @PageTitle("States || Districts")
-@Route(value="master", layout=MainLayout.class)
+@Route(value="masters", layout=MainLayout.class)
 @RolesAllowed("SUPER")
 public class SuperMasterView extends VerticalLayout {
 	

@@ -41,7 +41,7 @@ import com.vaadin.flow.server.StreamResource;
 import jakarta.annotation.security.RolesAllowed;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 
-@PageTitle("MLA Schemes")
+@PageTitle("History")
 @Route(value = "workhistory", layout = MainLayout.class)
 @RolesAllowed({ "USER", "SUPER", "ADMIN" })
 //@CssImport(value = "../components/vaadin-grid.css", themeFor = "vaadin-grid")
@@ -63,17 +63,18 @@ public class WorkViewHistory extends VerticalLayout {
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	WorkForm workform;
-	boolean isAdmin;
 	boolean isUser;
+	boolean isAdmin;
+	boolean isSuper;
 	//@Autowired
 	//private AuditTrail audit;
 
 	public WorkViewHistory(Dbservice service) {
 		this.service = service;
 		setSizeFull();
-		isAdmin = service.isAdmin();
-		isUser = service.isUser();
-		// displayFilter.addValueChangeListener(e-> displayFilters());
+		isAdmin = service.hasRole("ADMIN");
+		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
+		isUser  = service.hasRole("USER");
 		
 		configureGridHistory();
 		add(getToolbar(), getContent());

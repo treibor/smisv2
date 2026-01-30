@@ -40,7 +40,7 @@ public class BlockForm extends FormLayout{
 	public BlockForm(Dbservice service) {
 		this.service=service;
 		binder.bindInstanceFields(this);
-		isAdmin=service.isAdmin();
+		isAdmin = service.hasRole("ADMIN");
 		
 		blockName.setHelperText("Eg: Mawlai or Shillong Municipal Board");
 		blockDevelopmentOfficer.setHelperText("Eg: Block Development Officer");

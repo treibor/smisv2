@@ -10,7 +10,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.smis.entity.AuditTrail;
@@ -18,7 +20,6 @@ import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
 import com.smis.entity.District;
-import com.smis.entity.Impldistrict;
 import com.smis.entity.Installment;
 import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
@@ -113,6 +114,39 @@ public class Dbservice implements Serializable{
 		this.suserrepo=suserrepo;
 		this.reportrepo=reportrepo;
 	}
+	
+	public boolean hasRole(String role) {
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    if (auth == null || auth.getAuthorities() == null) return false;
+
+	    String roleName = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
+	    return auth.getAuthorities().stream()
+	            .map(GrantedAuthority::getAuthority)
+	            .anyMatch(roleName::equals);
+	}
+	
+	public boolean hasAuthorityForStep(int stepOrder) {
+	    return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(
+	            getLoggedUser(), stepOrder
+	    );
+	}
+	public Users getLoggedUser() {
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    if (auth == null || !auth.isAuthenticated()) {
+	        throw new IllegalStateException("No authenticated user");
+	    }
+
+	    String username = auth.getName();
+	    Users user = urepo.findByUserName(username);
+
+	    if (user == null) {
+	        throw new UsernameNotFoundException("User not found: " + username);
+	    }
+
+	    return user;
+	}
+	//_________________________________________________
 	public void updateAudit(AuditTrail entity) {
 		auditrepo.save(entity);
 	}
@@ -139,40 +173,24 @@ public class Dbservice implements Serializable{
 		return rolerepo.findByUser(username);
 	}
 	public List<String> fetchRolesForSelectedUser(Users user) {
-	    // Use your service to fetch the roles of the logged-in user
-	    //List<UsersRoles> userRoles = rolerepo.findByUser(getLoggedUser());
-
-	    // Map the UsersRoles objects to a list of role names
+	   	    // Map the UsersRoles objects to a list of role names
 	    return getRolesByUser(user).stream()
 	                    .map(UsersRoles::getRoleName)
 	                    .collect(Collectors.toList());
 	}
 	
 	public boolean isUser() {
-	    //Users loggedUser = getLoggedUser(); // Retrieve the logged-in user
-	    
-	    return getRoles().stream()
-	            .anyMatch(role -> role.getRoleName().equalsIgnoreCase("Admin")
-	                    || role.getRoleName().equalsIgnoreCase("SUPER")
-	                    || role.getRoleName().equalsIgnoreCase("USER"));
+		return hasRole("USER");
 	}
 
-	
 	public boolean isAdmin() {
-		//Users loggedUser = getLoggedUser(); // Retrieve the logged-in user
-	    return getRoles().stream()
-	            .anyMatch(role -> role.getRoleName().equalsIgnoreCase("Admin")
-	                    || role.getRoleName().equalsIgnoreCase("SUPER"));
+		return hasRole("ADMIN");
 	}
 
-	public boolean isSuperAdmin() {
-		//Users loggedUser = getLoggedUser(); // Retrieve the logged-in user
-		return getRoles().stream()
-	            .anyMatch(role -> 
-	                    role.getRoleName().equalsIgnoreCase("SUPER")
-	                   );
+	public boolean isSuperAdmin() { 
+		return hasRole("SUPER");
 	}
-
+	 
 	// Users
 	public Users findUser(String username) {
 		return urepo.findByUserName(username);
@@ -180,7 +198,7 @@ public class Dbservice implements Serializable{
 	public List<Users> findUsers() {
 		if(isSuperAdmin()) {
 			return urepo.findAll();
-		}else if(isAdmin()){
+		}else if(hasRole("ADMIN")){
 			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
 			
 		}else {
@@ -190,7 +208,13 @@ public class Dbservice implements Serializable{
 	public List<Users> findUsersByDistrictAndUserNameNot(District district, String username) {
 		return urepo.findByDistrictAndUserNameNot(district, username);
 	}
-	public Users getLoggedUser() {
+
+	/*
+	 * public Users getLoggedUser() { String username = getloggeduser(); Users user
+	 * = urepo.findByUserName(username); if (user == null) {
+	 * securityService.logout(); } return user; }
+	 */
+	public Users getLoggedUserold() {//old method replaced by above
 		Users loggeduser=urepo.findByUserName(getloggeduser());
 		if(loggeduser!=null) {
 			return urepo.findByUserName(getloggeduser());
@@ -572,10 +596,9 @@ public class Dbservice implements Serializable{
 	public List<Scheme> getAllSchemes() {
 		if (isSuperAdmin()) {
 			return srepo.findAll();
-		} else if (isAdmin()){
+		} else if (hasRole("ADMIN")) {
 			return srepo.findByDistrictAndInUse(getDistrict(), true);
-			//return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
-		}else {
+		} else {
 			return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
 		}
 
@@ -617,17 +640,16 @@ public class Dbservice implements Serializable{
 	public List<Block> getAllBlocks() {
 		if (isSuperAdmin()) {
 			return brepo.findAll();
-		}/* 
+		} 
 		else if (isAdmin()){
-			// return brepo.findByDistrictAndInUse(getDistrict(), true);
 			return brepo.findByDistrictAndInUseOrderByBlockNameAsc(getDistrict(), true);
-		}*/
+		}
 		else {
 			return brepo.findBlocksByUserAndStatus(getLoggedUser(), true);
 		}
 
 	}
-
+	
 	public List<Block> getAllBlocksWithNotInUse() {
 		if (isSuperAdmin()) {
 			return brepo.findAll();
@@ -694,8 +716,13 @@ public class Dbservice implements Serializable{
 	public void saveProcessFlowUser(ProcessFlowUser pfu) {
 		pflowuserrepo.save(pfu);
 	}
+
 	public ProcessFlowUser getProcessFlowUser(Users user, ProcessFlow pfu) {
 		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
+	}
+
+	public boolean hasAuthorityForStep(Users user, int stepOrder) {
+	    return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
 	}
 	public void deleteProcessFlowUser(ProcessFlowUser pfu) {
 		pflowuserrepo.delete(pfu);

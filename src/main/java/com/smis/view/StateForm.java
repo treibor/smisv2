@@ -49,7 +49,7 @@ public class StateForm extends FormLayout{
 		save.addClickShortcut(Key.ENTER);
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, state)));
-		delete.setEnabled(service.isAdmin());
+	
 		return new HorizontalLayout(save, delete);
 	}
 	

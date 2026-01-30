@@ -91,9 +91,9 @@ public class UsersForm extends FormLayout {
 
 	    processflow.setItems(service.getAllProcessFlow());
 	    processflow.setItemLabelGenerator(ProcessFlow::getStepName);
-	    blockc.setItems(service.getAllBlocks());
+	    blockc.setItems(service.getAllBlocksWithNotInUse());
 	    blockc.setItemLabelGenerator(Block::getBlockName);
-	    scheme.setItems(service.getAllSchemes());
+	    scheme.setItems(service.getAllSchemesWIthNotInUse());
 	    scheme.setItemLabelGenerator(Scheme::getSchemeName);
 
 	    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -120,7 +120,7 @@ public class UsersForm extends FormLayout {
 	    deletescheme.setEnabled(false);
 	    //new Icon(VaadinIcon.TRASH)
 	    checkboxGroup.setVisible(service.isSuperAdmin());
-
+	    
 	    // Process Flow Section
 	    HorizontalLayout processlayout = new HorizontalLayout(processflow, savetask, deletetask,savetaskall);
 	    processlayout.setAlignItems(FlexComponent.Alignment.BASELINE);
@@ -306,7 +306,7 @@ public class UsersForm extends FormLayout {
 	public void refreshblockgrid(Users user) {
 		blugrid.removeAllColumns();
 		//blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
-		blugrid.addColumn(block->block.getBlock().getBlockName()).setHeader("Process").setResizable(true);
+		blugrid.addColumn(block->block.getBlock().getBlockName()).setHeader("Block").setResizable(true).setSortable(true);
 		blugrid.addColumn(block->block.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<BlockUser> items = service.getBlockUser(user);
 		blugrid.setItems(items);

@@ -2,6 +2,7 @@ package com.smis.view;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.smis.audit.Audit;
@@ -112,8 +113,9 @@ public class WorkForm extends VerticalLayout {
 	public RadioButtonGroup<String> ucAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> roAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> instAction = new RadioButtonGroup<>();
-	boolean isAdmin;
 	boolean isUser;
+	boolean isAdmin;
+	boolean isSuper;
 	private AtomicReference<byte[]> uploadedPdf1 = new AtomicReference<>();
 	private AtomicReference<byte[]> uploadedPdf2 = new AtomicReference<>();
 	Upload ucUpload;
@@ -131,8 +133,9 @@ public class WorkForm extends VerticalLayout {
 		pf3=service.getProcessFlowByOrder(3);
 		pf4=service.getProcessFlowByOrder(4);
 		pf5=service.getProcessFlowByOrder(5);
-		isAdmin = service.isAdmin();
-		isUser = service.isUser();
+		isAdmin = service.hasRole("ADMIN");
+		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
+		isUser  = service.hasRole("USER");
 		add(createFinalPanel());
 
 	}
@@ -288,7 +291,7 @@ public class WorkForm extends VerticalLayout {
 		installsave.addClickShortcut(Key.ENTER);
 		installclose.addClickShortcut(Key.ESCAPE);
 		installsave.addClickListener(event -> {
-		    if (instAction.getValue()=="Forward") {
+		    if (instAction.getValue().equals("Forward")) {
 		        SaveInstallments();
 		    } else {
 		        returnInstallment();
@@ -305,8 +308,10 @@ public class WorkForm extends VerticalLayout {
 	public Component configureUcForm() {
 		ValidationUtil.applyValidation(ucRemarks);
 		vlayout1=new VerticalLayout();
-		Upload ucUpload=UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select UC Document");
-		vlayout1.add(ucUpload);
+		//Upload ucUpload=UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select UC Document");
+		this.ucUpload = UploadUtil.createPdfUpload(uploadedPdf1, "Upload Document", "Select UC Document");
+	    vlayout1.add(this.ucUpload);
+		//vlayout1.add(ucUpload);
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(ucAction, 2);
@@ -362,7 +367,7 @@ public class WorkForm extends VerticalLayout {
 		//roRemarks.setVisible(false);
 		roclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
 		rosave.addClickListener(event -> {
-		    if (roAction.getValue()=="Forward") {
+		    if (roAction.getValue().equals("Forward")) {
 		        saveRo();
 		    } else {
 		        returnRo();
@@ -735,7 +740,7 @@ public class WorkForm extends VerticalLayout {
 				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
 				return;
 			}
-			if (instLetter.getValue() == "" || instDate.getValue() == null) {
+			if (instLetter.getValue() == null || instLetter.getValue().trim().isEmpty() || instDate.getValue() == null) {
 				Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return;
 			}
@@ -842,35 +847,28 @@ public class WorkForm extends VerticalLayout {
 		}
 	    
 	}
-	private void updateWork(String text, ProcessFlow pf ) {
-		try {
-			binder.writeBean(work);
-			work.setWorkStatus(text);
-			work.setProcessflow(pf);
-			work.setUpdatedBy(service.getLoggedUser());
-			work.setUpdatedOn(LocalDateTime.now());
-			fireEvent(new SaveEvent(this, work));
-		} catch (Exception e) {
-			Notification.show("Something Went Wrong" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-		}
-
+	private void updateWork(String statusText, ProcessFlow nextPf) {
+	    try {
+	        // always refresh the entity to avoid stale transitions
+	        Work dbWork = service.getWorkById(work.getWorkId());
+	        dbWork.setWorkStatus(statusText);
+	        dbWork.setProcessflow(nextPf);
+	        dbWork.setUpdatedBy(service.getLoggedUser());
+	        dbWork.setUpdatedOn(LocalDateTime.now());
+	        fireEvent(new SaveEvent(this, dbWork));
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e)
+	            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    }
 	}
 	
 	public BigDecimal calculateReleasedInstAmount(Work work) {
-		int tablecount = service.getInstallments(work).size();
-
-		if (tablecount == 0) {
-			return BigDecimal.ZERO;
-		} else {
-			BigDecimal totalamount = BigDecimal.ZERO;
-			for (int i = 0; i < tablecount; i++) {
-				BigDecimal amount = service.getInstallments(work).get(i).getInstallmentAmount();
-				totalamount = totalamount.add(amount);
-			}
-			return totalamount;
-		}
-
+	    List<Installment> list = service.getInstallments(work);
+	    BigDecimal total = BigDecimal.ZERO;
+	    for (Installment i : list) {
+	        total = total.add(i.getInstallmentAmount());
+	    }
+	    return total;
 	}
 	
 	public static abstract class WorkFormEvent extends ComponentEvent<WorkForm> {

@@ -12,4 +12,5 @@ import com.smis.entity.Users;
 public interface ProcessFlowUserRepo extends JpaRepository<ProcessFlowUser, Long>{
 	List<ProcessFlowUser> findByUser(Users user);
 	ProcessFlowUser findByUserAndProcessFlow(Users user, ProcessFlow pf);
+	boolean existsByUserAndProcessFlow_StepOrder(Users user, int stepOrder);
 }

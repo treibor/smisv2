@@ -61,7 +61,7 @@ public class YearForm extends FormLayout{
 		save.addClickShortcut(Key.ENTER);
 		save.addClickListener(event-> validateandSave());
 		delete.addClickListener(event-> fireEvent(new DeleteEvent(this, year)));
-		delete.setEnabled(service.isAdmin());
+		delete.setEnabled(service.hasRole("Admin"));
 		addButton.addClickListener(event->setYear(new Year()));
 		return new HorizontalLayout(save, delete, addButton);
 	}
