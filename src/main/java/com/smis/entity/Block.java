@@ -2,6 +2,10 @@ package com.smis.entity;
 
 import java.io.Serializable;
 
+import com.smis.entity.master.District;
+import com.smis.entity.master.MasterBlock;
+import com.smis.entity.master.MasterConstituency;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,43 +25,54 @@ public class Block implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "block_generator")
 	@SequenceGenerator(name="block_generator", sequenceName = "block_seq", allocationSize=1)
-	private long blockId;
-	@NotEmpty
-	private String blockName;
+	private long id;
 	@NotEmpty
 	private String blockLabel;
 	@NotEmpty
-	private String blockDevelopmentOfficer;
+	private String bdoName;
+	private boolean inUse;
+	@ManyToOne
+	@JoinColumn(name="block_master_id")
+	@NotNull
+	private MasterBlock masterBlock;
 	@ManyToOne
 	@JoinColumn(name="districtId")
 	@NotNull
 	private District district;
-	private boolean inUse;
 	
+	public long getId() {
+		return id;
+	}
+	public void setId(long id) {
+		this.id = id;
+	}
 	
-	public long getBlockId() {
-		return blockId;
-	}
-	public void setBlockId(long blockId) {
-		this.blockId = blockId;
-	}
-	public String getBlockName() {
-		return blockName;
-	}
-	public void setBlockName(String blockName) {
-		this.blockName = blockName;
-	}
 	public String getBlockLabel() {
 		return blockLabel;
 	}
 	public void setBlockLabel(String blockLabel) {
 		this.blockLabel = blockLabel;
 	}
-	public String getBlockDevelopmentOfficer() {
-		return blockDevelopmentOfficer;
+	public String getBdoName() {
+		return bdoName;
 	}
-	public void setBlockDevelopmentOfficer(String blockDevelopmentOfficer) {
-		this.blockDevelopmentOfficer = blockDevelopmentOfficer;
+	public void setBdoName(String bdoName) {
+		this.bdoName = bdoName;
+	}
+	public boolean isInUse() {
+		return inUse;
+	}
+	public void setInUse(boolean inUse) {
+		this.inUse = inUse;
+	}
+	public MasterBlock getMasterBlock() {
+		return masterBlock;
+	}
+	public void setMasterBlock(MasterBlock masterBlock) {
+		this.masterBlock = masterBlock;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 	public District getDistrict() {
 		return district;
@@ -67,18 +82,6 @@ public class Block implements Serializable{
 	}
 	
 	
-	
-	public boolean isInUse() {
-		return inUse;
-	}
-	public void setInUse(boolean inUse) {
-		this.inUse = inUse;
-	}
-	@Override
-	public String toString() {
-		return "Block [blockId=" + blockId + ", blockName=" + blockName + ", blockLabel=" + blockLabel
-				+ ", blockDevelopmentOfficer=" + blockDevelopmentOfficer + ", district=" + district + "]";
-	}
 	
 	
 }

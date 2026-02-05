@@ -31,7 +31,7 @@ public class InstallmentReportNotes implements Serializable{
 	private long id;
 
 	
-	@Column(length=2000)
+	@Column(length=3000)
 	private String copyTo;
 
     @OneToMany(mappedBy = "reportNotes", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.smis.entity.District;
 import com.smis.entity.Users;
+import com.smis.entity.master.District;
 
 public interface UserRepository extends JpaRepository<Users, Long>{
 

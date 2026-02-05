@@ -74,8 +74,8 @@ public class Audit {
 				+ work.getSanctionDate().format(dateFormatter) + ", Amount-" + work.getWorkAmount() + ", Installments"
 				+ work.getNoOfInstallments() + ", Previous User-" + work.getUpdatedBy().getUserName()
 				+ ", Previous Entry Date-" + work.getUpdatedOn().format(timeFormatter) + ", Current Process-"
-				+ work.getProcessflow().getStepName() + " /" + work.getBlock().getBlockName() + " /"
-				+ work.getConstituency().getConstituencyName() + " /" + work.getScheme().getSchemeName() + " /"
+				+ work.getProcessflow().getStepName() + " /" + work.getBlock().getBlockLabel() + " /"
+				+ work.getConstituency().getConstituencyLabel() + " /" + work.getScheme().getSchemeName() + " /"
 				+ work.getYear().getYearName());
 		aservice.updateAudit(audit);
 	}

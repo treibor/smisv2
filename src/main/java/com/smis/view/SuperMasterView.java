@@ -1,10 +1,10 @@
 package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.District;
 import com.smis.entity.Impldistrict;
-import com.smis.entity.State;
 import com.smis.entity.Users;
+import com.smis.entity.master.District;
+import com.smis.entity.master.State;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;

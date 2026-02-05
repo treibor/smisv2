@@ -3,6 +3,7 @@ package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Constituency;
+import com.smis.entity.master.MasterConstituency;
 import com.smis.util.ButtonUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
@@ -12,13 +13,11 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.textfield.IntegerField;
-import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -28,23 +27,24 @@ import com.vaadin.flow.shared.Registration;
 public class ConstiForm extends FormLayout{
 	Dbservice service;
 	Binder<Constituency> binder=new BeanValidationBinder<>(Constituency.class);
-	IntegerField constituencyNo=new IntegerField("Constituency Number");
-	TextField constituencyName=new TextField("Constituency Name");
 	TextField constituencyMLA=new TextField("Constituency MLA");
 	TextField constituencyLabel=new TextField("Constituency Label");
+	ComboBox<MasterConstituency> masterConstituency = new ComboBox<>("Assembly Constituency");
 	Button save= new Button("Save");
 	Button delete= new Button("Delete");
 	Notification notify=new Notification();
 	Checkbox inUse=new Checkbox("In Use");
 	public Button addButton=new  Button("New");
 	private Constituency consti;
+	//private MasterConstituency masterConstituency;
 	public ConstiForm(Dbservice service) {
 		this.service=service;
 		binder.bindInstanceFields(this);
 		ValidationUtil.applyTextOnly(constituencyLabel);
 		ValidationUtil.applyTextOnly(constituencyMLA);
-		
-		add(new Span("* Click New Button To Add New Item"),constituencyNo, constituencyName, constituencyMLA, inUse,createButtonsLayout());
+		masterConstituency.setItems(service.getMasterConstituencies());
+		masterConstituency.setItemLabelGenerator(masterconsti-> masterconsti.getConstituencyName());
+		add(new Span("* Click New Button To Add New Item"), masterConstituency,constituencyLabel, constituencyMLA, inUse,createButtonsLayout());
 	}
 	
 	private Component createButtonsLayout() {
@@ -60,28 +60,29 @@ public class ConstiForm extends FormLayout{
 		addButton.addClickListener(event->setConstituency(new Constituency()));
 		return new HorizontalLayout(save, delete, addButton);
 	}
+
 	private void validateandSave() {
 		try {
-			if (constituencyNo.getValue()==null||constituencyNo.getValue() < 1) {
-				Notification.show("Constituency Number is Invalid. Please Check", 5000, Position.TOP_CENTER);
-			} else {
-				binder.writeBean(consti);
-				consti.setDistrict(service.getDistrict());
-				fireEvent(new SaveEvent(this, consti));
-			}
+			
+			binder.writeBean(consti);
+			consti.setDistrict(service.getDistrict());
+			fireEvent(new SaveEvent(this, consti));
+
 		} catch (ValidationException e) {
-			//notification.show("Please Enter All Required Fields",3000,Position.TOP_CENTER);
-			
-		}catch (Exception e) {
-			
+			// notification.show("Please Enter All Required
+			// Fields",3000,Position.TOP_CENTER);
+
+		} catch (Exception e) {
+
 		}
-		
+
 	}
 
 	public void setConstituency(Constituency consti) {
 		save.setEnabled(true);
 		delete.setEnabled(false);
 		this.consti=consti;
+		//masterConstituency.setValue(consti.getMasterconsti());
 		binder.readBean(consti);
 	}
 	

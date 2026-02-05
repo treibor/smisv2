@@ -94,7 +94,7 @@ public class WorkViewHistory extends VerticalLayout {
 	}
 
 	private void configureCombos() {
-		block.setItems(service.getAllBlocks());
+		block.setItems(service.getAllBlocks(true));
 		// block.setClearButtonVisible(true);
 		consti.setItems(service.getAllConstituencies());
 		scheme.setItems(service.getAllSchemes());
@@ -103,11 +103,10 @@ public class WorkViewHistory extends VerticalLayout {
 		year.setClearButtonVisible(true);
 		scheme.setClearButtonVisible(true);
 		consti.setClearButtonVisible(true);
-		block.setItemLabelGenerator(Block::getBlockName);
+		block.setItemLabelGenerator(Block::getBlockLabel);
 		year.setItemLabelGenerator(Year::getYearName);
 		scheme.setItemLabelGenerator(Scheme::getSchemeName);
-		consti.setItemLabelGenerator(constituency -> constituency.getConstituencyNo() + "-"
-				+ constituency.getConstituencyName() + "-" + constituency.getConstituencyMLA());
+		consti.setItemLabelGenerator(constituency -> constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
 		block.setPlaceholder("Block");
 		consti.setPlaceholder("Constituency");
 		year.setPlaceholder("Year");
@@ -130,12 +129,11 @@ public class WorkViewHistory extends VerticalLayout {
 				.setSortable(true);
 		gridhistory.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getBlock().getBlockName()).setAutoWidth(true).setHeader("Block/MB")
+		gridhistory.addColumn(work -> work.getBlock().getBlockLabel()).setAutoWidth(true).setHeader("Block/MB")
 				.setSortable(true).setResizable(true);
 		gridhistory.addColumn(work -> work.getScheme().getSchemeName()).setAutoWidth(true).setHeader("Scheme")
 				.setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getConstituency().getConstituencyNo() + "-"
-				+ work.getConstituency().getConstituencyName() + "-" + work.getConstituency().getConstituencyMLA())
+		gridhistory.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-" + work.getConstituency().getConstituencyMLA())
 				.setWidth("20%").setHeader("Constituency").setSortable(true).setResizable(true);
 		gridhistory.addColumn(work -> work.getYear().getYearName()).setAutoWidth(true).setHeader("Year").setSortable(true)
 				.setResizable(true);

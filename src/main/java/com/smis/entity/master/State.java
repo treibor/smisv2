@@ -1,4 +1,4 @@
-package com.smis.entity;
+package com.smis.entity.master;
 
 import java.io.Serializable;
 

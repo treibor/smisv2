@@ -3,6 +3,8 @@ package com.smis.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import com.smis.entity.master.District;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

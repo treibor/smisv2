@@ -25,7 +25,6 @@ import org.springframework.core.io.Resource;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
-import com.smis.entity.District;
 import com.smis.entity.Installment;
 import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
@@ -36,6 +35,7 @@ import com.smis.entity.Scheme;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.entity.master.District;
 import com.smis.util.NotificationUtil;
 import com.smis.util.UploadUtil;
 import com.vaadin.flow.component.Component;
@@ -74,7 +74,7 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 @PageTitle("MLA Release Order")
-@Route(value = "releaseordermla", layout = MainLayout.class)
+@Route(value = "releaseorder", layout = MainLayout.class)
 @RolesAllowed({ "USER", "SUPER", "ADMIN" })
 public class PrintView extends HorizontalLayout {
 	// Binder <Work> binder=new BeanValidationBinder<>(Work.class);
@@ -299,6 +299,7 @@ public class PrintView extends HorizontalLayout {
 	public Component configureBottomLayout() {
 		HorizontalLayout bLayout = new HorizontalLayout(inlineEditor);
 		inlineEditor.setSizeFull();
+		
 		bLayout.setWidthFull();
 		bLayout.setHeight("40%");
 		return bLayout;
@@ -310,7 +311,9 @@ public class PrintView extends HorizontalLayout {
 		int installno = instNo.getValue();
 
 		if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
-			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER);
+			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}else if(inlineEditor.getValue().length()>2900) {
+			Notification.show("'Copy To' Data has exceeded Permitted Limit", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);;
 		} else {
 			Set<Installment> installmentset = grid.getSelectedItems();
 			List<Installment> installments = new ArrayList<>(installmentset);
@@ -455,14 +458,14 @@ public class PrintView extends HorizontalLayout {
 		year.setItemLabelGenerator(year -> year.getYearName());
 		scheme.setItems(service.getAllSchemes());
 		scheme.setItemLabelGenerator(scheme -> scheme.getSchemeName());
-		block.setItems(service.getAllBlocks());
-		block.setItemLabelGenerator(block -> block.getBlockName());
+		block.setItems(service.getAllBlocks(false));
+		block.setItemLabelGenerator(block -> block.getBlockLabel());
 		constituency.setItems(service.getAllConstituencies());
 		// constituency.setItemLabelGenerator(constituency->constituency.getConstituencyNo()+"
 		// - "+constituency.getConstituencyName()+" -
 		// "+constituency.getConstituencyMLA());
 		constituency.setItemLabelGenerator(
-				constituency -> constituency.getConstituencyName() + " - " + constituency.getConstituencyMLA());
+				constituency -> constituency.getConstituencyLabel() + " - " + constituency.getConstituencyMLA());
 	}
 
 	public void configureGrid() {
@@ -531,7 +534,7 @@ public class PrintView extends HorizontalLayout {
 			total = total.add(installment.getInstallmentAmount());
 		}
 		String mla = work.getConstituency().getConstituencyMLA();
-		String consti = work.getConstituency().getConstituencyName();
+		String consti = work.getConstituency().getConstituencyLabel();
 		String dept = work.getScheme().getSchemeDept();
 		String block = work.getBlock().getBlockLabel();
 		District district = work.getDistrict();
@@ -542,7 +545,7 @@ public class PrintView extends HorizontalLayout {
 		int schemeduration = work.getScheme().getSchemeDuration();
 		LocalDate sancDate = work.getSanctionDate();
 		LocalDate complDate = sancDate.plusMonths(schemeduration);
-		String bdo = work.getBlock().getBlockDevelopmentOfficer();
+		String bdo = work.getBlock().getBdoName();
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		// compldate.setValue(complDate);
 		// if(installs.get(0).getCopyTo().!=null) {

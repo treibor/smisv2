@@ -1,4 +1,4 @@
-package com.smis.entity;
+package com.smis.entity.master;
 
 import java.io.Serializable;
 
@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -22,6 +23,7 @@ public class District implements Serializable{
 	
 	@NotEmpty
 	private String districtName;
+	@Min(value = 1, message = "District Code must be at least 1")
 	private long districtCode;
 	@NotEmpty
 	private String districtHq;

@@ -12,12 +12,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.District;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
-import com.smis.entity.State;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
+import com.smis.entity.master.District;
+import com.smis.entity.master.State;
 import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
 import com.vaadin.flow.component.Component;

@@ -2,6 +2,8 @@ package com.smis.entity;
 
 import java.io.Serializable;
 
+import com.smis.entity.master.District;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +19,7 @@ public class Year implements Serializable{
 	 private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "year_generator")
-	@SequenceGenerator(name="year_generator", initialValue = 1, sequenceName = "year_sequence", allocationSize = 1)
+	@SequenceGenerator(name="year_master_generator", initialValue = 1, sequenceName = "yearmaster_sequence", allocationSize = 1)
 	private long yearId;
 	@NotEmpty(message = "Year is required")
 	private String yearName;

@@ -91,8 +91,8 @@ public class UsersForm extends FormLayout {
 
 	    processflow.setItems(service.getAllProcessFlow());
 	    processflow.setItemLabelGenerator(ProcessFlow::getStepName);
-	    blockc.setItems(service.getAllBlocksWithNotInUse());
-	    blockc.setItemLabelGenerator(Block::getBlockName);
+	    blockc.setItems(service.getAllBlocks(false));
+	    blockc.setItemLabelGenerator(Block::getBlockLabel);
 	    scheme.setItems(service.getAllSchemesWIthNotInUse());
 	    scheme.setItemLabelGenerator(Scheme::getSchemeName);
 
@@ -274,7 +274,7 @@ public class UsersForm extends FormLayout {
 		refreshblockgrid(user);
 	}
 	private void addAllBlocks() {
-	    List<Block> allBlocks = service.getAllBlocks(); // Fetch all Block entries from DB
+	    List<Block> allBlocks = service.getAllBlocks(false); // Fetch all Block entries from DB
 
 	    if (allBlocks.isEmpty()) {
 	        Notification.show("No blocks found").addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -306,7 +306,7 @@ public class UsersForm extends FormLayout {
 	public void refreshblockgrid(Users user) {
 		blugrid.removeAllColumns();
 		//blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
-		blugrid.addColumn(block->block.getBlock().getBlockName()).setHeader("Block").setResizable(true).setSortable(true);
+		blugrid.addColumn(block->block.getBlock().getBlockLabel()).setHeader("Block").setResizable(true).setSortable(true);
 		blugrid.addColumn(block->block.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<BlockUser> items = service.getBlockUser(user);
 		blugrid.setItems(items);

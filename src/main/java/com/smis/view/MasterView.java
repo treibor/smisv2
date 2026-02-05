@@ -121,9 +121,11 @@ public class MasterView extends VerticalLayout{
 	private void configureGrids() {
 		constigrid.setSizeFull();
 		blockgrid.setSizeFull();
+		blockgrid.removeAllColumns();
 		yeargrid.setSizeFull();
 		schemegrid.setSizeFull();
-		constigrid.setColumns("constituencyNo", "constituencyName", "constituencyMLA", "inUse");
+		constigrid.setColumns("constituencyLabel", "constituencyMLA", "inUse");
+		constigrid.addColumn(constituency->constituency.getMasterConstituency().getConstituencyName()).setHeader("Constituency").setSortable(true);
 		constigrid.addColumn(constituency->constituency.getDistrict().getDistrictName()).setSortable(true).setVisible(isSuperAdmin);
 		constigrid.addColumn(constituency->constituency.getDistrict().getState().getStateName()).setSortable(true).setVisible(isSuperAdmin);
 		schemegrid.setColumns("schemeName", "schemeDuration",  "schemeDept", "schemeLabel");
@@ -131,12 +133,12 @@ public class MasterView extends VerticalLayout{
 		schemegrid.addColumn(scheme->scheme.isInUse()).setHeader("In Use");
 		schemegrid.addColumn(scheme->scheme.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
 		schemegrid.addColumn(scheme->scheme.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
-		blockgrid.setColumns("blockName");
-		blockgrid.addColumn(block ->block.getBlockDevelopmentOfficer()).setHeader("Office Head");
-		blockgrid.addColumn(block ->block.getBlockLabel()).setHeader("Label");
+		blockgrid.addColumn(block ->block.getMasterBlock().getBlockName()).setHeader("Block").setSortable(true);
+		blockgrid.addColumn(block ->block.getBdoName()).setHeader("Office Head");
+		blockgrid.addColumn(block ->block.getBlockLabel()).setHeader("Label").setSortable(true);
 		blockgrid.addColumn(block ->block.isInUse()).setHeader("In Use");
-		blockgrid.addColumn(block ->block.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
-		blockgrid.addColumn(block ->block.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
+		//blockgrid.addColumn(block ->block.getMasterBlock().getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		//blockgrid.addColumn(block ->block.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
 		yeargrid.setColumns("yearName", "yearLabel", "inUse");
 		yeargrid.addColumn( year -> year.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
 		yeargrid.addColumn( year -> year.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
@@ -179,7 +181,7 @@ public class MasterView extends VerticalLayout{
 	public void updateGrids() {
 		constigrid.setItems(service.getAllConstituenciesWIthNotInUse());
 		schemegrid.setItems(service.getAllSchemesWIthNotInUse());
-		blockgrid.setItems(service.getAllBlocksWithNotInUse());
+		blockgrid.setItems(service.getAllBlocks(false));
 		yeargrid.setItems(service.getAllYearsWIthNotInUse());
 	}
 	
@@ -193,7 +195,7 @@ public class MasterView extends VerticalLayout{
 
 	public void saveConstituency(ConstiForm.SaveEvent event) {
 		Constituency consti=event.getConstituency();
-		audit.saveLoginAudit("Save", "Save Constituency", consti.getConstituencyName(), consti.getConstituencyMLA());
+		audit.saveLoginAudit("Save", "Save Constituency", consti.getConstituencyLabel(), consti.getConstituencyMLA());
 		service.saveConstituency(consti);
 		updateGrids();
 		closeConstiEditor();
@@ -201,7 +203,7 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteConstituency(ConstiForm.DeleteEvent event) {
 		Constituency consti=event.getConstituency();
-		audit.saveLoginAudit("Delete", "Delete Constituency", consti.getConstituencyId()+"-"+consti.getConstituencyName(), consti.getConstituencyMLA());
+		audit.saveLoginAudit("Delete", "Delete Constituency", consti.getConstituencyLabel(), consti.getConstituencyMLA());
 		service.deleteConstituency(consti);
 		updateGrids();
 		closeConstiEditor();
@@ -314,7 +316,7 @@ public class MasterView extends VerticalLayout{
 
 	public void saveBlock(BlockForm.SaveEvent event) {
 		Block block=event.getBlock();
-		audit.saveLoginAudit("Save", "Save Block", block.getBlockId()+"-"+block.getBlockName(), block.getBlockLabel());
+		audit.saveLoginAudit("Save", "Save Block", block.getId()+"-"+block.getBlockLabel(), block.getBlockLabel());
 		service.saveBlock(block);
 		updateGrids();
 		closeBlockEditor();
@@ -322,7 +324,7 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteBlock(BlockForm.DeleteEvent event) {
 		Block block=event.getBlock();
-		audit.saveLoginAudit("Delete", "Delete Block", block.getBlockId()+"-"+block.getBlockName(), block.getBlockLabel());
+		audit.saveLoginAudit("Delete", "Delete Block", block.getId()+"-"+block.getBlockLabel(), block.getBlockLabel());
 		service.deleteBlock(block);
 		updateGrids();
 		closeBlockEditor();

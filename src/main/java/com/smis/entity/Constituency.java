@@ -2,6 +2,9 @@ package com.smis.entity;
 
 import java.io.Serializable;
 
+import com.smis.entity.master.District;
+import com.smis.entity.master.MasterConstituency;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,76 +22,80 @@ public class Constituency implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "consti_generator")
 	@SequenceGenerator(name="consti_generator", sequenceName = "consti_seq", allocationSize=1)
-	private long constituencyId;
-	private int constituencyNo;
-	
-	@NotEmpty(message = "Constituency name is required")
-	private String constituencyName;
-	
+	private long id;
+	@NotEmpty(message = "Constituency Label is required")
 	private String constituencyLabel;
 	@NotEmpty(message = "MLA name is required")
 	private String constituencyMLA;
 	@ManyToOne
+	@JoinColumn(name="constituency_master_id")
+	@NotNull
+	private MasterConstituency masterConstituency;
+	private boolean inUse;
+	@ManyToOne
 	@JoinColumn(name="districtId")
 	@NotNull
 	private District district;
-	private boolean inUse;
-	
 	public Constituency() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
-	public long getConstituencyId() {
-		return constituencyId;
+
+	public long getId() {
+		return id;
 	}
-	public void setConstituencyId(long constituencyId) {
-		this.constituencyId = constituencyId;
+
+	public void setId(long id) {
+		this.id = id;
 	}
-	public int getConstituencyNo() {
-		return constituencyNo;
-	}
-	public void setConstituencyNo(int constituencyNo) {
-		this.constituencyNo = constituencyNo;
-	}
-	public String getConstituencyName() {
-		return constituencyName;
-	}
-	public void setConstituencyName(String constituencyName) {
-		this.constituencyName = constituencyName;
-	}
+
 	public String getConstituencyLabel() {
 		return constituencyLabel;
 	}
+
 	public void setConstituencyLabel(String constituencyLabel) {
 		this.constituencyLabel = constituencyLabel;
 	}
+
 	public String getConstituencyMLA() {
 		return constituencyMLA;
 	}
+
 	public void setConstituencyMLA(String constituencyMLA) {
 		this.constituencyMLA = constituencyMLA;
 	}
+
+
+
+	public MasterConstituency getMasterConstituency() {
+		return masterConstituency;
+	}
+
+	public void setMasterConstituency(MasterConstituency masterConstituency) {
+		this.masterConstituency = masterConstituency;
+	}
+
+	public boolean isInUse() {
+		return inUse;
+	}
+
+	public void setInUse(boolean inUse) {
+		this.inUse = inUse;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
 	public District getDistrict() {
 		return district;
 	}
+
 	public void setDistrict(District district) {
 		this.district = district;
 	}
 	
-	
-	public boolean isInUse() {
-		return inUse;
-	}
-	public void setInUse(boolean inUse) {
-		this.inUse = inUse;
-	}
-	@Override
-	public String toString() {
-		return "Constituency [constituencyId=" + constituencyId + ", constituencyNo=" + constituencyNo
-				+ ", constituencyName=" + constituencyName + ", constituencyLabel=" + constituencyLabel
-				+ ", constituencyMLA=" + constituencyMLA + ", district=" + district + "]";
-	}
-	
+
 	
 	
 }

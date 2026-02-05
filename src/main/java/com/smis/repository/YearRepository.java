@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smis.entity.District;
 import com.smis.entity.Year;
+import com.smis.entity.master.District;
 
 public interface YearRepository extends JpaRepository<Year, Long>{
 

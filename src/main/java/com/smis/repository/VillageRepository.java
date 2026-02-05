@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.smis.entity.Block;
-import com.smis.entity.District;
-import com.smis.entity.Village;
+import com.smis.entity.master.District;
+import com.smis.entity.master.Village;
 
 public interface VillageRepository extends JpaRepository<Village, Long>{
 	List<Village> findByBlock(Block block);

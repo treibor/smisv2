@@ -88,14 +88,14 @@ public class ReportView extends VerticalLayout {
 	
 
 	public void initializeMlaItems() {
-		block.setItems(service.getAllBlocks());
+		block.setItems(service.getAllBlocks(false));
 		scheme.setItems(service.getAllSchemes());
 		consti.setItems(service.getAllConstituencies());
 		year.setItems(service.getAllYears());
-		block.setItemLabelGenerator(Block::getBlockName);
+		block.setItemLabelGenerator(Block::getBlockLabel);
 		scheme.setItemLabelGenerator(Scheme::getSchemeName);
 		year.setItemLabelGenerator(Year::getYearName);
-		consti.setItemLabelGenerator(consti-> consti.getConstituencyNo()+" - "+consti.getConstituencyName()+" - "+consti.getConstituencyMLA());
+		consti.setItemLabelGenerator(consti-> consti.getConstituencyLabel()+" - "+consti.getConstituencyMLA());
 		block.addValueChangeListener(e -> removePdfViewer());
 		scheme.addValueChangeListener(e -> removePdfViewer());
 		year.addValueChangeListener(e -> removePdfViewer());

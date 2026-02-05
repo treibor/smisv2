@@ -1,6 +1,8 @@
-package com.smis.entity;
+package com.smis.entity.master;
 
 import java.io.Serializable;
+
+import com.smis.entity.Block;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

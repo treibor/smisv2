@@ -89,6 +89,7 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		add(createPasswordForm());
 		//getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
 		setClassName("login-view");
+		getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
 	}
 
 	private String generateDynamicKey() {
@@ -198,7 +199,7 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		} catch (Exception e) {
 			// Handle login failure
 			//audit.saveLoginAudit("Login Failure- Authentication", username);
-			Notification.show("Authentication failed: Wrong User Name and Password")
+			Notification.show("Authentication failed: Wrong User Name or Password")
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			clearFields();
 

@@ -15,9 +15,10 @@ import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
-import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.entity.master.Village;
+import com.smis.util.ButtonUtil;
 import com.smis.util.NotificationUtil;
 import com.smis.util.UploadUtil;
 import com.smis.util.ValidationUtil;
@@ -165,12 +166,11 @@ public class WorkForm extends VerticalLayout {
 		scheme.setItems(service.getAllSchemes());
 		year.setItems(service.getAllYears());
 		constituency.setItems(service.getAllConstituencies());
-		block.setItems(service.getAllBlocks());
+		block.setItems(service.getAllBlocks(true));
 		scheme.setItemLabelGenerator(Scheme::getSchemeName);
 		year.setItemLabelGenerator(Year::getYearName);
-		constituency.setItemLabelGenerator(constituency -> constituency.getConstituencyNo() + "-"
-				+ constituency.getConstituencyName() + "-" + constituency.getConstituencyMLA());
-		block.setItemLabelGenerator(block -> block.getBlockName());
+		constituency.setItemLabelGenerator(constituency ->  constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
+		block.setItemLabelGenerator(block -> block.getBlockLabel());
 		workName.setMinLength(5);
 		workName.setMaxLength(999);
 		// Work work=new Work();
@@ -217,9 +217,11 @@ public class WorkForm extends VerticalLayout {
 	}
 	
 	private Component createButtonsLayout() {
-		
-		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
+		ButtonUtil.applySaveStyle(save);
+		ButtonUtil.applyCloseStyle(close);
+		ButtonUtil.applyDeleteStyle(delete);
+		//save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		//delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
 		save.addClickShortcut(Key.ENTER);
 		close.addClickShortcut(Key.ESCAPE);
 		save.addClickListener(event -> validatandSave());
@@ -284,6 +286,9 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	private Component createInstallButtons() {
+		ButtonUtil.applySaveStyle(installsave);
+		ButtonUtil.applyCloseStyle(installclose);
+		//ButtonUtil.applyDeleteStyle(delete);
 		installsave.setEnabled(isUser);
 		// installsave.setWidthFull();
 		// installclose.setWidthFull();
@@ -440,6 +445,9 @@ public class WorkForm extends VerticalLayout {
 		return form2;
 	}
 	private Component createUcButtons() {
+		ButtonUtil.applySaveStyle(ucsave);
+		ButtonUtil.applyCloseStyle(ucclose);
+		//ButtonUtil.applyDeleteStyle(delete);
 		ucsave.setEnabled(isUser);
 		ucsave.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 		ucsave.addClickShortcut(Key.ENTER);

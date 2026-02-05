@@ -1,9 +1,9 @@
 package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.District;
 import com.smis.entity.Impldistrict;
-import com.smis.entity.State;
+import com.smis.entity.master.District;
+import com.smis.entity.master.State;
 import com.smis.util.NotificationUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;

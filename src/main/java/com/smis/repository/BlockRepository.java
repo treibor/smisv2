@@ -7,13 +7,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.smis.entity.Block;
-import com.smis.entity.District;
 import com.smis.entity.Users;
+import com.smis.entity.master.District;
 
 public interface BlockRepository extends JpaRepository<Block, Long>{
 	
+	List<Block> findByMasterBlock_DistrictOrderByBlockLabelAsc(District district);
+	List<Block> findByMasterBlock_DistrictAndInUseOrderByBlockLabelAsc(District district, boolean inUse);
+	List<Block> findByDistrictOrderByBlockLabelAsc(District district);
+	List<Block> findByDistrictAndInUseOrderByBlockLabelAsc(District district, boolean inUse);
 	List<Block> findByDistrict(District district);
-	List<Block> findByDistrictAndInUseOrderByBlockNameAsc(District district, boolean inUse);
+	//List<Block> findByDistrictAndInUseOrderByBlockNameAsc(District district, boolean inUse);
 	
 	@Query("""
 			SELECT b

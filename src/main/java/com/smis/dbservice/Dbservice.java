@@ -19,7 +19,6 @@ import com.smis.entity.AuditTrail;
 import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
-import com.smis.entity.District;
 import com.smis.entity.Installment;
 import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
@@ -28,12 +27,15 @@ import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.SchemeUser;
-import com.smis.entity.State;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
-import com.smis.entity.Village;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.entity.master.District;
+import com.smis.entity.master.MasterBlock;
+import com.smis.entity.master.MasterConstituency;
+import com.smis.entity.master.State;
+import com.smis.entity.master.Village;
 import com.smis.repository.AuditRepository;
 import com.smis.repository.BlockRepository;
 import com.smis.repository.BlockUserRepo;
@@ -42,6 +44,8 @@ import com.smis.repository.DistrictRepository;
 import com.smis.repository.InstallmentDocRepository;
 import com.smis.repository.InstallmentReportRepository;
 import com.smis.repository.InstallmentRepository;
+import com.smis.repository.MasterBlockRepo;
+import com.smis.repository.MasterConstiRepo;
 import com.smis.repository.ProcessFlowRepo;
 import com.smis.repository.ProcessFlowUserRepo;
 import com.smis.repository.ProcessHistoryRepo;
@@ -90,10 +94,13 @@ public class Dbservice implements Serializable{
 	private final SchemeUserRepo suserrepo;
 	private final InstallmentDocRepository docrepo;
 	private final InstallmentReportRepository reportrepo;
+	private final MasterConstiRepo mconstirepo;
+	private final MasterBlockRepo mblockrepo;
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
 			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,InstallmentReportRepository reportrepo,
 			InstallmentRepository irepo,  VillageRepository vrepo, RoleRepository rolerepo, InstallmentDocRepository docrepo,
-			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo) {
+			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo,
+			MasterConstiRepo mconstirepo, MasterBlockRepo mblockrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
 		this.srepo = srepo;
@@ -113,8 +120,11 @@ public class Dbservice implements Serializable{
 		this.buserrepo=buserrepo;
 		this.suserrepo=suserrepo;
 		this.reportrepo=reportrepo;
+		this.mconstirepo=mconstirepo;
+		this.mblockrepo=mblockrepo;
 	}
-	
+	//Roles & Users
+	//___________________________________________________________________________________
 	public boolean hasRole(String role) {
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    if (auth == null || auth.getAuthorities() == null) return false;
@@ -146,7 +156,73 @@ public class Dbservice implements Serializable{
 
 	    return user;
 	}
-	//_________________________________________________
+	//________________________________________________________________________
+	
+	// Constituency______________________________________________________________
+	
+	public List<MasterConstituency> getMasterConstituencies() {
+		return mconstirepo.findByDistrict(getDistrict());
+	}
+	public List<Constituency> getAllConstituencies() {
+		if (isSuperAdmin()) {
+			return crepo.findAll();
+		} else {
+			return crepo.findByDistrictAndInUseOrderByMasterConstituency_ConstituencyNameAsc(getDistrict(), true);
+		}
+	}
+	
+	public List<Constituency> getAllConstituenciesWIthNotInUse() {
+		if (isSuperAdmin()) {
+			return crepo.findAll();
+		} else {
+			return crepo.findByDistrict(getDistrict());
+		}
+	}
+	
+	public void saveConstituency(Constituency consti) {
+		try {
+			if (consti == null) {
+
+				return;
+			}
+			crepo.save(consti);
+		} catch (Exception e) {
+			Notification.show("Unable to Save Constituency. Error:" + e, 5000, Position.TOP_CENTER);
+		}
+
+	}
+
+	public void deleteConstituency(Constituency consti) {
+		try {
+			crepo.delete(consti);
+		} catch (Exception e) {
+			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
+		}
+	}
+	
+
+	//_____________________________________________________________________________
+	public List<MasterBlock> getMasterBlocks() {
+		return mblockrepo.findByDistrict(getDistrict());
+	}
+	public List<Block> getAllBlocks(boolean inUse) {
+		if (isSuperAdmin()) {
+			return brepo.findAll();
+		} 
+		else if (isAdmin()){
+			if (inUse == true) {
+				return brepo.findByDistrictAndInUseOrderByBlockLabelAsc(getDistrict(), inUse);
+			} else {
+				return brepo.findByDistrictOrderByBlockLabelAsc(getDistrict());
+			}
+		}
+		else {
+			return brepo.findBlocksByUserAndStatus(getLoggedUser(), inUse);
+		}
+
+	}
+	//____________________________________________________________________________________
+	
 	public void updateAudit(AuditTrail entity) {
 		auditrepo.save(entity);
 	}
@@ -441,26 +517,7 @@ public class Dbservice implements Serializable{
 	}
 
 	// save & Delete Constituency
-	public void saveConstituency(Constituency consti) {
-		try {
-			if (consti == null) {
-
-				return;
-			}
-			crepo.save(consti);
-		} catch (Exception e) {
-			Notification.show("Unable to Save Constituency. Error:" + e, 5000, Position.TOP_CENTER);
-		}
-
-	}
-
-	public void deleteConstituency(Constituency consti) {
-		try {
-			crepo.delete(consti);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
-		}
-	}
+	
 
 	// save & Delete Year
 	public void saveYear(Year year) {
@@ -613,51 +670,15 @@ public class Dbservice implements Serializable{
 
 	}
 
-	public List<Constituency> getAllConstituencies() {
-		if (isSuperAdmin()) {
-			return crepo.findAll();
-		} else {
-			// return crepo.findByDistrictAndInUse(getDistrict(), true);
-			return crepo.findByDistrictAndInUseOrderByConstituencyNoAsc(getDistrict(), true);
-		}
-		// return crepo.findAll();
-	}
+	
 	public List<String> getWorkNames(){
 		return wrepo.findWorkNames();
 	}
 	public List<String> getSanctionNos(){
 		return wrepo.findSanctionNos();
 	}
-	public List<Constituency> getAllConstituenciesWIthNotInUse() {
-		if (isSuperAdmin()) {
-			return crepo.findAll();
-		} else {
-			return crepo.findByDistrict(getDistrict());
-		}
-		// return crepo.findAll();
-	}
-
-	public List<Block> getAllBlocks() {
-		if (isSuperAdmin()) {
-			return brepo.findAll();
-		} 
-		else if (isAdmin()){
-			return brepo.findByDistrictAndInUseOrderByBlockNameAsc(getDistrict(), true);
-		}
-		else {
-			return brepo.findBlocksByUserAndStatus(getLoggedUser(), true);
-		}
-
-	}
 	
-	public List<Block> getAllBlocksWithNotInUse() {
-		if (isSuperAdmin()) {
-			return brepo.findAll();
-		} else {
-			return brepo.findByDistrict(getDistrict());
-		}
-
-	}
+	
 
 	public List<District> getAllDistricts(State state) {
 		return drepo.findByState(state);

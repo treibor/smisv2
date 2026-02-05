@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.smis.entity.District;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
+import com.smis.entity.master.District;
 
 public interface SchemeRepository extends JpaRepository<Scheme, Long>{
 
