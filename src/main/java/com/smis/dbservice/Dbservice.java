@@ -19,8 +19,8 @@ import com.smis.entity.AuditTrail;
 import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
+import com.smis.entity.ConstituencyUser;
 import com.smis.entity.Installment;
-import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
@@ -34,18 +34,22 @@ import com.smis.entity.Year;
 import com.smis.entity.master.District;
 import com.smis.entity.master.MasterBlock;
 import com.smis.entity.master.MasterConstituency;
+import com.smis.entity.master.MasterScheme;
+import com.smis.entity.master.MasterYear;
 import com.smis.entity.master.State;
 import com.smis.entity.master.Village;
 import com.smis.repository.AuditRepository;
 import com.smis.repository.BlockRepository;
 import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
+import com.smis.repository.ConstituencyUserRepo;
 import com.smis.repository.DistrictRepository;
-import com.smis.repository.InstallmentDocRepository;
 import com.smis.repository.InstallmentReportRepository;
 import com.smis.repository.InstallmentRepository;
 import com.smis.repository.MasterBlockRepo;
 import com.smis.repository.MasterConstiRepo;
+import com.smis.repository.MasterSchemeRepo;
+import com.smis.repository.MasterYearRepo;
 import com.smis.repository.ProcessFlowRepo;
 import com.smis.repository.ProcessFlowUserRepo;
 import com.smis.repository.ProcessHistoryRepo;
@@ -91,16 +95,19 @@ public class Dbservice implements Serializable{
 	private final ProcessFlowUserRepo pflowuserrepo;
 	private final ProcessHistoryRepo phistoryrrepo;
 	private final BlockUserRepo buserrepo;
+	private final ConstituencyUserRepo cuserrepo;
 	private final SchemeUserRepo suserrepo;
-	private final InstallmentDocRepository docrepo;
+	//private final InstallmentDocRepository docrepo;
 	private final InstallmentReportRepository reportrepo;
 	private final MasterConstiRepo mconstirepo;
 	private final MasterBlockRepo mblockrepo;
+	private final MasterSchemeRepo mschemerepo;
+	private final MasterYearRepo myearrepo;
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
 			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,InstallmentReportRepository reportrepo,
-			InstallmentRepository irepo,  VillageRepository vrepo, RoleRepository rolerepo, InstallmentDocRepository docrepo,
+			InstallmentRepository irepo,  VillageRepository vrepo, RoleRepository rolerepo, 
 			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo,
-			MasterConstiRepo mconstirepo, MasterBlockRepo mblockrepo) {
+			MasterConstiRepo mconstirepo, MasterBlockRepo mblockrepo, MasterSchemeRepo mschemerepo,MasterYearRepo myearrepo,ConstituencyUserRepo cuserrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
 		this.srepo = srepo;
@@ -113,7 +120,7 @@ public class Dbservice implements Serializable{
 		this.strepo = strepo;
 		this.vtrepo = vrepo;
 		this.rolerepo=rolerepo;
-		this.docrepo=docrepo;
+		
 		this.pflowrepo=pflowrepo;
 		this.pflowuserrepo=pflowuserrepo;
 		this.phistoryrrepo=phistoryrrepo;
@@ -122,6 +129,9 @@ public class Dbservice implements Serializable{
 		this.reportrepo=reportrepo;
 		this.mconstirepo=mconstirepo;
 		this.mblockrepo=mblockrepo;
+		this.mschemerepo=mschemerepo;
+		this.myearrepo=myearrepo;
+		this.cuserrepo=cuserrepo;
 	}
 	//Roles & Users
 	//___________________________________________________________________________________
@@ -167,15 +177,18 @@ public class Dbservice implements Serializable{
 		if (isSuperAdmin()) {
 			return crepo.findAll();
 		} else {
-			return crepo.findByDistrictAndInUseOrderByMasterConstituency_ConstituencyNameAsc(getDistrict(), true);
+			return crepo.findConstituenciesByUserAndStatus(getLoggedUser(), true);
 		}
 	}
 	
 	public List<Constituency> getAllConstituenciesWIthNotInUse() {
 		if (isSuperAdmin()) {
 			return crepo.findAll();
-		} else {
-			return crepo.findByDistrict(getDistrict());
+		} else if (isAdmin()){
+			return crepo.findByDistrictAndInUseOrderByConstituencyLabel(getDistrict(), true);
+		}else {
+			//return crepo.findByDistrict(getDistrict());
+			return crepo.findConstituenciesByUserAndStatus(getLoggedUser(), true);
 		}
 	}
 	
@@ -221,7 +234,57 @@ public class Dbservice implements Serializable{
 		}
 
 	}
-	//____________________________________________________________________________________
+	//Schemes____________________________________________________________________________________
+	
+	public List<MasterScheme> getMasterSchemes() {
+		return mschemerepo.findAll();
+	}
+	
+	public List<Scheme> getAllSchemes() {
+		if (isSuperAdmin()) {
+			return srepo.findAll();
+		} else if (hasRole("ADMIN")) {
+			return srepo.findByDistrictAndInUse(getDistrict(), true);
+		} else {
+			return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
+		}
+
+	}
+
+	public List<Scheme> getAllSchemesWIthNotInUse() {
+		if (isSuperAdmin()) {
+			return srepo.findAll();
+		} else {
+			return srepo.findByDistrict(getDistrict());
+		}
+
+	}
+	
+	//Year______________________________________________________________________________________________
+	public List<MasterYear> getMasterYears() {
+		return myearrepo.findAll();
+	}
+	
+	public List<Year> getAllYears() {
+		if (isSuperAdmin()) {
+			return yrepo.findAll();
+		} else {
+			return yrepo.findByDistrictAndInUseOrderByYearLabelDesc(getDistrict(), true);
+		}
+
+	}
+
+	public List<Year> getAllYearsWIthNotInUse() {
+		if (isSuperAdmin()) {
+			return yrepo.findAll();
+		} else {
+			//return yrepo.findByDistrict(getDistrict());
+			return yrepo.findByDistrictOrderByYearLabelDesc(getDistrict());
+		}
+
+	}
+	
+	//_______________________________________________________________________________________________________
 	
 	public void updateAudit(AuditTrail entity) {
 		auditrepo.save(entity);
@@ -407,11 +470,7 @@ public class Dbservice implements Serializable{
 	public List<Work> getWorks() {
 		if (isSuperAdmin()) {
 			return wrepo.findAll();
-		} 
-		/*else if (isAdmin()) {
-			return wrepo.findByDistrictOrderByWorkCodeDesc(getDistrict());
-		}*/ 
-		else {
+		}else {
 			return wrepo.findWorksByUser(getLoggedUser());
 		}
     }
@@ -631,44 +690,9 @@ public class Dbservice implements Serializable{
 		}
 	}
 
-	public List<Year> getAllYears() {
-		if (isSuperAdmin()) {
-			return yrepo.findAll();
-		} else {
-			return yrepo.findByDistrictAndInUseOrderByYearNameDesc(getDistrict(), true);
-		}
+	
 
-	}
-
-	public List<Year> getAllYearsWIthNotInUse() {
-		if (isSuperAdmin()) {
-			return yrepo.findAll();
-		} else {
-			//return yrepo.findByDistrict(getDistrict());
-			return yrepo.findByDistrictOrderByYearNameDesc(getDistrict());
-		}
-
-	}
-
-	public List<Scheme> getAllSchemes() {
-		if (isSuperAdmin()) {
-			return srepo.findAll();
-		} else if (hasRole("ADMIN")) {
-			return srepo.findByDistrictAndInUse(getDistrict(), true);
-		} else {
-			return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
-		}
-
-	}
-
-	public List<Scheme> getAllSchemesWIthNotInUse() {
-		if (isSuperAdmin()) {
-			return srepo.findAll();
-		} else {
-			return srepo.findByDistrict(getDistrict());
-		}
-
-	}
+	
 
 	
 	public List<String> getWorkNames(){
@@ -760,6 +784,18 @@ public class Dbservice implements Serializable{
 	public void deleteBlockUser(BlockUser su) {
 		buserrepo.delete(su);
 	}
+	public ConstituencyUser getConstituencyUser(Users user, Constituency consti) {
+		return cuserrepo.findByUserAndConstituency(user, consti);
+	}
+	public List<ConstituencyUser> getConstituencyUser(Users user) {
+		return cuserrepo.findByUser(user);
+	}
+	public void saveConstituencyUser(ConstituencyUser bu) {
+		cuserrepo.save(bu);
+	}
+	public void deleteConstituencyUser(ConstituencyUser su) {
+		cuserrepo.delete(su);
+	}
 	public SchemeUser getSchemeUser(Users user, Scheme sch) {
 		return suserrepo.findByUserAndScheme(user, sch);
 	}
@@ -792,17 +828,6 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
-	public void saveDocuments(InstallmentDocument doc) {
-		docrepo.save(doc);
-	}
-
-	public void deleteDocuments(InstallmentDocument doc) {
-		docrepo.delete(doc);
-	}
-	public void deleteUnreferencedData() {
-		docrepo.deleteUnreferencedInstallmentDocuments();
-		reportrepo.deleteUnreferencedInstallmentReports();
-	}	
 	
 	public void saveInstallmentReport(InstallmentReportNotes ipn) {
 		reportrepo.save(ipn);

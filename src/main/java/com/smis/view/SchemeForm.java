@@ -2,6 +2,8 @@ package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Scheme;
+import com.smis.entity.master.MasterBlock;
+import com.smis.entity.master.MasterScheme;
 import com.smis.util.ButtonUtil;
 import com.smis.util.ValidationUtil;
 import com.vaadin.flow.component.Component;
@@ -10,6 +12,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
@@ -34,7 +37,8 @@ public class SchemeForm extends FormLayout{
 	Binder<Scheme> binder=new BeanValidationBinder<>(Scheme.class);
 	//Binder<Scheme> binder2=new BeanValidationBinder<>(SchemeProcess.class);
 	//IntegerField constituencyNo=new IntegerField("Scheme Number");
-	TextField schemeName=new TextField("Scheme Name");
+	ComboBox<MasterScheme> masterScheme = new ComboBox<>("Scheme");
+	//TextField schemeName=new TextField("Scheme Name");
 	TextField schemeNameLong=new TextField("Scheme Full Name");
 	TextField schemeDept=new TextField("Scheme Department");
 	//TextField schemeDeptLong=new TextField("Scheme Department");
@@ -59,9 +63,10 @@ public class SchemeForm extends FormLayout{
 		schemeReport.setStepButtonsVisible(true);
 		schemeReport.setMin(1);
 		schemeReport.setValue(1);
+		
 		ValidationUtil.applyValidation(schemeDept);
 		ValidationUtil.applyValidation(schemeLabel);
-		ValidationUtil.applyValidation(schemeName);
+		//ValidationUtil.applyValidation(schemeName);
 		ValidationUtil.applyValidation(schemeNameLong);
 		
 		//add(schemeName, schemeNameLong, schemeDept, schemeDuration,  schemeLabel, schemeReport,inUse, createButtonsLayout());
@@ -74,7 +79,9 @@ public class SchemeForm extends FormLayout{
 	
 	
 	private Component createSchemeLayout() {
-		VerticalLayout layout=new VerticalLayout(new Span("* Click New Button To Add New Item"),schemeName, schemeNameLong, schemeDept, schemeDuration,  schemeLabel, schemeReport,inUse, createButtonsLayout());
+		masterScheme.setItems(service.getMasterSchemes());
+		masterScheme.setItemLabelGenerator(masterscheme->masterscheme.getSchemeName());
+		VerticalLayout layout=new VerticalLayout(new Span("* Click New Button To Add New Item"),masterScheme,schemeLabel, schemeNameLong, schemeDept, schemeDuration,   schemeReport,inUse, createButtonsLayout());
 		layout.setSizeFull();
 		return layout;
 	}

@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import com.smis.entity.master.District;
+import com.smis.entity.master.MasterBlock;
+import com.smis.entity.master.MasterScheme;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,9 +27,8 @@ public class Scheme implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "scheme_generator")
 	@SequenceGenerator(name="scheme_generator", initialValue = 1, sequenceName = "scheme_sequence", allocationSize = 1)
-	private long schemeId;
-	@NotEmpty(message = "Scheme name is required")
-	private String schemeName;
+	private long id;
+
 	@NotEmpty(message = "Scheme full name is required")
 	private String schemeNameLong;
 	@NotEmpty(message = "Label is required")
@@ -44,19 +45,15 @@ public class Scheme implements Serializable{
 	private District district;
 	private int schemeReport;
 	private boolean inUse;
-	
-	
-	public long getSchemeId() {
-		return schemeId;
+	@ManyToOne
+	@JoinColumn(name="scheme_master_id")
+	@NotNull(message = "Please Select The Scheme")
+	private MasterScheme masterScheme;
+	public long getId() {
+		return id;
 	}
-	public void setSchemeId(long schemeId) {
-		this.schemeId = schemeId;
-	}
-	public String getSchemeName() {
-		return schemeName;
-	}
-	public void setSchemeName(String schemeName) {
-		this.schemeName = schemeName;
+	public void setId(long id) {
+		this.id = id;
 	}
 	public String getSchemeNameLong() {
 		return schemeNameLong;
@@ -94,33 +91,35 @@ public class Scheme implements Serializable{
 	public void setSchemeDuration(int schemeDuration) {
 		this.schemeDuration = schemeDuration;
 	}
-	
-	
-	public int getSchemeReport() {
-		return schemeReport;
-	}
-	public void setSchemeReport(int schemeReport) {
-		this.schemeReport = schemeReport;
-	}
 	public District getDistrict() {
 		return district;
 	}
 	public void setDistrict(District district) {
 		this.district = district;
 	}
-	
+	public int getSchemeReport() {
+		return schemeReport;
+	}
+	public void setSchemeReport(int schemeReport) {
+		this.schemeReport = schemeReport;
+	}
 	public boolean isInUse() {
 		return inUse;
 	}
 	public void setInUse(boolean inUse) {
 		this.inUse = inUse;
 	}
-	@Override
-	public String toString() {
-		return "Scheme [schemeId=" + schemeId + ", schemeName=" + schemeName + ", schemeNameLong=" + schemeNameLong
-				+ ", schemeLabel=" + schemeLabel + ", schemeAllocation=" + schemeAllocation + ", schemeDept="
-				+ schemeDept + ", schemeDeptLong=" + schemeDeptLong + ", schemeDuration=" + schemeDuration
-				+ ", district=" + district + ", schemeReport=" + schemeReport + "]";
+	public MasterScheme getMasterScheme() {
+		return masterScheme;
 	}
+	public void setMasterScheme(MasterScheme masterScheme) {
+		this.masterScheme = masterScheme;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
+	
+	
 	
 }

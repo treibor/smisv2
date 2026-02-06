@@ -3,6 +3,7 @@ package com.smis.entity;
 import java.io.Serializable;
 
 import com.smis.entity.master.District;
+import com.smis.entity.master.MasterYear;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,9 +21,7 @@ public class Year implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "year_generator")
 	@SequenceGenerator(name="year_master_generator", initialValue = 1, sequenceName = "yearmaster_sequence", allocationSize = 1)
-	private long yearId;
-	@NotEmpty(message = "Year is required")
-	private String yearName;
+	private long id;
 	@NotEmpty(message = "Year Label is required")
 	private String yearLabel;
 	@ManyToOne
@@ -30,18 +29,15 @@ public class Year implements Serializable{
 	@NotNull
 	private District district;
 	private boolean inUse;
-	
-	public long getYearId() {
-		return yearId;
+	@ManyToOne
+	@JoinColumn(name="year_master_id")
+	@NotNull
+	private MasterYear masterYear;
+	public long getId() {
+		return id;
 	}
-	public void setYearId(long yearId) {
-		this.yearId = yearId;
-	}
-	public String getYearName() {
-		return yearName;
-	}
-	public void setYearName(String yearName) {
-		this.yearName = yearName;
+	public void setId(long id) {
+		this.id = id;
 	}
 	public String getYearLabel() {
 		return yearLabel;
@@ -49,7 +45,6 @@ public class Year implements Serializable{
 	public void setYearLabel(String yearLabel) {
 		this.yearLabel = yearLabel;
 	}
-	
 	public District getDistrict() {
 		return district;
 	}
@@ -62,11 +57,16 @@ public class Year implements Serializable{
 	public void setInUse(boolean inUse) {
 		this.inUse = inUse;
 	}
-	@Override
-	public String toString() {
-		return "Year [yearId=" + yearId + ", yearName=" + yearName + ", yearLabel=" + yearLabel + ", district="
-				+ district + "]";
+	public MasterYear getMasterYear() {
+		return masterYear;
 	}
+	public void setMasterYear(MasterYear masterYear) {
+		this.masterYear = masterYear;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
 	
 	
 }

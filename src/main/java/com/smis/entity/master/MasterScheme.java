@@ -18,19 +18,19 @@ public class MasterScheme implements Serializable{
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "schememaster_generator")
 	@SequenceGenerator(name="schememaster_generator", initialValue = 1, sequenceName = "schememaster_seq", allocationSize = 1)
-	private long id;
+	private long schemeMasterId;
 	@NotEmpty(message = "Scheme code is required")
 	private String schemeCode;
 	
 	@NotEmpty(message = "Scheme name is required")
 	private String schemeName;
 
-	public long getId() {
-		return id;
+	public long getSchemeMasterId() {
+		return schemeMasterId;
 	}
 
-	public void setId(long id) {
-		this.id = id;
+	public void setSchemeMasterId(long schemeMasterId) {
+		this.schemeMasterId = schemeMasterId;
 	}
 
 	public String getSchemeCode() {
@@ -52,7 +52,7 @@ public class MasterScheme implements Serializable{
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
-	
+
 	
 	
 }

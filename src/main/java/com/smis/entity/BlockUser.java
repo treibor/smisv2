@@ -34,6 +34,7 @@ public class BlockUser implements Serializable {
     @ManyToOne
     @JoinColumn(name = "assignedBy", nullable = false)
     private Users assignedBy;
+    private String remarks;
     
 	public long getId() {
 		return Id;
@@ -73,6 +74,18 @@ public class BlockUser implements Serializable {
 
 	public void setAssignedBy(Users assignedBy) {
 		this.assignedBy = assignedBy;
+	}
+
+	public String getRemarks() {
+		return remarks;
+	}
+
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 
 	

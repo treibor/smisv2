@@ -1,16 +1,17 @@
 package com.smis.view;
 
-import java.io.ByteArrayInputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 //import com.identity.views.CheckBox;
 import com.smis.dbservice.Dbservice;
+import com.smis.dbservice.FileStorageService;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
-import com.smis.entity.InstallmentDocument;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
@@ -26,8 +27,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -36,7 +35,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 
 import jakarta.annotation.security.RolesAllowed;
 import software.xdev.vaadin.grid_exporter.GridExporter;
@@ -51,6 +49,8 @@ public class WorkViewHistory extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = 1L;
 	Dbservice service;
+	@Autowired
+	FileStorageService fileStorageService;
 	Grid<Work> grid = new Grid<>(Work.class);
 	Grid<Work> gridhistory = new Grid<>(Work.class);
 	TextField filterText = new TextField();
@@ -104,8 +104,8 @@ public class WorkViewHistory extends VerticalLayout {
 		scheme.setClearButtonVisible(true);
 		consti.setClearButtonVisible(true);
 		block.setItemLabelGenerator(Block::getBlockLabel);
-		year.setItemLabelGenerator(Year::getYearName);
-		scheme.setItemLabelGenerator(Scheme::getSchemeName);
+		year.setItemLabelGenerator(Year::getYearLabel);
+		scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
 		consti.setItemLabelGenerator(constituency -> constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
 		block.setPlaceholder("Block");
 		consti.setPlaceholder("Constituency");
@@ -131,11 +131,11 @@ public class WorkViewHistory extends VerticalLayout {
 				.setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getBlock().getBlockLabel()).setAutoWidth(true).setHeader("Block/MB")
 				.setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getScheme().getSchemeName()).setAutoWidth(true).setHeader("Scheme")
+		gridhistory.addColumn(work -> work.getScheme().getSchemeLabel()).setAutoWidth(true).setHeader("Scheme")
 				.setSortable(true).setResizable(true);
 		gridhistory.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-" + work.getConstituency().getConstituencyMLA())
 				.setWidth("20%").setHeader("Constituency").setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getYear().getYearName()).setAutoWidth(true).setHeader("Year").setSortable(true)
+		gridhistory.addColumn(work -> work.getYear().getYearLabel()).setAutoWidth(true).setHeader("Year").setSortable(true)
 				.setResizable(true);
 		gridhistory.addColumn(work -> work.getSanctionNo()).setHeader("Sanc. No").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
@@ -180,88 +180,8 @@ public class WorkViewHistory extends VerticalLayout {
 
 
 	}
-	private void showInstallmentsDialog(Work work) { 
-	    // Create a dialog
-	    Dialog dialog = new Dialog();
-	    dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
-
-	    Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
-	    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-	    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
-	    installmentGrid.addColumn(Installment::getInstallmentNo)
-	        .setHeader("Installment Number").setResizable(true);
-	    installmentGrid.addColumn(Installment::getInstallmentAmount)
-	        .setHeader("Amount Released").setResizable(true);
-	    installmentGrid.addColumn(installment -> installment.getInstallmentDate() != null
-	        ? installment.getInstallmentDate().format(dateFormatter)
-	        : "")
-	        .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getInstallmentLetter)
-	        .setHeader("Letter No.").setResizable(true);
-	    installmentGrid.addComponentColumn(installment -> {
-	        InstallmentDocument doc = installment.getReleaseOrder(); // Get the linked document
-
-	        if (doc != null && doc.getDocument() != null) {
-	            // Create a StreamResource for the PDF
-	            StreamResource resource = new StreamResource("document.pdf",
-	                () -> new ByteArrayInputStream(doc.getDocument()));
-
-	            Anchor downloadLink = new Anchor(resource, "View");
-	            downloadLink.setTarget("_blank"); // Open in a new tab
-
-	            return downloadLink;
-	        } else {
-	            return new Span(""); // Show message if no document exists
-	        }
-	    }).setHeader("Release Order").setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getUcLetter)
-	        .setHeader("UC Letter No").setResizable(true);
-	    installmentGrid.addColumn(installment -> installment.getUcDate() != null
-	        ? installment.getUcDate().format(dateFormatter) 
-	        : "")
-	        .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addComponentColumn(installment -> {
-	        InstallmentDocument doc = installment.getUcDocument(); // Get the linked document
-
-	        if (doc != null && doc.getDocument() != null) {
-	            // Create a StreamResource for the PDF
-	            StreamResource resource = new StreamResource("document.pdf",
-	                () -> new ByteArrayInputStream(doc.getDocument()));
-
-	            Anchor downloadLink = new Anchor(resource, "View");
-	            downloadLink.setTarget("_blank"); // Open in a new tab
-
-	            return downloadLink;
-	        } else {
-	            return new Span(""); // Show message if no document exists
-	        }
-	    }).setHeader("UC Documents").setAutoWidth(true);
-	    installmentGrid.addColumn(installment -> installment.getEnteredBy().getProfileName()).setHeader("Entered By").setResizable(true).setVisible(isAdmin);
-	    installmentGrid.addColumn(installment -> installment.getEnteredOn() != null? installment.getEnteredOn().format(timeFormatter): "").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
-
-	    // 🔹 Add "View Document" column
-	    
-	    Button closeButton = new Button("Close", e -> dialog.close());
-	    Button deleteButton = new Button("Delete", e ->deleteInstallment(installmentGrid.asSingleSelect().getValue()) );
-	    deleteButton.setEnabled(false);
-	    // Load Installments
-	    List<Installment> installments = service.getInstallments(work);
-	    installmentGrid.setItems(installments);
-	    installmentGrid.setAllRowsVisible(true);
-	    installmentGrid.asSingleSelect().addValueChangeListener(event -> {
-		    Installment selectedItem = event.getValue(); // Replace MyObject with your actual item type
-			    if (selectedItem != null ) {
-			        deleteButton.setEnabled(true);
-			    } else {
-			    	deleteButton.setEnabled(false);
-			    }
-			});
-	    // Close button
-	    // Add components to the dialog
-	    dialog.add(installmentGrid);
-	    dialog.getFooter().add(deleteButton,closeButton);
-	    dialog.open();
+	private void showInstallmentsDialog(Work work) {
+	   
 	}
 	public void deleteInstallment(Installment inst) {
 		

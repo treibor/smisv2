@@ -9,12 +9,15 @@ import java.util.stream.Collectors;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
+import com.smis.entity.Constituency;
+import com.smis.entity.ConstituencyUser;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.Scheme;
 import com.smis.entity.SchemeUser;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
+import com.smis.util.NotificationUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -59,10 +62,12 @@ public class UsersForm extends FormLayout {
 	public Grid<ProcessFlowUser> pfugrid=new Grid<ProcessFlowUser>();
 	public Grid<BlockUser> blugrid=new Grid<BlockUser>();
 	public Grid<SchemeUser> scgrid=new Grid<SchemeUser>();
+	public Grid<ConstituencyUser> cugrid=new Grid<ConstituencyUser>();
 	//CheckboxGroup<Scheme> schemeGroup = new CheckboxGroup<>();
 	public ComboBox<ProcessFlow> processflow=new ComboBox<ProcessFlow>("Process");
 	public ComboBox<Block> blockc=new ComboBox<Block>("Block");
 	public ComboBox<Scheme> scheme=new ComboBox<Scheme>("Scheme");
+	public ComboBox<Constituency> consti=new ComboBox<Constituency>("Constituency");
 	//ComboBox<MasterProcess> schemeprocess=new ComboBox<MasterProcess>("Assigned Task");
 	Button savetask= new Button(new Icon(VaadinIcon.PLUS));
 	Button savetaskall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
@@ -73,6 +78,10 @@ public class UsersForm extends FormLayout {
 	Button savescheme= new Button(new Icon(VaadinIcon.PLUS));
 	Button saveschemeall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
 	Button deletescheme= new Button(new Icon(VaadinIcon.MINUS_CIRCLE_O));
+	Button saveconsti= new Button(new Icon(VaadinIcon.PLUS));
+	Button saveconstiall= new Button(new Icon(VaadinIcon.PLUS_SQUARE_O));
+	Button deleteconsti= new Button(new Icon(VaadinIcon.MINUS_SQUARE_O));
+	
 	private Users user;
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	//private Impldistrict impldist;
@@ -94,8 +103,9 @@ public class UsersForm extends FormLayout {
 	    blockc.setItems(service.getAllBlocks(false));
 	    blockc.setItemLabelGenerator(Block::getBlockLabel);
 	    scheme.setItems(service.getAllSchemesWIthNotInUse());
-	    scheme.setItemLabelGenerator(Scheme::getSchemeName);
-
+	    scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
+	    consti.setItems(service.getAllConstituenciesWIthNotInUse());
+	    consti.setItemLabelGenerator(consti-> consti.getConstituencyLabel()+"-"+consti.getConstituencyMLA());
 	    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 	    save.addClickShortcut(Key.ENTER);
 	    save.addClickListener(event -> validateandSave());
@@ -109,12 +119,17 @@ public class UsersForm extends FormLayout {
 	    deletetask.addClickListener(e -> deleteProcess());
 	    deleteblock.addClickListener(e -> deleteBlockUser());
 	    deletescheme.addClickListener(e -> deleteSchemeUser());
-	    savetask.setTooltipText("Add Process");
+	    savetask.setTooltipText("Add Selected Process");
 	    savetaskall.setTooltipText("Add All Processes");
-	    saveblock.setTooltipText("Add Block");
+	    saveblock.setTooltipText("Add Selected Block");
 	    saveblockall.setTooltipText("Add All Blocks");
-	    savescheme.setTooltipText("Add Scheme");
+	    savescheme.setTooltipText("Add Selected Scheme");
 	    saveschemeall.setTooltipText("Add All Schemes");
+	    saveconsti.setTooltipText("Add Constituency");
+	    saveconstiall.setTooltipText("Add All");
+	    saveconsti.addClickListener(e->addConstituency());
+	    saveconstiall.addClickListener(e->addAllConstituencies());
+	    deleteconsti.addClickListener(e->deleteConstiUser());
 	    deletetask.setEnabled(false);
 	    deleteblock.setEnabled(false);
 	    deletescheme.setEnabled(false);
@@ -141,14 +156,21 @@ public class UsersForm extends FormLayout {
 	    VerticalLayout schemeContent = new VerticalLayout(schemelayout, scgrid);
 	    schemeContent.setSpacing(true);
 	    scgrid.setHeight("400px");
-
+	    //Consti Section
+	    HorizontalLayout constilayout = new HorizontalLayout(consti, saveconsti, deleteconsti,saveconstiall);
+	    constilayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+	    VerticalLayout constiContent = new VerticalLayout(constilayout, cugrid);
+	    constiContent.setSpacing(true);
+	    cugrid.setHeight("400px");
+	    
 	    // Accordion with sections
 	    Accordion accordion = new Accordion();
 	    //accordion.add("Roles", checkboxGroup);
 	    accordion.add("Process Flow", processContent);
 	    accordion.add("Block Assignment", blockContent);
 	    accordion.add("Scheme Assignment", schemeContent);
-
+	    accordion.add("Constituency Assignment", constiContent);
+	    
 	    // Make the accordion scrollable
 	    VerticalLayout layout = new VerticalLayout(checkboxGroup, enabled, save,accordion);
 	    layout.setSizeFull();
@@ -385,7 +407,7 @@ public class UsersForm extends FormLayout {
 	public void refreshschemegrid(Users user) {
 		scgrid.removeAllColumns();
 		//scgrid.addColumn(scheme->scheme.getId()).setHeader("No.").setResizable(true);
-		scgrid.addColumn(scheme->scheme.getScheme().getSchemeName()).setHeader("Scheme").setResizable(true);
+		scgrid.addColumn(scheme->scheme.getScheme().getSchemeLabel()).setHeader("Scheme").setResizable(true);
 		scgrid.addColumn(scheme->scheme.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
 		List<SchemeUser> items = service.getSchemeUser(user);
 		scgrid.setItems(items);
@@ -400,7 +422,96 @@ public class UsersForm extends FormLayout {
 		});
 		
 	}
+	private void deleteConstiUser() {
+		try {
+			service.deleteConstituencyUser(cugrid.asSingleSelect().getValue());
+			NotificationUtil.showSuccess("Constituency Deleted");
+		} catch (Exception e) {
+			NotificationUtil.showError("Error:" + e);
+		}
+		refreshconstigrid(user);
+	}
+	private void addConstituency() {
+		if(consti.getValue()==null) {
+			NotificationUtil.showWarning("Please Select a Constituency");
+			return;
+		}
+		try {
+			ConstituencyUser existingCU = service.getConstituencyUser(user, consti.getValue());
+			if (existingCU != null) {
+				existingCU.setAssignedDate(LocalDateTime.now());
+				existingCU.setAssignedBy(service.getLoggedUser());
+				service.saveConstituencyUser(existingCU);
 
+			} else {
+				ConstituencyUser pfu = new ConstituencyUser();
+				pfu.setUser(user);
+				pfu.setConstituency(consti.getValue());
+				pfu.setAssignedDate(LocalDateTime.now());
+				pfu.setAssignedBy(service.getLoggedUser());
+				service.saveConstituencyUser(pfu);
+			}
+			Notification.show("Constituency Assigned to User").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+			refreshconstigrid(user);
+		} catch (Exception e) {
+			NotificationUtil.showError("" + e);
+			// TODO: handle exception
+		}
+	}
+	
+	private void addAllConstituencies() {
+
+		try {
+			List<Constituency> allConsti = service.getAllConstituencies(); // Fetch all Block entries from DB
+			if (allConsti.isEmpty()) {
+			    Notification.show("No Constituency found").addThemeVariants(NotificationVariant.LUMO_ERROR);
+			    return;
+			}
+
+			for (Constituency Consti : allConsti) {
+			    ConstituencyUser existingCU = service.getConstituencyUser(user, Consti);
+
+			    if (existingCU != null) {
+			        // Update existing entry
+			        existingCU.setAssignedDate(LocalDateTime.now());
+			        existingCU.setAssignedBy(service.getLoggedUser());
+			        service.saveConstituencyUser(existingCU);
+			    } else {
+			        // Create new entry
+			        ConstituencyUser bu = new ConstituencyUser();
+			        bu.setUser(user);
+			        bu.setConstituency(Consti);
+			        bu.setAssignedDate(LocalDateTime.now());
+			        bu.setAssignedBy(service.getLoggedUser());
+			        service.saveConstituencyUser(bu);
+			    }
+			}
+
+			Notification.show("All Constituencies assigned to user").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+			refreshconstigrid(user);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public void refreshconstigrid(Users user) {
+		cugrid.removeAllColumns();
+		//blugrid.addColumn(block->block.getBlock().getBlockId()).setHeader("Order").setResizable(true);
+		cugrid.addColumn(constituency->constituency.getConstituency().getConstituencyLabel()).setHeader("Consituency").setResizable(true).setSortable(true);
+		cugrid.addColumn(block->block.getAssignedDate().format(timeFormatter)).setHeader("Updated On").setResizable(true);
+		List<ConstituencyUser> items = service.getConstituencyUser(user);
+		cugrid.setItems(items);
+		cugrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+		cugrid.asSingleSelect().addValueChangeListener(event -> {
+			ConstituencyUser selectedItem = event.getValue(); // Replace MyObject with your actual item type
+		    if (selectedItem != null) {
+		        deleteconsti.setEnabled(true);
+		    } else {
+		    	deleteconsti.setEnabled(false);
+		    }
+		});
+		//pfugrid.setVisible(!items.isEmpty());
+	}
 	
 	
 	private void validateandSave() {

@@ -75,8 +75,8 @@ public class Audit {
 				+ work.getNoOfInstallments() + ", Previous User-" + work.getUpdatedBy().getUserName()
 				+ ", Previous Entry Date-" + work.getUpdatedOn().format(timeFormatter) + ", Current Process-"
 				+ work.getProcessflow().getStepName() + " /" + work.getBlock().getBlockLabel() + " /"
-				+ work.getConstituency().getConstituencyLabel() + " /" + work.getScheme().getSchemeName() + " /"
-				+ work.getYear().getYearName());
+				+ work.getConstituency().getConstituencyLabel() + " /" + work.getScheme().getSchemeLabel() + " /"
+				+ work.getYear().getYearLabel());
 		aservice.updateAudit(audit);
 	}
 

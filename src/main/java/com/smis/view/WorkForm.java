@@ -1,5 +1,7 @@
 package com.smis.view;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -7,10 +9,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.smis.audit.Audit;
 import com.smis.dbservice.Dbservice;
+import com.smis.dbservice.FileStorageService;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
-import com.smis.entity.InstallmentDocument;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
@@ -51,16 +53,19 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.spring.annotation.UIScope;
 
 import jakarta.transaction.Transactional;
-
+@org.springframework.stereotype.Component
+@UIScope
 public class WorkForm extends VerticalLayout {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	Dbservice service;
-	//@Autowired
+	private FileStorageService fileStorageService;
+	//FileStorageService fileStorageService;
 	private Audit audit;
 	private Work work;
 	//private WorkView workview;
@@ -123,10 +128,11 @@ public class WorkForm extends VerticalLayout {
 	Upload roUpload;
 	VerticalLayout vlayout1;
 	VerticalLayout vlayout2;
-	public WorkForm(Dbservice service, Audit audit) {
+	public WorkForm(Dbservice service, Audit audit,FileStorageService fileStorageService ) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
 		this.audit=audit;
+		this.fileStorageService=fileStorageService;
 		//System.out.println("Audit"+audit);
 		binder.bindInstanceFields(this);
 		pf1=service.getProcessFlowByOrder(1);
@@ -167,8 +173,8 @@ public class WorkForm extends VerticalLayout {
 		year.setItems(service.getAllYears());
 		constituency.setItems(service.getAllConstituencies());
 		block.setItems(service.getAllBlocks(true));
-		scheme.setItemLabelGenerator(Scheme::getSchemeName);
-		year.setItemLabelGenerator(Year::getYearName);
+		scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
+		year.setItemLabelGenerator(Year::getYearLabel);
 		constituency.setItemLabelGenerator(constituency ->  constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
 		block.setItemLabelGenerator(block -> block.getBlockLabel());
 		workName.setMinLength(5);
@@ -630,80 +636,97 @@ public class WorkForm extends VerticalLayout {
 	
 
 	public void saveUc() {
-		int tableinstallments = service.getInstallments(work).size();
-		int toEnterInstallment = tableinstallments;
-		int index = tableinstallments - 1;
-		if (ucletter.getValue() == null || ucletter.equals("") || ucDate.getValue() == null
-				|| ucDate.getValue().equals(null)) {
-			Notification.show("Please Enter Letter No and Date", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if (ucDate.getValue().isBefore(service.getInstallments(work).get(index).getInstallmentDate())) {
-			Notification.show("UC Date Cannot Be Before Installment Release Date", 5000, Position.TOP_CENTER);
-		} else {
-			try {
-				work = service.getWorkById(work.getWorkId());
-				if(work.getProcessflow().getStepOrder()!=4) {
-					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-					return;
-				}
-				if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
-				    Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
-				                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-				    return;
-				}
-				
-				Users user=service.getLoggedUser();
-				InstallmentDocument instdoc=new InstallmentDocument();
-				instdoc.setDocument(uploadedPdf1.get());
-				instdoc.setUpdatedBy(user);
-				instdoc.setUpdatedOn(LocalDateTime.now());
-				service.saveDocuments(instdoc);
-				this.installment = service.getInstallments(work).get(index);
-				installment.setUcDate(ucDate.getValue());
-				installment.setUcLetter(ucletter.getValue());
-				installment.setEnteredBy(user);
-				installment.setUcDocument(instdoc);
-				//audit.saveAudit(work,installment, pf4.getStepName()+"-"+toEnterInstallment, "Entry");
-				service.saveInstallment(installment);
-				service.saveWork(work);
-				ProcessHistory ph=new ProcessHistory();
-				ph.setWork(work);
-				ph.setReversed(false);
-				ph.setUser(user);
-				ph.setEnteredOn(LocalDateTime.now());
-				ph.setRemarks(ucRemarks.getValue());
-				ph.setProcessFlow(pf4);
-				ph.setProcessName(pf4.getStepName()+"-"+toEnterInstallment);
-				service.saveProcessHistory(ph);
-				audit.saveAudit(work,installment, pf4.getStepName()+"-"+toEnterInstallment, "Entry");
-				if (work.getNoOfInstallments() == tableinstallments) {
-					ProcessHistory ph1=new ProcessHistory();
-					ph1.setWork(work);
-					ph1.setProcessFlow(pf5);
-					ph1.setProcessName("Forward");
-					ph1.setUser(user);
-					ph1.setReversed(false);
-					ph1.setEnteredOn(LocalDateTime.now());
-					ph1.setProcessName(pf5.getStepName());
-					
-					updateWork("Completed",pf5);
-					service.saveProcessHistory(ph1);
-				} else {
-					updateWork(pf2.getStepName()+"-"+ toEnterInstallment + "",pf2);
-					
-				}
-				
-				Notification.show(pf2.getStepName()+ "-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-				clearFields();
-				service.deleteUnreferencedData();
-			} catch (NullPointerException e) {
-				Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    int tableinstallments = service.getInstallments(work).size();
+	    int toEnterInstallment = tableinstallments;
+	    int index = tableinstallments - 1;
 
-			}catch (Exception e) {
-				Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    if (ucletter.getValue() == null || ucletter.getValue().trim().isEmpty() || ucDate.getValue() == null) {
+	        Notification.show("Please Enter Letter No and Date", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
 
-			}
-		}
+	    if (ucDate.getValue().isBefore(service.getInstallments(work).get(index).getInstallmentDate())) {
+	        Notification.show("UC Date Cannot Be Before Installment Release Date", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    try {
+	        work = service.getWorkById(work.getWorkId());
+
+	        if (work.getProcessflow().getStepOrder() != 4) {
+	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+
+	        if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
+	            Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        Users user = service.getLoggedUser();
+
+	        // 1) Generate unique UC filename
+	        String safeFileName = fileStorageService.generateSafeFileName("UC", "uc.pdf");
+
+	        // 2) Save UC file to filesystem
+	        try (InputStream in = new ByteArrayInputStream(uploadedPdf1.get())) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+
+	        // 3) Update installment + store UC path string
+	        this.installment = service.getInstallments(work).get(index);
+	        installment.setUcDate(ucDate.getValue());
+	        installment.setUcLetter(ucletter.getValue());
+	        installment.setEnteredBy(user);
+	        installment.setUcDocument(safeFileName);   // ✅ IMPORTANT
+	        service.saveInstallment(installment);
+
+	        // if you really need this here, keep it; otherwise can remove
+	        service.saveWork(work);
+
+	        // 4) Process history with document path
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setReversed(false);
+	        ph.setUser(user);
+	        ph.setEnteredOn(LocalDateTime.now());
+	        ph.setRemarks(ucRemarks.getValue());
+	        ph.setProcessFlow(pf4);
+	        ph.setProcessName(pf4.getStepName() + "-" + toEnterInstallment);
+	        ph.setDocument(safeFileName);              // ✅ IMPORTANT
+	        service.saveProcessHistory(ph);
+
+	        audit.saveAudit(work, installment, pf4.getStepName() + "-" + toEnterInstallment, "Entry");
+
+	        // 5) Move workflow
+	        if (work.getNoOfInstallments() == tableinstallments) {
+	            ProcessHistory ph1 = new ProcessHistory();
+	            ph1.setWork(work);
+	            ph1.setProcessFlow(pf5);
+	            ph1.setUser(user);
+	            ph1.setReversed(false);
+	            ph1.setEnteredOn(LocalDateTime.now());
+	            ph1.setProcessName(pf5.getStepName());
+
+	            updateWork("Completed", pf5);
+	            service.saveProcessHistory(ph1);
+	        } else {
+	            updateWork(pf2.getStepName() + "-" + toEnterInstallment, pf2);
+	        }
+
+	        Notification.show(pf2.getStepName() + "-" + toEnterInstallment + " Completed Successfully", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong : " + e, 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    }
 	}
 	public void returnUc() {
 		if (ucRemarks.getValue() == null|| ucRemarks.getValue().trim().isEmpty()) {
@@ -738,59 +761,83 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	public void saveRo() {
-		int tableinstallments = service.getInstallments(work).size();
-		int toEnterInstallment = tableinstallments;
-		int index = tableinstallments - 1;
-		try {
-			work = service.getWorkById(work.getWorkId());
-			if(work.getProcessflow().getStepOrder()!=3) {
-				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-				return;
-			}
-			if (instLetter.getValue() == null || instLetter.getValue().trim().isEmpty() || instDate.getValue() == null) {
-				Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-				return;
-			}
-			if (uploadedPdf2 == null || uploadedPdf2.get().length == 0) {
-				Notification.show("Please Select The Release Order To be Uploaded", 3000, Position.TOP_CENTER)
-						.addThemeVariants(NotificationVariant.LUMO_ERROR);
-				return;
-			}
-			Users user = service.getLoggedUser();
-			InstallmentDocument instdoc = new InstallmentDocument();
-			instdoc.setDocument(uploadedPdf2.get());
-			instdoc.setUpdatedBy(service.getLoggedUser());
-			instdoc.setUpdatedOn(LocalDateTime.now());
-			service.saveDocuments(instdoc);
-			this.installment = service.getInstallments(work).get(index);
-			installment.setReleaseOrder(instdoc);
-			installment.setInstallmentDate(instDate.getValue());
-			installment.setInstallmentLetter(instLetter.getValue());
-			service.saveInstallment(installment);
-			//work.setProcessflow(service.getProcessFlowByOrder(4));
-			//service.saveWork(work);
-			ProcessHistory ph = new ProcessHistory();
-			ph.setWork(work);
-			ph.setProcessFlow(pf3);
-			ph.setProcessName(pf3.getStepName()+"-" +toEnterInstallment);
-			ph.setReversed(false);
-			ph.setUser(user);
-			ph.setEnteredOn(LocalDateTime.now());
-			ph.setRemarks(roRemarks.getValue());
-			audit.saveAudit(work, installment, pf3.getStepName()+"-"+toEnterInstallment, "Entry");
-			service.saveProcessHistory(ph);
-			updateWork(pf3.getStepName() + toEnterInstallment + "", pf4);
-			Notification.show(pf3.getStepName()+"-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-			clearFields();
-			service.deleteUnreferencedData();
-		} catch (NullPointerException npe) {
-			Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-			//npe.printStackTrace();
-		}catch (Exception e) {
-			Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
-			//e.printStackTrace();
-		}
+	    int tableinstallments = service.getInstallments(work).size();
+	    int toEnterInstallment = tableinstallments;
+	    int index = tableinstallments - 1;
+
+	    try {
+	        work = service.getWorkById(work.getWorkId());
+
+	        if (work.getProcessflow().getStepOrder() != 3) {
+	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+
+	        if (instLetter.getValue() == null || instLetter.getValue().trim().isEmpty() || instDate.getValue() == null) {
+	            Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        if (uploadedPdf2 == null || uploadedPdf2.get() == null || uploadedPdf2.get().length == 0) {
+	            Notification.show("Please Select The Release Order To be Uploaded", 3000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        Users user = service.getLoggedUser();
+
+	        // 1) generate file name for RO (not UC)
+	        String safeFileName = fileStorageService.generateSafeFileName("RO", "release_order.pdf");
+
+	        // 2) save bytes to filesystem
+	        try (InputStream in = new ByteArrayInputStream(uploadedPdf2.get())) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+
+	        // 3) update installment
+	        this.installment = service.getInstallments(work).get(index);
+	        installment.setInstallmentDate(instDate.getValue());
+	        installment.setInstallmentLetter(instLetter.getValue());
+
+	        // store file key/path in installment (as your code expects)
+	        installment.setReleaseOrder(safeFileName);
+
+	        service.saveInstallment(installment);
+
+	        // 4) save process history
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setProcessFlow(pf3);
+	        ph.setProcessName(pf3.getStepName() + "-" + toEnterInstallment);
+	        ph.setReversed(false);
+	        ph.setUser(user);
+	        ph.setEnteredOn(LocalDateTime.now());
+	        ph.setRemarks(roRemarks.getValue());
+
+	        // store file key/path in history (as your code expects)
+	        ph.setDocument(safeFileName);
+
+	        audit.saveAudit(work, installment, pf3.getStepName() + "-" + toEnterInstallment, "Entry");
+	        service.saveProcessHistory(ph);
+
+	        updateWork(pf3.getStepName() + toEnterInstallment, pf4);
+
+	        Notification.show(pf3.getStepName() + "-" + toEnterInstallment + " Completed Successfully", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (NullPointerException npe) {
+	        Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        npe.printStackTrace();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong :" + e, 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    }
 	}
 	public void returnRo() {
 		if (ucRemarks.getValue() == null ||ucRemarks.getValue().trim().isEmpty()) {
@@ -818,10 +865,10 @@ public class WorkForm extends VerticalLayout {
 				ph.setRemarks(roRemarks.getValue());
 				service.saveProcessHistory(ph);
 				audit.saveAuditReturn(work, "Return To "+pf2.getStepName(), "Return");
-				Notification.show("Returned to "+pf2.getStepName()+" Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+				NotificationUtil.showSuccess("Returned to "+pf2.getStepName()+" Sucessfully");
 				clearFields();
 			} catch (Exception e) {
-				Notification.show("Something Went Wrong :" + e);
+				NotificationUtil.showError("Error :"+e);
 
 			}
 		}

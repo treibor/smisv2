@@ -19,17 +19,17 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import com.smis.dbservice.Dbservice;
+import com.smis.dbservice.FileStorageService;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
-import com.smis.entity.InstallmentDocument;
 import com.smis.entity.InstallmentReportNotes;
 import com.smis.entity.ProcessFlow;
-import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
@@ -79,6 +79,8 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 public class PrintView extends HorizontalLayout {
 	// Binder <Work> binder=new BeanValidationBinder<>(Work.class);
 	Dbservice service;
+	@Autowired
+	FileStorageService fileStorageService;
 	Grid<Installment> grid = new Grid<>(Installment.class);
 	Set<Installment> selectedPersons;
 	IntegerField instNo = new IntegerField("Installment No:");
@@ -262,20 +264,17 @@ public class PrintView extends HorizontalLayout {
 				service.saveWork(singlework);
 
 			}
-			InstallmentDocument instdoc = new InstallmentDocument();
-			instdoc.setUpdatedBy(user);
-			instdoc.setUpdatedOn(LocalDateTime.now());
-			instdoc.setDocument(uploadedPdf1.get());
-			service.saveDocuments(instdoc);
-			for (Installment installment : installments) {
-				installment.setReleaseOrder(instdoc);
-				service.saveInstallment(installment);
-			}
+			
+			// ---- rename using helper ----
+			String safeFileName = fileStorageService.generateSafeFileName(
+			        "RO",
+			        "release_order.pdf"   // replace with real upload filename if available
+			);
+
+
 			populateGrid();
 			Notification.show(" Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
 					.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-			service.deleteUnreferencedData();
-			//UploadUtil.resetUploadComponent(upload1, buffer, uploadedPdf1);
 			dialog.close();
 		} catch (NullPointerException e) {
 			Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -286,6 +285,8 @@ public class PrintView extends HorizontalLayout {
 		}
 
 	}
+	
+	
 
 	public Component configureMiddleLayout() {
 		HorizontalLayout middleLayout = new HorizontalLayout(grid);
@@ -455,9 +456,9 @@ public class PrintView extends HorizontalLayout {
 
 	private void populateAllFields() {
 		year.setItems(service.getAllYears());
-		year.setItemLabelGenerator(year -> year.getYearName());
+		year.setItemLabelGenerator(year -> year.getYearLabel());
 		scheme.setItems(service.getAllSchemes());
-		scheme.setItemLabelGenerator(scheme -> scheme.getSchemeName());
+		scheme.setItemLabelGenerator(scheme -> scheme.getSchemeLabel());
 		block.setItems(service.getAllBlocks(false));
 		block.setItemLabelGenerator(block -> block.getBlockLabel());
 		constituency.setItems(service.getAllConstituencies());

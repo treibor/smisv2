@@ -173,7 +173,7 @@ public class HomeView extends VerticalLayout {
     	Data data = new Data();
     	List<Scheme> schemes = service.getAllSchemesWIthNotInUse(); // or getAllSchemes()
     	for (Scheme sc : schemes) {
-    	    labels.add(sc.getSchemeName());
+    	    labels.add(sc.getSchemeLabel());
     	    data.add(service.getWorkCount(sc));
     	}
         BarChart bc = new BarChart(labels, data);

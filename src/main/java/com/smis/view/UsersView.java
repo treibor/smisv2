@@ -95,10 +95,12 @@ public class UsersView extends HorizontalLayout {
 				form.refreshpfugrid(user);
 				form.refreshblockgrid(user);
 				form.refreshschemegrid(user);
+				form.refreshconstigrid(user);
 			}else {
 				form.pfugrid.removeAllColumns();
 				form.blugrid.removeAllColumns();
 				form.scgrid.removeAllColumns();
+				form.cugrid.removeAllColumns();
 			}
 		}
 	}

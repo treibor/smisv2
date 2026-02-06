@@ -18,25 +18,29 @@ public class MasterYear implements Serializable {
 	private long yearId;
 	@NotEmpty(message = "Year is required")
 	private String yearName;
-
+	private String remarks;
 	public long getYearId() {
 		return yearId;
 	}
-
 	public void setYearId(long yearId) {
 		this.yearId = yearId;
 	}
-
 	public String getYearName() {
 		return yearName;
 	}
-
 	public void setYearName(String yearName) {
 		this.yearName = yearName;
 	}
-
+	public String getRemarks() {
+		return remarks;
+	}
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
-
+	
+	
+	
 }

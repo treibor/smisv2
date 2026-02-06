@@ -83,7 +83,7 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long>{
 	@Query("select  c, d, e, g, h  from Installment c join c.work d join d.year e  join d.constituency g join d.district h  where  c.installmentNo=:installment and c.work=:work")
 	Installment getInstallmentByNoAndWork( int installment,  @Param ("work") Work work);
 	
-	@Query("select  a, c, d, e, f, g from Installment a join a.work c join c.constituency d join c.scheme e join c.year f join c.block g  where  c.district=:district and (c.scheme=:scheme or :scheme is null ) and (c.year=:year or :year is null ) and (c.block=:block or :block is null ) and (c.constituency=:consti or :consti is null ) order by d.constituencyLabel, g.blockLabel, e.schemeName, f.yearName, c.workCode, a.installmentNo ASC")
+	@Query("select  a, c, d, e, f, g from Installment a join a.work c join c.constituency d join c.scheme e join c.year f join c.block g  where  c.district=:district and (c.scheme=:scheme or :scheme is null ) and (c.year=:year or :year is null ) and (c.block=:block or :block is null ) and (c.constituency=:consti or :consti is null ) order by d.constituencyLabel, g.blockLabel, e.schemeLabel, f.yearLabel, c.workCode, a.installmentNo ASC")
 	List<Installment> getReportData(@Param("scheme") Scheme scheme, @Param("district") District district, @Param("year") Year year,@Param("consti") Constituency consti, @Param("block") Block block);
 	
 	@Query("select  count(*) from Installment c")

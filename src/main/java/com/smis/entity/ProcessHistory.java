@@ -3,6 +3,7 @@ package com.smis.entity;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,11 +36,12 @@ public class ProcessHistory implements Serializable {
 	@ManyToOne
 	@JoinColumn(name = "process_flow_id", nullable = false)
 	private ProcessFlow processFlow; // The process step executed
-
+	
 	private String processName;
 	private boolean reversed;
 	private String remarks; 
-
+	@Column(length = 500)
+    private String document;
 	private LocalDateTime enteredOn; // When the action occurred
 
 	public Long getId() {
@@ -106,4 +108,16 @@ public class ProcessHistory implements Serializable {
 		this.reversed = reversed;
 	}
 
+	public String getDocument() {
+		return document;
+	}
+
+	public void setDocument(String document) {
+		this.document = document;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
 }

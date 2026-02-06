@@ -4,13 +4,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,7 +15,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -56,130 +52,152 @@ public class Installment implements Serializable {
 	private InstallmentReportNotes reportNotes;
 	
 	
-	
 	@ManyToOne 
 	@JoinColumn(name="workId", referencedColumnName = "workId")
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	@NotNull
 	private Work work;
 	
-	@ManyToOne 
-	@JoinColumn(name="releaseorder", referencedColumnName = "id")
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private InstallmentDocument releaseOrder;
+	@Column(length = 500)
+    private String releaseOrder;
 	
+	@Column(length = 500)
+    private String ucDocument;
 
-	@ManyToOne 
-	@JoinColumn(name="ucdocument", referencedColumnName = "id")
-	@OnDelete(action = OnDeleteAction.CASCADE)
-	private InstallmentDocument ucDocument;
-	
-	
-
-
-	
-	public Users getEnteredBy() {
-		return enteredBy;
-	}
-	public void setEnteredBy(Users enteredBy) {
-		this.enteredBy = enteredBy;
-	}
-	
-	public LocalDateTime getEnteredOn() {
-		return enteredOn;
-	}
-	public void setEnteredOn(LocalDateTime enteredOn) {
-		this.enteredOn = enteredOn;
-	}
 	public long getInstallmentId() {
 		return installmentId;
 	}
+
 	public void setInstallmentId(long installmentId) {
 		this.installmentId = installmentId;
 	}
+
 	public int getInstallmentNo() {
 		return installmentNo;
 	}
+
 	public void setInstallmentNo(int installmentNo) {
 		this.installmentNo = installmentNo;
 	}
-	
-	
+
 	public BigDecimal getInstallmentAmountPrev() {
 		return installmentAmountPrev;
 	}
+
 	public void setInstallmentAmountPrev(BigDecimal installmentAmountPrev) {
 		this.installmentAmountPrev = installmentAmountPrev;
 	}
+
 	public BigDecimal getInstallmentAmount() {
 		return installmentAmount;
 	}
+
 	public void setInstallmentAmount(BigDecimal installmentAmount) {
 		this.installmentAmount = installmentAmount;
 	}
+
 	public String getInstallmentLetter() {
 		return installmentLetter;
 	}
+
 	public void setInstallmentLetter(String installmentLetter) {
 		this.installmentLetter = installmentLetter;
 	}
+
 	public String getInstallmentCheque() {
 		return installmentCheque;
 	}
+
 	public void setInstallmentCheque(String installmentCheque) {
 		this.installmentCheque = installmentCheque;
 	}
+
 	public LocalDate getInstallmentDate() {
 		return installmentDate;
 	}
+
 	public void setInstallmentDate(LocalDate installmentDate) {
 		this.installmentDate = installmentDate;
 	}
+
 	public String getInstallmentLabel() {
 		return installmentLabel;
 	}
+
 	public void setInstallmentLabel(String installmentLabel) {
 		this.installmentLabel = installmentLabel;
 	}
+
 	public String getUcLetter() {
 		return ucLetter;
 	}
+
 	public void setUcLetter(String ucLetter) {
 		this.ucLetter = ucLetter;
 	}
+
 	public LocalDate getUcDate() {
 		return ucDate;
 	}
+
 	public void setUcDate(LocalDate ucDate) {
 		this.ucDate = ucDate;
 	}
 
-	
-	
-	public Work getWork() {
-		return work;
+	public LocalDateTime getEnteredOn() {
+		return enteredOn;
 	}
-	public void setWork(Work work) {
-		this.work = work;
+
+	public void setEnteredOn(LocalDateTime enteredOn) {
+		this.enteredOn = enteredOn;
 	}
-	public InstallmentDocument getReleaseOrder() {
-		return releaseOrder;
+
+	public Users getEnteredBy() {
+		return enteredBy;
 	}
-	public void setReleaseOrder(InstallmentDocument releaseOrder) {
-		this.releaseOrder = releaseOrder;
+
+	public void setEnteredBy(Users enteredBy) {
+		this.enteredBy = enteredBy;
 	}
-	public InstallmentDocument getUcDocument() {
-		return ucDocument;
-	}
-	public void setUcDocument(InstallmentDocument ucDocument) {
-		this.ucDocument = ucDocument;
-	}
+
 	public InstallmentReportNotes getReportNotes() {
 		return reportNotes;
 	}
+
 	public void setReportNotes(InstallmentReportNotes reportNotes) {
 		this.reportNotes = reportNotes;
 	}
+
+	public Work getWork() {
+		return work;
+	}
+
+	public void setWork(Work work) {
+		this.work = work;
+	}
+
+	public String getReleaseOrder() {
+		return releaseOrder;
+	}
+
+	public void setReleaseOrder(String releaseOrder) {
+		this.releaseOrder = releaseOrder;
+	}
+
+	public String getUcDocument() {
+		return ucDocument;
+	}
+
+	public void setUcDocument(String ucDocument) {
+		this.ucDocument = ucDocument;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
 	
 
+
+	
 }

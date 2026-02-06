@@ -128,7 +128,7 @@ public class MasterView extends VerticalLayout{
 		constigrid.addColumn(constituency->constituency.getMasterConstituency().getConstituencyName()).setHeader("Constituency").setSortable(true);
 		constigrid.addColumn(constituency->constituency.getDistrict().getDistrictName()).setSortable(true).setVisible(isSuperAdmin);
 		constigrid.addColumn(constituency->constituency.getDistrict().getState().getStateName()).setSortable(true).setVisible(isSuperAdmin);
-		schemegrid.setColumns("schemeName", "schemeDuration",  "schemeDept", "schemeLabel");
+		schemegrid.setColumns( "schemeDuration",  "schemeDept", "schemeLabel");
 		schemegrid.addColumn(scheme->scheme.getSchemeReport()).setHeader("Report Type");
 		schemegrid.addColumn(scheme->scheme.isInUse()).setHeader("In Use");
 		schemegrid.addColumn(scheme->scheme.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
@@ -139,7 +139,7 @@ public class MasterView extends VerticalLayout{
 		blockgrid.addColumn(block ->block.isInUse()).setHeader("In Use");
 		//blockgrid.addColumn(block ->block.getMasterBlock().getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
 		//blockgrid.addColumn(block ->block.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
-		yeargrid.setColumns("yearName", "yearLabel", "inUse");
+		yeargrid.setColumns("yearLabel", "inUse");
 		yeargrid.addColumn( year -> year.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
 		yeargrid.addColumn( year -> year.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
 		constigrid.getColumns().forEach(col-> col.setAutoWidth(true));
@@ -235,7 +235,7 @@ public class MasterView extends VerticalLayout{
 		
 		try {
 			Year year=event.getYear();
-			audit.saveLoginAudit("Save", "Save Year", year.getYearName(), "");
+			audit.saveLoginAudit("Save", "Save Year", year.getYearLabel(), "");
 			service.saveYear(year);
 			updateGrids();
 			closeYearEditor();
@@ -247,7 +247,7 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteYear(YearForm.DeleteEvent event) {
 		Year year=event.getYear();
-		audit.saveLoginAudit("Delete", "Delete Year", year.getYearId()+"-"+year.getYearName(), "");
+		audit.saveLoginAudit("Delete", "Delete Year", year.getId()+"-"+year.getYearLabel(), "");
 		service.deleteYear(year);
 		updateGrids();
 		closeYearEditor();
@@ -276,7 +276,7 @@ public class MasterView extends VerticalLayout{
 
 	public void saveScheme(SchemeForm.SaveEvent event) {
 		Scheme scheme=event.getScheme();
-		audit.saveLoginAudit("Save", "Save Scheme", scheme.getSchemeName(), scheme.getSchemeNameLong());
+		audit.saveLoginAudit("Save", "Save Scheme", scheme.getSchemeLabel(), scheme.getSchemeNameLong());
 		service.saveScheme(scheme);
 		updateGrids();
 		closeSchemeEditor();
@@ -284,7 +284,7 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteScheme(SchemeForm.DeleteEvent event) {
 		Scheme scheme=event.getScheme();
-		audit.saveLoginAudit("Delete", "Delete Scheme", scheme.getSchemeId()+"-"+scheme.getSchemeName(), scheme.getSchemeNameLong());
+		audit.saveLoginAudit("Delete", "Delete Scheme", scheme.getId()+"-"+scheme.getSchemeLabel(), scheme.getSchemeNameLong());
 		service.deleteScheme(event.getScheme());
 		updateGrids();
 		closeSchemeEditor();

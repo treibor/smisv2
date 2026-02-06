@@ -66,22 +66,20 @@ public class Work implements Serializable{
 	@ManyToOne
 	@JoinColumn(name="blockId")
 	@NotNull(message = "Please select the Block")
-	
 	private Block block;
+	
 	@ManyToOne
 	@JoinColumn(name="villageId")
-	@NotNull(message = "Please select the village")
-	
 	private Village village;
+	
 	@ManyToOne
 	@JoinColumn(name="constituencyId")
 	@NotNull(message = "Please select the constituency")
-	
 	private Constituency constituency;
+	
 	@ManyToOne
 	@JoinColumn(name="districtId")
 	@NotNull
-	
 	private District district;
 	
 	@ManyToOne
@@ -101,8 +99,10 @@ public class Work implements Serializable{
 
 	@OneToMany(mappedBy = "work", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProcessHistory> processHistory;
-	
-	
+	private Boolean isOldWork;
+	private Boolean isDeleted;
+	private Boolean isRecasted;
+	private String Remarks;
 	
 	
 	public Village getVillage() {
@@ -230,6 +230,33 @@ public class Work implements Serializable{
 	}
 	public void setProcessHistory(List<ProcessHistory> processHistory) {
 		this.processHistory = processHistory;
+	}
+	public Boolean getIsDeleted() {
+		return isDeleted;
+	}
+	public void setIsDeleted(Boolean isDeleted) {
+		this.isDeleted = isDeleted;
+	}
+	public Boolean getIsRecasted() {
+		return isRecasted;
+	}
+	public void setIsRecasted(Boolean isRecasted) {
+		this.isRecasted = isRecasted;
+	}
+	public String getRemarks() {
+		return Remarks;
+	}
+	public void setRemarks(String remarks) {
+		Remarks = remarks;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	public Boolean getIsOldWork() {
+		return isOldWork;
+	}
+	public void setIsOldWork(Boolean isOldWork) {
+		this.isOldWork = isOldWork;
 	}
 	
 	
