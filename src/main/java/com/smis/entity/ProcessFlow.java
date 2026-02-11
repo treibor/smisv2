@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -22,11 +23,11 @@ public class ProcessFlow implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "process_generator")
     @SequenceGenerator(name = "process_generator", allocationSize = 1, sequenceName = "process_seq", initialValue = 1)
-    private long Id;
+    private long id;
 
     private String stepName;
     private int stepOrder;
-
+    
     @OneToMany(mappedBy = "processFlow", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProcessFlowUser> assignedUsers = new ArrayList<>();
 
@@ -34,15 +35,21 @@ public class ProcessFlow implements Serializable {
     @JoinColumn(name = "nextStepId")
     private ProcessFlow nextStep;
 
+    @Column(name="step_code", nullable=false, unique=true)
+    private String stepCode;
+
+   
 	
     
    
+
+
 	public long getId() {
-		return Id;
+		return id;
 	}
 
 	public void setId(long id) {
-		Id = id;
+		this.id = id;
 	}
 
 	public String getStepName() {
@@ -80,7 +87,18 @@ public class ProcessFlow implements Serializable {
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
-    
+
+	public String getStepCode() {
+		return stepCode;
+	}
+
+	public void setStepCode(String stepCode) {
+		this.stepCode = stepCode;
+	}
+
+	
+
+	
     
     
 }

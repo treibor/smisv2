@@ -34,8 +34,11 @@ public class ProcessHistory implements Serializable {
 	private Users user; // The user performing the action
 
 	@ManyToOne
-	@JoinColumn(name = "process_flow_id", nullable = false)
-	private ProcessFlow processFlow; // The process step executed
+	@JoinColumn(name = "from_step_id")
+	private ProcessFlow fromStep;
+	@ManyToOne
+	@JoinColumn(name = "to_step_id")
+	private ProcessFlow toStep;
 	
 	private String processName;
 	private boolean reversed;
@@ -43,81 +46,71 @@ public class ProcessHistory implements Serializable {
 	@Column(length = 500)
     private String document;
 	private LocalDateTime enteredOn; // When the action occurred
-
 	public Long getId() {
 		return id;
 	}
-
 	public void setId(Long id) {
 		this.id = id;
 	}
-
 	public Work getWork() {
 		return work;
 	}
-
 	public void setWork(Work work) {
 		this.work = work;
 	}
-
 	public Users getUser() {
 		return user;
 	}
-
 	public void setUser(Users user) {
 		this.user = user;
 	}
-
-	public ProcessFlow getProcessFlow() {
-		return processFlow;
+	public ProcessFlow getFromStep() {
+		return fromStep;
 	}
-
-	public void setProcessFlow(ProcessFlow processFlow) {
-		this.processFlow = processFlow;
+	public void setFromStep(ProcessFlow fromStep) {
+		this.fromStep = fromStep;
 	}
-
-	public LocalDateTime getEnteredOn() {
-		return enteredOn;
+	public ProcessFlow getToStep() {
+		return toStep;
 	}
-
-	public void setEnteredOn(LocalDateTime enteredOn) {
-		this.enteredOn = enteredOn;
+	public void setToStep(ProcessFlow toStep) {
+		this.toStep = toStep;
 	}
-
-	public String getRemarks() {
-		return remarks;
-	}
-
-	public void setRemarks(String remarks) {
-		this.remarks = remarks;
-	}
-
 	public String getProcessName() {
 		return processName;
 	}
-
 	public void setProcessName(String processName) {
 		this.processName = processName;
 	}
-
 	public boolean isReversed() {
 		return reversed;
 	}
-
 	public void setReversed(boolean reversed) {
 		this.reversed = reversed;
 	}
-
+	public String getRemarks() {
+		return remarks;
+	}
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
 	public String getDocument() {
 		return document;
 	}
-
 	public void setDocument(String document) {
 		this.document = document;
 	}
-
+	public LocalDateTime getEnteredOn() {
+		return enteredOn;
+	}
+	public void setEnteredOn(LocalDateTime enteredOn) {
+		this.enteredOn = enteredOn;
+	}
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
+	
+
+	
 	
 }

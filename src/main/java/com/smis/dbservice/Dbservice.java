@@ -151,6 +151,13 @@ public class Dbservice implements Serializable{
 	            getLoggedUser(), stepOrder
 	    );
 	}
+	public boolean hasAuthorityForStep(Users user, String stepCode) {
+	    ProcessFlow step = pflowrepo.findByStepCode(stepCode)
+	            .orElse(null);
+	    if (step == null) return false;
+
+	    return pflowuserrepo.existsByUserAndProcessFlow(user, step);
+	}
 	public Users getLoggedUser() {
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    if (auth == null || !auth.isAuthenticated()) {
@@ -433,6 +440,12 @@ public class Dbservice implements Serializable{
 			int installment) {
 		
 		return irepo.getFilteredInstallment(scheme, consti,pflow, block, getDistrict(), year, installment);
+	}
+
+	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, List<ProcessFlow> pflows,
+			Block block, Year year, int installment) {
+
+		return irepo.getFilteredInstallment(scheme, consti, pflows, block, getDistrict(), year, installment);
 	}
 	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, ProcessFlow pflow, Block block, Year year) {
 		
@@ -741,7 +754,10 @@ public class Dbservice implements Serializable{
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	    }
 	}
-	
+	public ProcessFlow getStepByCode(String code) {
+	    return pflowrepo.findByStepCode(code)
+	        .orElseThrow(() -> new IllegalStateException("Missing ProcessFlow stepCode=" + code));
+	}
 	public List<ProcessFlow> getAllProcessFlow() {
 		//return pflowrepo.findAll();
 		return pflowrepo.findAllByOrderByIdAsc();
@@ -749,7 +765,24 @@ public class Dbservice implements Serializable{
 	public ProcessFlow getProcessFlowByOrder(int a) {
 		return pflowrepo.findByStepOrder(a);
 	}
-	
+	public ProcessFlow getReturnToStepFromHistory(Work work) {
+		ProcessFlow current = work.getProcessflow();
+
+	    return phistoryrrepo
+	        .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+	        .map(ProcessHistory::getFromStep)
+	        .orElseThrow(() -> new IllegalStateException("No previous forward step found from history."));
+	}
+	public ProcessFlow getPrevStepFromHistory(Work work) {
+	    ProcessFlow current = work.getProcessflow();
+
+	    return phistoryrrepo
+	        .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+	        .map(ProcessHistory::getFromStep)
+	        .orElseThrow(() -> new IllegalStateException(
+	            "No history found for move into " + current.getStepName()
+	        ));
+	}
 	public void saveProcessFlow(ProcessFlow processflow) {
 		pflowrepo.save(processflow);
 	}
@@ -818,8 +851,15 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
+	public ProcessFlow findReturnTarget(Work work) {
+	    ProcessHistory lastForward = phistoryrrepo.findTop1ByWorkAndReversedFalseOrderByEnteredOnDesc(work)
+	        .orElseThrow(() -> new IllegalStateException("No forward history found"));
+	    return lastForward.getFromStep(); // exact path taken
+	}
+	
 	public boolean processHistoryExists(Work work, ProcessFlow processFlow, Users user) {
-	    return phistoryrrepo.existsByWorkAndProcessFlowAndUser(work, processFlow, user);
+	    //return phistoryrrepo.existsByWorkAndProcessFlowAndUser(work, processFlow, user);
+		return true;
 	}
 	public List<ProcessHistory> getProcessHistory(Work work) {
 		try {

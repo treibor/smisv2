@@ -51,4 +51,12 @@ public class ButtonUtil {
         applyBase(button, "Close", VaadinIcon.CLOSE);
         button.addThemeVariants(ButtonVariant.LUMO_ICON);
     }
+    public static void applyPrintStyle(Button button) {
+        applyBase(button, "Generate RO", VaadinIcon.AUTOMATION);
+        button.addThemeVariants(ButtonVariant.LUMO_ICON);
+    }
+    public static void applyUploadStyle(Button button) {
+        applyBase(button, "Upload RO", VaadinIcon.UPLOAD);
+        button.addThemeVariants(ButtonVariant.LUMO_ICON);
+    }
 }

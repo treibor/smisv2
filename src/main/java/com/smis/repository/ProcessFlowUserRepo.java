@@ -13,4 +13,6 @@ public interface ProcessFlowUserRepo extends JpaRepository<ProcessFlowUser, Long
 	List<ProcessFlowUser> findByUser(Users user);
 	ProcessFlowUser findByUserAndProcessFlow(Users user, ProcessFlow pf);
 	boolean existsByUserAndProcessFlow_StepOrder(Users user, int stepOrder);
+	boolean existsByUserAndProcessFlow(Users user, ProcessFlow processFlow);
+	
 }

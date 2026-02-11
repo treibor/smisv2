@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,10 @@ import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.util.ButtonUtil;
+import com.smis.util.NotificationUtil;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -171,11 +175,15 @@ public class WorkView extends VerticalLayout {
 		grid.getHeaderRows().clear();
 		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 		grid.setClassNameGenerator(work -> {
-			if (work.getWorkStatus().equals("Completed"))
-				return "high-rating";
-			if (work.getWorkStatus().equals("Entered"))
-				return "low-rating";
-			return null;
+		    String status = work.getWorkStatus();
+
+		    if ("Completed".equals(status)) {
+		        return "high-rating";
+		    }
+		    if ("Entered".equals(status)) {
+		        return "low-rating";
+		    }
+		    return null;
 		});
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(grid);
 
@@ -214,6 +222,35 @@ public class WorkView extends VerticalLayout {
 
 	    // Release Order (filesystem)
 	    installmentGrid.addComponentColumn(installment -> {
+	        String ro = installment.getGeneratedReleaseOrder();
+
+	        if (ro == null || ro.isBlank()) {
+	            return new Span("");
+	        }
+
+	        if (!fileStorageService.exists(ro)) {
+	            Span missing = new Span("Missing file");
+	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
+	            missing.getStyle().set("font-weight", "500");
+	            return missing;
+	        }
+
+	        StreamResource resource = new StreamResource(ro, () -> {
+	            try {
+	                return fileStorageService.open(ro);
+	            } catch (IOException ex) {
+	                throw new UncheckedIOException(ex);
+	            }
+	        });
+	        resource.setContentType("application/pdf");
+
+	        Anchor link = new Anchor(resource, "View");
+	        link.setTarget("_blank");
+	        return link;
+
+	    }).setHeader("Generated RO").setAutoWidth(true);
+
+	    installmentGrid.addComponentColumn(installment -> {
 	        String roPath = installment.getReleaseOrder();
 
 	        if (roPath == null || roPath.isBlank()) {
@@ -240,7 +277,7 @@ public class WorkView extends VerticalLayout {
 	        link.setTarget("_blank");
 	        return link;
 
-	    }).setHeader("Release Order").setAutoWidth(true);
+	    }).setHeader("Uploaded RO").setAutoWidth(true);
 
 	    installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
 	    installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
@@ -312,8 +349,9 @@ public class WorkView extends VerticalLayout {
 		dialog.setHeaderTitle("History :" + work.getWorkCode() + "-" + work.getWorkName());
 		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 		// DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		grid.addColumn(processhistory -> processhistory.getProcessFlow().getStepName()).setHeader("Task")
-				.setAutoWidth(true);
+		grid.addColumn(ph -> ph.getFromStep() != null ? ph.getFromStep().getStepName() : "")
+	    .setHeader("Task")
+	    .setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getProcessName()).setHeader("Action Performed")
 				.setAutoWidth(true);
 		grid.addColumn(processhistory -> processhistory.getRemarks()).setHeader("Remarks").setWidth("40%")
@@ -388,10 +426,8 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void updateGrid() {
-
-		// grid.setItems(service.getWorksAssignedToUser());
+		
 		grid.setItems(service.getWorks());
-		// gridhistory.setItems(service.getWorkHistory());
 
 	}
 
@@ -406,13 +442,8 @@ public class WorkView extends VerticalLayout {
 		Button addButton = new Button("New Work");
 		addButton.setIcon(new Icon(VaadinIcon.PLUS_CIRCLE_O));
 		addButton.addClickListener(e -> addWork());
-		addButton.setVisible(service.hasAuthorityForStep(loggedUser, 1));
-		Button testButton = new Button("Generate Test Data");
+		addButton.setVisible(service.hasAuthorityForStep(loggedUser, "WORK_ENTRY"));
 		configureCombos();
-		// HorizontalLayout toolbar = new HorizontalLayout(filterText, addButton,
-		// testButton);
-		// HorizontalLayout toolbar = new HorizontalLayout(filterText,consti, block,
-		// scheme, year, addButton, expButton);
 		FormLayout toolbar = new FormLayout();
 		toolbar.add(filterText, 2);
 		toolbar.add(consti, 2);
@@ -436,6 +467,9 @@ public class WorkView extends VerticalLayout {
 		workform.addListener(WorkForm.SaveEvent.class, this::saveWork);
 		workform.addListener(WorkForm.DeleteEvent.class, this::deleteWork);
 		workform.addListener(WorkForm.CloseEvent.class, e -> closeEditor());
+		workform.addListener(WorkForm.RefreshEvent.class, e -> {
+	        updateGrid();
+	    });
 	}
 
 	public void saveWork(WorkForm.SaveEvent event) {
@@ -483,16 +517,7 @@ public class WorkView extends VerticalLayout {
 
 	}
 
-	private void updateLists() {
-		block.clear();
-		scheme.clear();
-		consti.clear();
-		year.clear();
-		/// grid.setItems(service.getFilteredWorks(filterText.getValue()));
-		// grid.setItems(service.getFilteredWorkss(filterText.getValue()));
-		grid.setItems(service.getFilteredWorksAndSearch(filterText.getValue()));
-		// configureGrid();
-	}
+	
 
 	private void closeEditor() {
 		workform.setWork(null);
@@ -503,237 +528,327 @@ public class WorkView extends VerticalLayout {
 	private void addWork() {
 		// workform.save.setEnabled(true);
 		grid.asSingleSelect().clear();
-		openWorkAccordion();
+		//openWorkAccordion();
 		workform.workSelect.setValue("");
 		editWork(new Work());
 
 	}
 
 	private void editWork(Work work) {
-		try {
-			workform.accordion.close();
-			if (work == null) {
-				closeEditor();
-				// System.out.println("Null Work");
-				return;
-			}
-			workform.setWork(work);
-			workform.setVisible(true);
-			workform.save.setEnabled(isUser);
-			int instcount = service.getInstallmentCount(work);
-			List<Installment> installments = service.getInstallments(work);
-			workform.delete.setEnabled(isAdmin);
-			workform.save.setEnabled(isAdmin);
-			if (installments.size() > 0) {
-				closeAllAccordion();
-				workform.workaccordion.setOpened(isAdmin);
-				workform.workaccordion.setEnabled(isAdmin);
-			}
-			// Installment installment=service.getByWorkWithLargestInstallment(work);
-			int step = work.getProcessflow().getStepOrder();
-			if (step == 2) {
-				workform.instAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(4).getStepName());
-				workform.instAction.setValue("Forward");
-				if (instcount > 0) {
+	    try {
+	        workform.accordion.close();
 
-					workform.installmentAmount.setValue(
-							work.getWorkAmount().subtract(installments.get(instcount - 1).getInstallmentAmount()));
-					workform.installmentmaster.setText("Installment: " + (instcount + 1));
-					workform.instAction.setVisible(true);
+	        if (work == null) {
+	            closeEditor();
+	            return;
+	        }
 
-				} else {
-					workform.installmentAmount
-							.setValue(work.getWorkAmount().divide(new BigDecimal(work.getNoOfInstallments())));
-					workform.installmentmaster.setText("Installment: 1");
-					workform.instAction.setVisible(false);
-				}
-				openInstallAccordion();
+	        // ✅ NEW/unsaved work: no DB queries
+	        if (work.getWorkId() == 0) {
+	            workform.setWork(work);
+	            workform.setVisible(true);
+	            workform.delete.setEnabled(false);
 
-			} else if (step == 3) {
-				openRoAccordion();
-				workform.roAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(2).getStepName());
-				workform.roAction.setValue("Forward");
-				workform.instLetter.setValue(installments.get(instcount).getInstallmentLetter());
-				workform.instDate.setValue(installments.get(instcount).getInstallmentDate());
-			} else if (step == 4) {
+	            closeAllAccordions();
+	            showOnly(workform.workaccordion);
+	            applyAccordionVisibilityByAuthority();
+	            return;
+	        }
 
-				openUcAccordion();
-				workform.ucAction.setItems("Forward", "Return to " + service.getProcessFlowByOrder(3).getStepName());
-				workform.ucAction.setValue("Forward");
-			} else {
-				closeAllAccordion();
-			}
+	        // ✅ Reload managed Work
+	        Work dbWork = service.getWorkById(work.getWorkId());
+	        if (dbWork == null) {
+	            NotificationUtil.showError("Work not found. Reloading...");
+	            UI.getCurrent().getPage().reload();
+	            return;
+	        }
+	        work = dbWork;
 
-			workform.workaccordion.setVisible(service.hasAuthorityForStep(loggedUser, 1));
-			workform.installaccordion.setVisible(service.hasAuthorityForStep(loggedUser, 2));
-			workform.roaccordion.setVisible(service.hasAuthorityForStep(loggedUser, 3));
-			workform.ucaccordion.setVisible(service.hasAuthorityForStep(loggedUser, 4));
-			workform.complaccordion.setVisible(service.hasAuthorityForStep(loggedUser, 5));
-		} catch (ArithmeticException aE) {
+	        workform.setWork(work);
+	        workform.setVisible(true);
 
-		} catch (Exception e) {
-			// System.out.println(e);
-		}
+	        // roles
+	        workform.delete.setEnabled(isAdmin);
+
+	        // load installments once (safe now because Work is persisted)
+	        int instcount = service.getInstallmentCount(work);
+	        List<Installment> installments = service.getInstallments(work);
+
+	        // default: reset accordion state
+	        closeAllAccordions();
+
+	        // If there are installments, allow admin to open work accordion
+	        if (!installments.isEmpty()) {
+	            workform.workaccordion.setOpened(isAdmin);
+	            workform.workaccordion.setEnabled(isAdmin);
+	        }
+
+	        // Current stepCode
+	        ProcessFlow pf = work.getProcessflow();
+	        String stepCode = (pf != null) ? pf.getStepCode() : null;
+
+	        // -------------- step-specific UI --------------
+	        if ("RELEASE_INSTALLMENT".equals(stepCode)) {
+
+	            // ✅ return-to from HISTORY (must ignore reversed rows in query)
+	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+
+	            workform.instAction.setItems("Forward", "Return to " + returnTo.getStepName());
+	            workform.instAction.setValue("Forward");
+
+	            if (instcount > 0 && installments.size() >= instcount) {
+	                BigDecimal lastAmount = installments.get(instcount - 1).getInstallmentAmount();
+	                BigDecimal remaining = work.getWorkAmount().subtract(lastAmount);
+
+	                workform.installmentAmount.setValue(remaining);
+	                workform.installmentmaster.setText("Installment: " + (instcount + 1));
+	                workform.instAction.setVisible(true);
+	            } else {
+	                // default first installment suggestion
+	                BigDecimal perInst = work.getWorkAmount().divide(
+	                        new BigDecimal(work.getNoOfInstallments()),
+	                        2,
+	                        java.math.RoundingMode.HALF_UP
+	                );
+	                workform.installmentAmount.setValue(perInst);
+	                workform.installmentmaster.setText("Installment: 1");
+	                workform.instAction.setVisible(false);
+	            }
+
+	            showOnly(workform.installaccordion);
+
+	        }else if ("GENERATE_RELEASE_ORDER".equals(stepCode)) {
+	            showOnly(workform.genroaccordion);
+	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+	            workform.genroText.setText("Return to " + returnTo.getStepName());
+	            
+	            if (instcount > 0 && installments.size() >= instcount) {
+	                Installment latest = installments.get(instcount - 1);
+	                workform.instLetter.setValue(java.util.Objects.toString(latest.getInstallmentLetter(), ""));
+	                workform.instDate.setValue(latest.getInstallmentDate());
+	            } else {
+	                workform.instLetter.setValue("");
+	                workform.instDate.clear();
+	            }
+
+	        } else if ("UPLOAD_RELEASE_ORDER".equals(stepCode)) {
+
+	            showOnly(workform.uproaccordion);
+
+	            // ✅ return-to from HISTORY
+	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+	            workform.roAction.setItems("Forward", "Return to " + returnTo.getStepName());
+	            workform.roAction.setValue("Forward");
+
+	            if (instcount > 0 && installments.size() >= instcount) {
+	                Installment latest = installments.get(instcount - 1);
+	                workform.instLetter.setValue(java.util.Objects.toString(latest.getInstallmentLetter(), ""));
+	                workform.instDate.setValue(latest.getInstallmentDate());
+	            } else {
+	                workform.instLetter.setValue("");
+	                workform.instDate.clear();
+	            }
+
+	        } else if ("RELEASE_FUNDS".equals(stepCode)) {
+
+	            showOnly(workform.rfaccordion);
+
+	            // ✅ return-to from HISTORY
+	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+	            workform.rfAction.setItems("Forward", "Return to " + returnTo.getStepName());
+	            workform.rfAction.setValue("Forward");
+
+	        } else if ("UPLOAD_UC".equals(stepCode)) {
+
+	            showOnly(workform.ucaccordion);
+
+	            // ✅ return-to from HISTORY
+	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+	            workform.ucAction.setItems("Forward", "Return to " + returnTo.getStepName());
+	            workform.ucAction.setValue("Forward");
+
+	        } else if ("COMPLETED".equals(stepCode)) {
+
+	            showOnly(workform.complaccordion);
+
+	        } else {
+	            closeAllAccordions();
+	        }
+
+	        // -------------- Authority visibility --------------
+	        applyAccordionVisibilityByAuthority();
+
+	    } catch (ArithmeticException aE) {
+	        NotificationUtil.showError("Invalid installment calculation. Check number of installments.");
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        NotificationUtil.showError("Something went wrong: " + e.getMessage());
+	    }
 	}
 
-	private void editWorkOriginal(Work work) {
-		try {
-			int workinstallment = 0;
-			if (work == null) {
-				closeEditor();
-			} else {
-				workform.setWork(work);
-				workform.setVisible(true);
-				workform.save.setEnabled(isUser);
-				enableFields();
-				workinstallment = work.getNoOfInstallments();
-				if (work.getWorkAmount() != null) {
-					// check if work is entered or not by checking if installment is greater than 0
-					int tablecount = service.getInstallmentCount(work);
-					int toEnter = tablecount + 1;
-					// check if any installment is entered
-					if (tablecount > 0) {
-						List<Installment> installments = service.getInstallments(work);
-						workform.delete.setEnabled(isAdmin);
-						workform.save.setEnabled(isAdmin);
-						if (!isAdmin) {
-							disableFields();
+	private void applyAccordionVisibilityByAuthority() {
+	    workform.workaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "WORK_ENTRY"));
+	    workform.installaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "RELEASE_INSTALLMENT"));
 
-						}
-						// workform.setEnabled(isAdmin);
-						int tablecountindex = tablecount - 1;
-						if (workinstallment == tablecount) {
-							// check if all installments are entered, (if yes check if uc is enetered
+	    // RO accordion should be visible if user has authority in either RO steps
+	    boolean canRo = service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER")
+	            || service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER");
+	    workform.uproaccordion.setVisible(canRo);
 
-							if (installments.get(tablecountindex).getInstallmentLetter() == null) {
-								closeAllAccordion();
-
-								// workform.ucmaster.setText("UC: " + tablecount);
-							} else if (installments.get(tablecountindex).getUcLetter() == null) {
-								workform.ucAction.setItems("Enter UC", "Return to " + service
-										.getProcessFlowByOrder(work.getProcessflow().getStepOrder()).getStepName());
-								workform.ucAction.setValue("Enter UC");
-								workform.ucmaster.setText("UC: " + tablecount);
-								openUcAccordion();
-							} else {
-								// Work is completed
-								closeAllAccordion();
-								workform.save.setEnabled(false);
-							}
-						} else {
-							// Not All Installments are entered
-
-							if (installments.get(tablecountindex).getInstallmentLetter() == null) {
-								// check if release order is not printed
-								closeAllAccordion();
-							} else if (installments.get(tablecountindex).getUcLetter() == null) {
-								workform.ucAction.setItems("Enter UC", "Return to " + service
-										.getProcessFlowByOrder(work.getProcessflow().getStepOrder()).getStepName());
-								workform.ucAction.setValue("Enter UC");
-								openUcAccordion();
-								workform.ucmaster.setText("UC: " + tablecount);
-
-							} else {
-
-								openInstallAccordion();
-								workform.installmentAmount.setValue(work.getWorkAmount()
-										.subtract(installments.get(tablecountindex).getInstallmentAmount()));
-								workform.installmentmaster.setText("Installment: " + toEnter);
-
-							}
-						}
-					} else {
-						// "No Installments In the table"-Enter New Installment
-
-						workform.delete.setEnabled(true);
-						openInstallAccordion();
-						workform.installmentAmount
-								.setValue(work.getWorkAmount().divide(new BigDecimal(work.getNoOfInstallments())));
-						workform.installmentmaster.setText("Installment: " + toEnter);
-
-					}
-
-				} else {
-					closeAllAccordion();
-					enableFields();
-				}
-				workform.workaccordion.setVisible(service.hasAuthorityForStep(1));
-				workform.installaccordion.setVisible(service.hasAuthorityForStep(2));
-				workform.ucaccordion.setVisible(service.hasAuthorityForStep(4));
-
-			}
-		} catch (ArithmeticException aE) {
-
-		} catch (Exception e) {
-			// System.out.println(e);
-		}
+	    workform.rfaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "RELEASE_FUNDS"));
+	    workform.ucaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "UPLOAD_UC"));
+	    workform.complaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "COMPLETED"));
+	}
+	
+//	public void openComplAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.workaccordion.setEnabled(false);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//		// workform.workaccordion.setOpened(false);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.complaccordion.setOpened(true);
+//		workform.complaccordion.setEnabled(true);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//	}
+//	public void closeAllAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.workaccordion.setEnabled(false);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//	}
+//
+//	public void openWorkAccordion() {
+//		workform.workaccordion.setOpened(true);
+//		workform.workaccordion.setEnabled(true);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//		// workform.workaccordion.setOpened(false);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//	}
+//
+//	public void openInstallAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.installaccordion.setEnabled(true);
+//		workform.installaccordion.setOpened(true);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//		// workform.workaccordion.setOpened(false);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//	}
+//
+//	public void openUcAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(true);
+//		workform.ucaccordion.setOpened(true);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//	}
+//
+//	public void openRoAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//
+//		workform.uproaccordion.setOpened(true);
+//		workform.uproaccordion.setEnabled(true);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(false);
+//		workform.rfaccordion.setOpened(false);
+//	}
+//	public void openRfAccordion() {
+//		workform.workaccordion.setOpened(false);
+//		workform.installaccordion.setEnabled(false);
+//		workform.installaccordion.setOpened(false);
+//		workform.ucaccordion.setEnabled(false);
+//		workform.ucaccordion.setOpened(false);
+//		workform.uproaccordion.setOpened(false);
+//		workform.uproaccordion.setEnabled(false);
+//		workform.complaccordion.setOpened(false);
+//		workform.complaccordion.setEnabled(false);
+//		workform.rfaccordion.setEnabled(true);
+//		workform.rfaccordion.setOpened(true);
+//	}
+	private Map<String, AccordionPanel> stepToPanel() {
+	    return Map.of(
+	        "WORK_ENTRY", workform.workaccordion,
+	        "RELEASE_INSTALLMENT", workform.installaccordion,
+	        "GENERATE_RELEASE_ORDER", workform.genroaccordion,
+	        "UPLOAD_RELEASE_ORDER", workform.uproaccordion,
+	        "RELEASE_FUNDS", workform.rfaccordion,
+	        "UPLOAD_UC", workform.ucaccordion,
+	        "COMPLETED", workform.complaccordion
+	    );
 	}
 
-	public void closeAllAccordion() {
-		workform.workaccordion.setOpened(false);
-		workform.workaccordion.setEnabled(false);
-		workform.installaccordion.setEnabled(false);
-		workform.installaccordion.setOpened(false);
-		workform.ucaccordion.setEnabled(false);
-		workform.ucaccordion.setOpened(false);
-		workform.roaccordion.setOpened(false);
-		workform.roaccordion.setEnabled(false);
-		workform.complaccordion.setOpened(true);
-		workform.complaccordion.setEnabled(true);
+	public void openByStepCode(String stepCode) {
+	    AccordionPanel p = stepToPanel().get(stepCode);
+	    if (p == null) {
+	        closeAllAccordions();
+	        return;
+	    }
+	    showOnly(p);
+	}
+	private List<AccordionPanel> allPanels() {
+	    return List.of(
+	        workform.workaccordion,
+	        workform.installaccordion,
+	        workform.uproaccordion,
+	        workform.genroaccordion,
+	        workform.rfaccordion,
+	        workform.ucaccordion,
+	        workform.complaccordion
+	    );
 	}
 
-	public void openWorkAccordion() {
-		workform.workaccordion.setOpened(true);
-		workform.workaccordion.setEnabled(true);
-		workform.installaccordion.setEnabled(false);
-		workform.installaccordion.setOpened(false);
-		workform.ucaccordion.setEnabled(false);
-		workform.ucaccordion.setOpened(false);
-		// workform.workaccordion.setOpened(false);
-		workform.roaccordion.setOpened(false);
-		workform.roaccordion.setEnabled(false);
-		workform.complaccordion.setOpened(false);
-		workform.complaccordion.setEnabled(false);
+	private void showOnly(AccordionPanel panelToOpen) {
+	    for (AccordionPanel p : allPanels()) {
+	        boolean active = (p == panelToOpen);
+	        p.setOpened(active);
+	        p.setEnabled(active);
+	    }
 	}
 
-	public void openInstallAccordion() {
-		workform.workaccordion.setOpened(false);
-		workform.installaccordion.setEnabled(true);
-		workform.installaccordion.setOpened(true);
-		workform.ucaccordion.setEnabled(false);
-		workform.ucaccordion.setOpened(false);
-		// workform.workaccordion.setOpened(false);
-		workform.roaccordion.setOpened(false);
-		workform.roaccordion.setEnabled(false);
-		workform.complaccordion.setOpened(false);
-		workform.complaccordion.setEnabled(false);
+	// If you want "close all"
+	private void closeAllAccordions() {
+	    for (AccordionPanel p : allPanels()) {
+	        p.setOpened(false);
+	        p.setEnabled(false);
+	    }
 	}
-
-	public void openUcAccordion() {
-		workform.workaccordion.setOpened(false);
-		workform.installaccordion.setEnabled(false);
-		workform.installaccordion.setOpened(false);
-		workform.ucaccordion.setEnabled(true);
-		workform.ucaccordion.setOpened(true);
-		workform.roaccordion.setOpened(false);
-		workform.roaccordion.setEnabled(false);
-		workform.complaccordion.setOpened(false);
-		workform.complaccordion.setEnabled(false);
-	}
-
-	public void openRoAccordion() {
-		workform.workaccordion.setOpened(false);
-		workform.installaccordion.setEnabled(false);
-		workform.installaccordion.setOpened(false);
-		workform.ucaccordion.setEnabled(false);
-		workform.ucaccordion.setOpened(false);
-
-		workform.roaccordion.setOpened(true);
-		workform.roaccordion.setEnabled(true);
-		workform.complaccordion.setOpened(false);
-		workform.complaccordion.setEnabled(false);
-	}
-
 	public void enableFields() {
 		workform.scheme.setEnabled(true);
 		workform.constituency.setEnabled(true);

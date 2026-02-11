@@ -90,14 +90,22 @@ public class WorkForm extends VerticalLayout {
 	Button installclose = new Button("Close");
 	Button ucsave = new Button("Save");
 	Button ucclose = new Button("Close");
+	Button genrosave = new Button("Save");
+	Button genroclose = new Button("Close");
 	Button rosave = new Button("Save");
 	Button roclose = new Button("Close");
+	Button rfsave = new Button("Save");
+	Button rfclose = new Button("Close");
+	Button complsave = new Button("Save");
+	Button complclose = new Button("Close");
 	BigDecimalField installmentAmount = new BigDecimalField("Amount");
 	TextField ucletter = new TextField("UC Number");
 	TextField instRemarks = new TextField("Remarks");
 	TextField ucRemarks = new TextField("Remarks");
 	TextField roRemarks = new TextField("Remarks");
 	TextField complRemarks = new TextField("Remarks");
+	TextField rfRemarks = new TextField("Remarks");
+	TextField genroRemarks = new TextField("Remarks");
 	DatePicker ucDate = new DatePicker("UC Date");
 	public TextField instLetter = new TextField("Release Letter No.");
 	public DatePicker instDate = new DatePicker("Release Date");
@@ -105,41 +113,41 @@ public class WorkForm extends VerticalLayout {
 	Accordion accordion = new Accordion();
 	public AccordionPanel workaccordion = new AccordionPanel();
 	public AccordionPanel installaccordion = new AccordionPanel();
-	public AccordionPanel roaccordion = new AccordionPanel();
+	public AccordionPanel genroaccordion = new AccordionPanel();
+	public AccordionPanel uproaccordion = new AccordionPanel();
+	public AccordionPanel rfaccordion = new AccordionPanel();
 	public AccordionPanel ucaccordion = new AccordionPanel();
 	public AccordionPanel complaccordion = new AccordionPanel();
 	// Label installmentmaster=new Label("");
 	H6 installmentmaster = new H6("");
 	H6 ucmaster = new H6("");
-	private final ProcessFlow pf1;
-	private final ProcessFlow pf2;
-	private final ProcessFlow pf3;
-	private final ProcessFlow pf4;
-    private final ProcessFlow pf5;
+	H6 genroText = new H6("");
 	public RadioButtonGroup<String> ucAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> roAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> instAction = new RadioButtonGroup<>();
+	public RadioButtonGroup<String> rfAction = new RadioButtonGroup<>();
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
 	private AtomicReference<byte[]> uploadedPdf1 = new AtomicReference<>();
 	private AtomicReference<byte[]> uploadedPdf2 = new AtomicReference<>();
+	private AtomicReference<byte[]> uploadedRfPdf = new AtomicReference<>();
 	Upload ucUpload;
 	Upload roUpload;
+	Upload rfUpload;
 	VerticalLayout vlayout1;
 	VerticalLayout vlayout2;
+	VerticalLayout vlayoutrf;
+	Users loggedUser;
 	public WorkForm(Dbservice service, Audit audit,FileStorageService fileStorageService ) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
 		this.audit=audit;
 		this.fileStorageService=fileStorageService;
 		//System.out.println("Audit"+audit);
+		this.loggedUser=service.getLoggedUser();
 		binder.bindInstanceFields(this);
-		pf1=service.getProcessFlowByOrder(1);
-		pf2=service.getProcessFlowByOrder(2);
-		pf3=service.getProcessFlowByOrder(3);
-		pf4=service.getProcessFlowByOrder(4);
-		pf5=service.getProcessFlowByOrder(5);
+		
 		isAdmin = service.hasRole("ADMIN");
 		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
 		isUser  = service.hasRole("USER");
@@ -151,17 +159,38 @@ public class WorkForm extends VerticalLayout {
 		village.setItems(service.getVillage(block));
 		village.setItemLabelGenerator(village -> village.getVillageName());
 	}
-
+	private String stepTitle(String stepCode, String fallback) {
+	    ProcessFlow pf = service.getStepByCode(stepCode); // or injected service in form
+	    return (pf != null && pf.getStepName() != null && !pf.getStepName().isBlank())
+	            ? pf.getStepName()
+	            : fallback;
+	}
 	public Component createFinalPanel() {
-		workaccordion = accordion.add(pf1.getStepName(), new VerticalLayout(configureForm(), createButtonsLayout()));
-		installaccordion = accordion.add(pf2.getStepName(),new VerticalLayout(configureInstallmentForm(), createInstallButtons()));
-		roaccordion = accordion.add(pf3.getStepName(),new VerticalLayout(configureROForm()));
-		ucaccordion = accordion.add(pf4.getStepName(),new VerticalLayout(configureUcForm(), createUcButtons()));
-		complaccordion = accordion.add(pf5.getStepName(),new VerticalLayout(configureCompleteForm()));
-		return accordion;
+
+	    workaccordion = accordion.add(stepTitle("WORK_ENTRY", "Work Entry"),
+	            new VerticalLayout(configureWorkForm(), createButtonsLayout()));
+
+	    installaccordion = accordion.add(stepTitle("RELEASE_INSTALLMENT", "Release Installment"),
+	            new VerticalLayout(releaseInstallmentForm()));
+	    genroaccordion = accordion.add(stepTitle("GENERATE_RELEASE_ORDER", "Generate Release Order"),
+	            new VerticalLayout(generateROForm()));
+
+	    uproaccordion = accordion.add(stepTitle("UPLOAD_RELEASE_ORDER", "Upload Release Order"),
+	            new VerticalLayout(uploadROForm()));
+
+	    rfaccordion = accordion.add(stepTitle("RELEASE_FUNDS", "Release Funds"),
+	            new VerticalLayout(releaseFundsForm()));
+
+	    ucaccordion = accordion.add(stepTitle("UPLOAD_UC", "Upload UC"),
+	            new VerticalLayout(uploadUcForm()));
+
+	    complaccordion = accordion.add(stepTitle("COMPLETED", "Completion"),
+	            new VerticalLayout(completeForm()));
+
+	    return accordion;
 	}
 	
-	public Component configureForm() {
+	public Component configureWorkForm() {
 		ValidationUtil.applyTextAreaValidation(workName);
 		ValidationUtil.applyValidation(ucletter);
 		noOfInstallments.setStepButtonsVisible(true);
@@ -188,7 +217,10 @@ public class WorkForm extends VerticalLayout {
 			workSelect.setItems(workname);
 			workSelect.setValue(workname);
 		});
-		workSelect.addValueChangeListener(e->workName.setValue(workSelect.getValue()));
+		workSelect.addValueChangeListener(e -> {
+		    String val = workSelect.getValue();
+		    workName.setValue(val != null ? val : "");
+		});
 		//sanctionNo.setMinLength(2);
 		//sanctionNo.setMaxLength(50);
 		sanctionNo.setItems(service.getSanctionNos());
@@ -230,7 +262,7 @@ public class WorkForm extends VerticalLayout {
 		//delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
 		save.addClickShortcut(Key.ENTER);
 		close.addClickShortcut(Key.ESCAPE);
-		save.addClickListener(event -> validatandSave());
+		save.addClickListener(event -> saveNewWork());
 		// delete.addClickListener(event -> fireEvent(new DeleteEvent(this, work)));
 		delete.addClickListener(event -> confirmDelete(work));
 		close.addClickListener(event -> fireEvent(new CloseEvent(this)));
@@ -263,20 +295,24 @@ public class WorkForm extends VerticalLayout {
 		}
 	}
 
-	public Component configureInstallmentForm() {
+	public Component releaseInstallmentForm() {
 		ValidationUtil.applyValidation(instRemarks);
 		FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(installmentmaster, 2);
 		form2.add(instAction, 2);
-		
 		form2.add(installmentAmount, 2);
 		form2.add(instRemarks, 2);
-		// form2.add(installmentCheque, 2);
+		form2.add(installsave, 1);
+		form2.add(installclose, 1);
 		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
 				// Use two columns, if layout's width exceeds 500px
 				new ResponsiveStep("500px", 2));
 		//instRemarks.setVisible(false);
+		installsave.addClickShortcut(Key.ENTER);
+		installclose.addClickShortcut(Key.ESCAPE);
+		ButtonUtil.applySaveStyle(installsave);
+		ButtonUtil.applyCloseStyle(installclose);
 		instAction.addValueChangeListener(event -> {
 		    String selectedValue = event.getValue();
 
@@ -288,74 +324,101 @@ public class WorkForm extends VerticalLayout {
 		    	installmentAmount.setVisible(false);
 		    }
 		});
-		return form2;
-	}
-
-	private Component createInstallButtons() {
-		ButtonUtil.applySaveStyle(installsave);
-		ButtonUtil.applyCloseStyle(installclose);
-		//ButtonUtil.applyDeleteStyle(delete);
-		installsave.setEnabled(isUser);
-		// installsave.setWidthFull();
-		// installclose.setWidthFull();
-		installsave.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		installsave.addClickShortcut(Key.ENTER);
-		installclose.addClickShortcut(Key.ESCAPE);
 		installsave.addClickListener(event -> {
 		    if (instAction.getValue().equals("Forward")) {
 		        SaveInstallments();
 		    } else {
-		        returnInstallment();
+		        reverseFlow(instRemarks);
 		    }
 		});
 		installclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
-		HorizontalLayout hl1 = new HorizontalLayout(installsave, installclose);
-		// return new HorizontalLayout(save, delete, close);
-		hl1.setWidthFull();
-		return hl1;
+		return form2;
 	}
+
 	
 
-	public Component configureUcForm() {
+	public Component uploadUcForm() {
 		ValidationUtil.applyValidation(ucRemarks);
-		vlayout1=new VerticalLayout();
-		//Upload ucUpload=UploadUtil.createPdfUpload(uploadedPdf1,"Upload Document","Select UC Document");
 		this.ucUpload = UploadUtil.createPdfUpload(uploadedPdf1, "Upload Document", "Select UC Document");
-	    vlayout1.add(this.ucUpload);
-		//vlayout1.add(ucUpload);
-		FormLayout form2 = new FormLayout();
+	    FormLayout form2 = new FormLayout();
 		form2.setWidth("100%");
 		form2.add(ucAction, 2);
 		form2.add(ucDate, 1);
 		form2.add(ucletter, 1);
-		//form2.add(createUpload(upload1, buffer), 2);
-		form2.add(vlayout1, 2);
+		form2.add(ucUpload, 2);
 		form2.add(ucRemarks,2);
+		form2.add(ucsave,1);
+		form2.add(ucclose,1);
+		ButtonUtil.applySaveStyle(ucsave);
+		ButtonUtil.applyCloseStyle(ucclose);
 		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
 				// Use two columns, if layout's width exceeds 500px
 				new ResponsiveStep("500px", 2));
-		//ucRemarks.setVisible(false);
+		ucsave.addClickShortcut(Key.ENTER);
+		ucclose.addClickShortcut(Key.ESCAPE);
+		ucsave.addClickListener(event -> {
+		    if (ucAction.getValue()=="Forward") {
+		        uploadUc();
+		    } else {
+		        reverseFlow(ucRemarks);
+		    }
+		});
+		ucclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
 		ucAction.addValueChangeListener(event -> {
 		    String selectedValue = event.getValue();
-
 		    if ("Forward".equals(selectedValue)) {
-		    	//ucRemarks.setVisible(false);
-		    	//ucAction.setVisible(true);
 		    	ucDate.setVisible(true);
 		    	ucletter.setVisible(true);
-		    	vlayout1.setVisible(true);
+		    	ucUpload.setVisible(true);
 		    }else {
-		    	//ucRemarks.setVisible(true);
-		    	//ucAction.setVisible(false);
 		    	ucDate.setVisible(false);
 		    	ucletter.setVisible(false);
-		    	vlayout1.setVisible(false);
+		    	ucUpload.setVisible(false);
 		    }
 		});
 
 		return form2;
 	}
-	public Component configureROForm() {
+
+	public Component releaseFundsForm() {
+		vlayoutrf=new VerticalLayout();
+		this.rfUpload = UploadUtil.createPdfUpload(uploadedRfPdf, "Upload Transfer of Funds Receipt", "Select Fund Receipt");
+	    vlayoutrf.add(rfUpload);
+	    ButtonUtil.applySaveStyle(rfsave);
+	    ButtonUtil.applyCloseStyle(rfclose);
+		FormLayout rfform = new FormLayout();
+		rfform.setWidth("100%");
+		rfform.add(rfAction, 2);
+		//form2.add(createUpload(upload1, buffer), 2);
+		//rfform.add(null);
+		rfform.add(vlayoutrf, 2);
+		rfform.add(rfRemarks,2);
+		rfform.add(rfsave,1);
+		rfform.add(rfclose,1);
+		rfform.setResponsiveSteps(new ResponsiveStep("0", 2),
+				// Use two columns, if layout's width exceeds 500px
+				new ResponsiveStep("500px", 2));
+		rfAction.addValueChangeListener(event -> {
+		    String selectedValue = event.getValue();
+
+		    if ("Forward".equals(selectedValue)) {
+		    	vlayoutrf.setVisible(true);
+		    }else {
+		    	//ucRemarks.setVisible(true);
+		    	//ucAction.setVisible(false);
+		    	vlayoutrf.setVisible(false);
+		    }
+		});
+		rfsave.addClickListener(event -> {
+		    if (rfAction.getValue()=="Forward") {
+		        saveRf();
+		    } else {
+		        reverseFlow(rfRemarks);
+		    }
+		});
+		return rfform;
+	}
+	public Component uploadROForm() {
 		ValidationUtil.applyValidation(roRemarks);
 		FormLayout form2 = new FormLayout();
 		vlayout2=new VerticalLayout();
@@ -381,7 +444,7 @@ public class WorkForm extends VerticalLayout {
 		    if (roAction.getValue().equals("Forward")) {
 		        saveRo();
 		    } else {
-		        returnRo();
+		        reverseFlow(roRemarks);
 		    }
 		});
 		roAction.addValueChangeListener(event -> {
@@ -401,478 +464,665 @@ public class WorkForm extends VerticalLayout {
 
 		return form2;
 	}
-	public Component configureCompleteForm() {
+	
+	public Component generateROForm() {
+
+		ValidationUtil.applyValidation(complRemarks);
+		ButtonUtil.applySaveStyle(genrosave);
+		ButtonUtil.applyCloseStyle(genroclose);
+		FormLayout form2 = new FormLayout();
+		form2.setWidthFull();
+		form2.add(genroText, 2);
+		form2.add(genroRemarks, 2);
+		form2.add(genrosave, 1);
+		form2.add(genroclose, 1);
+		
+		form2.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2), new FormLayout.ResponsiveStep("500px", 2));
+
+		genroclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
+		genrosave.addClickListener(event -> {
+			reverseFlow(genroRemarks);
+			clearFields();
+
+		});
+		return form2;
+	}
+	public Component completeForm() {
+
 		ValidationUtil.applyValidation(complRemarks);
 		FormLayout form2 = new FormLayout();
-		H6 returnlabel=new H6("Return to "+pf4.getStepName());
-		Button complsave=new Button("Save");
-		Button complclose=new Button("Close");
-		form2.setWidth("100%");
-		form2.add(returnlabel, 2);
+		form2.setWidthFull();
 		form2.add(complRemarks, 2);
 		form2.add(complsave, 1);
 		form2.add(complclose, 1);
-		form2.setResponsiveSteps(new ResponsiveStep("0", 2),
-				// Use two columns, if layout's width exceeds 500px
-				new ResponsiveStep("500px", 2));
-		//roRemarks.setVisible(false);
+
+		form2.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2), new FormLayout.ResponsiveStep("500px", 2));
+
 		complclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
 		complsave.addClickListener(event -> {
-		    if (complRemarks.getValue()==null||complRemarks.getValue().trim().isEmpty()) {
-		    	Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		    } else {
-		    	work = service.getWorkById(work.getWorkId());
-				if(work.getProcessflow().getStepOrder()!=5) {
-					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-					return;
-				}
-		    	try {
-					Users user=service.getLoggedUser();
-					ProcessHistory ph=new ProcessHistory();
-					ph.setWork(work);
-					ph.setProcessFlow(pf5);
-					ph.setProcessName("Return To "+pf4.getStepName());
-					ph.setReversed(true);
-					ph.setUser(user);
-					ph.setRemarks(complRemarks.getValue());
-					ph.setEnteredOn(LocalDateTime.now());
-					service.saveProcessHistory(ph);
-					updateWork("Return To "+pf4.getStepName(),pf4);
-					Notification.show("Returned Successfully to "+pf4.getStepName(), 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-					clearFields();
-				} catch (Exception e) {
-					Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-				}
-		    }
+			reverseFlow(complRemarks);
+			clearFields();
+
 		});
-		
 		return form2;
 	}
-	private Component createUcButtons() {
-		ButtonUtil.applySaveStyle(ucsave);
-		ButtonUtil.applyCloseStyle(ucclose);
-		//ButtonUtil.applyDeleteStyle(delete);
-		ucsave.setEnabled(isUser);
-		ucsave.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		ucsave.addClickShortcut(Key.ENTER);
-		ucclose.addClickShortcut(Key.ESCAPE);
-		ucsave.addClickListener(event -> {
-		    if (ucAction.getValue()=="Forward") {
-		        saveUc();
-		    } else {
-		        returnUc();
-		    }
-		});
-		ucclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
-		HorizontalLayout hl1 = new HorizontalLayout(ucsave, ucclose);
-		// return new HorizontalLayout(save, delete, close);
-		hl1.setWidthFull();
-		return hl1;
-	}
+	
 	
 	public void setWork(Work work) {
 		this.work = work;
 		binder.readBean(work);
 	}
 	
-	
-	@Transactional
-	private void validatandSave() {
-		if (work == null) {
-			Notification.show("Unable To Identify The Work", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if (noOfInstallments.getValue() < 1 || noOfInstallments.getValue() > 5) {
-			Notification.show("Failure: Number of Installments Should Be Between 1 and 5", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if (workAmount.getValue() == null || workAmount.getValue().compareTo(BigDecimal.ZERO) == -1
-				|| workAmount.getValue().compareTo(BigDecimal.ZERO) == 0) {
-			Notification.show("Failure: Amount  Must Be Entered .", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if (sanctionDate.getValue() == null) {
-			Notification.show("Failure: Sanction Date Must Be Entered .", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		} else if(!ValidationUtil.applyValidation(sanctionNo.getValue())) {
-			Notification.show("Sanction No: Special Characters like *, ?, ^,%, $ ,#  are not allowed.", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}
-			else {
-			try {
-				long singlework = work.getWorkCode();
-				binder.writeBean(work);
-				long newWorkCode = service.getWorkCode() + 1;
-				Users user=service.getLoggedUser();
-				ProcessHistory ph = null;
-				if (singlework == 0) {
-					work.setWorkCode(newWorkCode);
-					work.setWorkStatus("Entered");
-					work.setUpdatedBy(user);
-					work.setUpdatedOn(LocalDateTime.now());
-					work.setProcessflow(pf2);
-					ph = new ProcessHistory();
-					ph.setWork(work);
-					ph.setEnteredOn(LocalDateTime.now());
-					ph.setProcessFlow(pf1);
-					ph.setProcessName(pf1.getStepName());
-					ph.setReversed(false);
-					ph.setUser(user);
-					
-				}
-				work.setDistrict(service.getDistrict());
-				//audit=new Audit(service);
-				if(singlework == 0) {
-					audit.saveAudit(work,pf1.getStepName(), "Entry");
-				}else {
-					audit.saveAudit(work, pf1.getStepName(), "Update");
-				}
-				fireEvent(new SaveEvent(this, work));
-				if (ph != null) {
-			        service.saveProcessHistory(ph);
-			    }
-				
-				String message = (singlework == 0) 
-				        ? "Work Entered Successfully With Work Code: " + newWorkCode
-				        : "Work Updated Successfully";
+	private void saveNewWork() {
 
-				    Notification.show(message, 5000, Notification.Position.TOP_CENTER)
-				                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-				clearFields();
-			} catch (Exception e) {
-				Notification.show("Unable to Save Work. Please Enter All Mandatory Fields" + e, 5000, Position.TOP_CENTER)
-						.addThemeVariants(NotificationVariant.LUMO_ERROR);
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	
-	@Transactional
-	private void SaveInstallments() {
-		int workinstallments = work.getNoOfInstallments();
-		int tableinstallments = service.getInstallments(work).size();
-		int toEnterInstallment = tableinstallments + 1;
-		if (work == null) {
-			Notification.show("Unable To Retrieve Work. Please Select Work From The Table").addThemeVariants(NotificationVariant.LUMO_WARNING);
-		} else if (workinstallments == tableinstallments) {
-			Notification.show("Failure: All Installments Have Been Entered For The Selected Work.", 5000,
-					Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
-		} else if (installmentAmount.getValue() == null || installmentAmount.getValue().compareTo(BigDecimal.ZERO) == 0
-				|| installmentAmount.getValue().compareTo(BigDecimal.ZERO) == -1) {
-			Notification.show("Failure:Please Enter A Valid Amount .", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
-		} else if (work.getWorkAmount().compareTo(installmentAmount.getValue()) == -1) {
-			Notification.show("Failure: Please Check Released Amount. It Should Be less Or Equal To The Sanctioned Amount",
-					5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
-		} else if ((calculateReleasedInstAmount(work).add(installmentAmount.getValue()))
-				.compareTo(work.getWorkAmount()) == 1) {
-			Notification.show("Failure: Released Amount:" + calculateReleasedInstAmount(work)
-					+ " & Amount To Be Released has Exceeded The Sanctioned Amount:" + work.getWorkAmount() + "", 5000,
-					Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
-		} else {
-			work = service.getWorkById(work.getWorkId());
-			
-			if(work.getProcessflow().getStepOrder()!=2) {
-				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-				return;
-			}
-			try {
-				Users user=service.getLoggedUser();
-				Installment installment = new Installment();
-				installment.setInstallmentAmount(installmentAmount.getValue());
-				installment.setInstallmentNo(service.getInstallments(work).size() + 1);
-				installment.setInstallmentAmountPrev(calculateReleasedInstAmount(work));
-				installment.setEnteredBy(user);
-				installment.setEnteredOn(LocalDateTime.now());
-				installment.setWork(work);
-				ProcessHistory ph=new ProcessHistory();
-				ph.setWork(work);
-				ph.setProcessFlow(pf2);
-				ph.setProcessName(pf2.getStepName()+"-"+toEnterInstallment);
-				ph.setReversed(false);
-				ph.setUser(user);
-				ph.setEnteredOn(LocalDateTime.now());
-				ph.setRemarks(instRemarks.getValue());
-				service.saveInstallment(installment);
-				service.saveProcessHistory(ph);
-				
-				audit.saveAudit(work, installment, pf2.getStepName()+"-"+toEnterInstallment, "Entry");
-				updateWork("Installment " + toEnterInstallment + "",pf3);
-				Notification.show(pf2.getStepName()+ "-" + toEnterInstallment + " Completed Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-				clearFields();
-			} catch (Exception e) {
-				Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);;
-
-			}
-		}
-	}
-	public void returnInstallment() {
-		if (instRemarks.getValue() == null || instRemarks.getValue().trim().isEmpty()) {
-			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}else {
-			work = service.getWorkById(work.getWorkId());
-			if(work.getProcessflow().getStepOrder()!=2) {
-				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-				return;
-			}
-			try {
-				Users user=service.getLoggedUser();
-				ProcessHistory ph=new ProcessHistory();
-				ph.setWork(work);
-				ph.setProcessFlow(pf2);
-				ph.setProcessName("Return To "+pf4.getStepName());
-				ph.setReversed(true);
-				ph.setUser(user);
-				ph.setRemarks(instRemarks.getValue());
-				ph.setEnteredOn(LocalDateTime.now());
-				service.saveProcessHistory(ph);
-				audit.saveAuditReturn(work, "Return To "+pf4.getStepName(), "Return");
-				updateWork("Return To "+pf4.getStepName(),pf4);
-				Notification.show("Returned Successfully to "+pf4.getStepName(), 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-				clearFields();
-			} catch (Exception e) {
-				Notification.show("Something Went Wrong :" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-			}
-		}
-	}
-
-	
-
-	public void saveUc() {
-	    int tableinstallments = service.getInstallments(work).size();
-	    int toEnterInstallment = tableinstallments;
-	    int index = tableinstallments - 1;
-
-	    if (ucletter.getValue() == null || ucletter.getValue().trim().isEmpty() || ucDate.getValue() == null) {
-	        Notification.show("Please Enter Letter No and Date", 5000, Position.TOP_CENTER)
+	    if (work == null) {
+	        Notification.show("Unable To Identify The Work", 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	        return;
 	    }
 
-	    if (ucDate.getValue().isBefore(service.getInstallments(work).get(index).getInstallmentDate())) {
-	        Notification.show("UC Date Cannot Be Before Installment Release Date", 5000, Position.TOP_CENTER)
+	    if (noOfInstallments.getValue() < 1 || noOfInstallments.getValue() > 5) {
+	        Notification.show("Failure: Number of Installments Should Be Between 1 and 5", 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (workAmount.getValue() == null || workAmount.getValue().compareTo(BigDecimal.ZERO) <= 0) {
+	        Notification.show("Failure: Amount Must Be Entered.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (sanctionDate.getValue() == null) {
+	        Notification.show("Failure: Sanction Date Must Be Entered.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (!ValidationUtil.applyValidation(sanctionNo.getValue())) {
+	        Notification.show("Sanction No: Special Characters like *, ?, ^, %, $, # are not allowed.", 5000,
+	                Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 	        return;
 	    }
 
 	    try {
-	        work = service.getWorkById(work.getWorkId());
+	        // Stronger "new" check
+	        boolean isNew = work.getWorkId() == 0;
 
-	        if (work.getProcessflow().getStepOrder() != 4) {
-	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-	            return;
-	        }
-
-	        if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
-	            Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
+	        // Optional but recommended: stop early if binder invalid
+	        if (!binder.validate().isOk()) {
+	            Notification.show("Please fill all mandatory fields.", 5000, Position.TOP_CENTER)
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	            return;
 	        }
+	        binder.writeBean(work);
 
 	        Users user = service.getLoggedUser();
+	        LocalDateTime now = LocalDateTime.now();
 
-	        // 1) Generate unique UC filename
-	        String safeFileName = fileStorageService.generateSafeFileName("UC", "uc.pdf");
+	        work.setDistrict(service.getDistrict());
+	        work.setUpdatedBy(user);
+	        work.setUpdatedOn(now);
 
-	        // 2) Save UC file to filesystem
-	        try (InputStream in = new ByteArrayInputStream(uploadedPdf1.get())) {
-	            fileStorageService.save(in, safeFileName);
+	        Long newWorkCode = null;
+	        ProcessHistory ph = null;
+
+	        if (isNew) {
+	            newWorkCode = service.getWorkCode() + 1;
+	            work.setWorkCode(newWorkCode);
+
+	            ProcessFlow entryStep = service.getStepByCode("WORK_ENTRY");
+	            if (entryStep == null) {
+	                Notification.show("Workflow misconfigured: WORK_ENTRY step not found.", 6000, Position.TOP_CENTER)
+	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	                return;
+	            }
+
+	            ProcessFlow nextStep = entryStep.getNextStep();
+	            if (nextStep == null) {
+	                Notification.show("Workflow misconfigured: WORK_ENTRY has no next step.", 6000, Position.TOP_CENTER)
+	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	                return;
+	            }
+
+	            work.setProcessflow(nextStep);
+
+	            ph = new ProcessHistory();
+	            ph.setWork(work);
+	            ph.setUser(user);
+	            ph.setFromStep(entryStep);
+	            ph.setToStep(nextStep);
+	            ph.setProcessName(entryStep.getStepName()); // or "Entry"
+	            ph.setReversed(false);
+	            ph.setEnteredOn(now);
+	            ph.setRemarks(null);
 	        }
 
-	        // 3) Update installment + store UC path string
-	        this.installment = service.getInstallments(work).get(index);
-	        installment.setUcDate(ucDate.getValue());
-	        installment.setUcLetter(ucletter.getValue());
-	        installment.setEnteredBy(user);
-	        installment.setUcDocument(safeFileName);   // ✅ IMPORTANT
-	        service.saveInstallment(installment);
+	        // Save Work
+	        fireEvent(new SaveEvent(this, work));
 
-	        // if you really need this here, keep it; otherwise can remove
-	        service.saveWork(work);
-
-	        // 4) Process history with document path
-	        ProcessHistory ph = new ProcessHistory();
-	        ph.setWork(work);
-	        ph.setReversed(false);
-	        ph.setUser(user);
-	        ph.setEnteredOn(LocalDateTime.now());
-	        ph.setRemarks(ucRemarks.getValue());
-	        ph.setProcessFlow(pf4);
-	        ph.setProcessName(pf4.getStepName() + "-" + toEnterInstallment);
-	        ph.setDocument(safeFileName);              // ✅ IMPORTANT
-	        service.saveProcessHistory(ph);
-
-	        audit.saveAudit(work, installment, pf4.getStepName() + "-" + toEnterInstallment, "Entry");
-
-	        // 5) Move workflow
-	        if (work.getNoOfInstallments() == tableinstallments) {
-	            ProcessHistory ph1 = new ProcessHistory();
-	            ph1.setWork(work);
-	            ph1.setProcessFlow(pf5);
-	            ph1.setUser(user);
-	            ph1.setReversed(false);
-	            ph1.setEnteredOn(LocalDateTime.now());
-	            ph1.setProcessName(pf5.getStepName());
-
-	            updateWork("Completed", pf5);
-	            service.saveProcessHistory(ph1);
-	        } else {
-	            updateWork(pf2.getStepName() + "-" + toEnterInstallment, pf2);
+	        // Save history for new work
+	        if (ph != null) {
+	            service.saveProcessHistory(ph);
 	        }
 
-	        Notification.show(pf2.getStepName() + "-" + toEnterInstallment + " Completed Successfully", 5000, Position.TOP_CENTER)
+	        String message = isNew
+	                ? "Work Entered Successfully With Work Code: " + newWorkCode
+	                : "Work Updated Successfully";
+
+	        Notification.show(message, 5000, Notification.Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
 	        clearFields();
 
 	    } catch (Exception e) {
-	        Notification.show("Something Went Wrong : " + e, 5000, Position.TOP_CENTER)
+	        Notification.show("Unable to Save Work. Please Enter All Mandatory Fields. " + e.getMessage(),
+	                5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	
+	private void updateWork(ProcessFlow nextPf) {
+	    try {
+	        Work dbWork = service.getWorkById(work.getWorkId());
+
+	        if (dbWork == null || nextPf == null) {
+	            throw new IllegalStateException("Invalid workflow transition");
+	        }
+
+	        dbWork.setProcessflow(nextPf);
+	        dbWork.setUpdatedBy(service.getLoggedUser());
+	        dbWork.setUpdatedOn(LocalDateTime.now());
+
+	        fireEvent(new SaveEvent(this, dbWork));
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e.getMessage())
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	    }
 	}
-	public void returnUc() {
-		if (ucRemarks.getValue() == null|| ucRemarks.getValue().trim().isEmpty()) {
-			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}else {
-			work = service.getWorkById(work.getWorkId());
-			if(work.getProcessflow().getStepOrder()!=4) {
-				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-				return;
-			}
-			try {
-				Users user=service.getLoggedUser();
-				ProcessHistory ph=new ProcessHistory();
-				ph.setWork(work);
-				ph.setProcessFlow(pf4);
-				ph.setProcessName("Return To "+pf3.getStepName());
-				ph.setReversed(true);
-				ph.setUser(user);
-				ph.setEnteredOn(LocalDateTime.now());
-				ph.setRemarks(ucRemarks.getValue());
-				service.saveProcessHistory(ph);
-				audit.saveAuditReturn(work, "Return To "+pf3.getStepName(), "Entry");
-				updateWork("Returned to "+pf3.getStepName(), pf3);
-				Notification.show("Returned to "+pf3.getStepName()+" Sucessfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-				clearFields();
-			} catch (Exception e) {
-				Notification.show("Something Went Wrong" + e).addThemeVariants(NotificationVariant.LUMO_ERROR);
+	
+	@Transactional
+	private void SaveInstallments() {
 
-			}
-		}
+	    if (work == null) {
+	        Notification.show("Unable To Retrieve Work. Please Select Work From The Table")
+	                .addThemeVariants(NotificationVariant.LUMO_WARNING);
+	        return;
+	    }
+
+	    work = service.getWorkById(work.getWorkId());
+	    if (work == null) {
+	        NotificationUtil.showError("Unable to reload Work. Please try again.");
+	        return;
+	    }
+
+	    ProcessFlow current = work.getProcessflow();
+	    String currentCode = (current != null) ? current.getStepCode() : null;
+
+	    if (!"RELEASE_INSTALLMENT".equals(currentCode)) {
+	        NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	        UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	        return;
+	    }
+
+	    int allowed = work.getNoOfInstallments();
+	    int alreadyEntered = service.getInstallments(work).size();
+	    int toEnter = alreadyEntered + 1;
+
+	    if (allowed == alreadyEntered) {
+	        Notification.show("Failure: All Installments Have Been Entered For The Selected Work.", 5000,
+	                Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
+	        return;
+	    }
+
+	    if (installmentAmount.getValue() == null || installmentAmount.getValue().compareTo(BigDecimal.ZERO) <= 0) {
+	        Notification.show("Failure: Please Enter A Valid Amount.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_WARNING);
+	        return;
+	    }
+
+	    BigDecimal releasedSoFar = calculateReleasedInstAmount(work);
+	    if (releasedSoFar.add(installmentAmount.getValue()).compareTo(work.getWorkAmount()) > 0) {
+	        Notification.show("Failure: Released Amount Exceeds Sanctioned Amount.", 5000,
+	                Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
+	        return;
+	    }
+
+	    try {
+	        Users user = service.getLoggedUser();
+	        LocalDateTime now = LocalDateTime.now();
+
+	        // Save installment
+	        Installment installment = new Installment();
+	        installment.setInstallmentAmount(installmentAmount.getValue());
+	        installment.setInstallmentNo(toEnter);
+	        installment.setInstallmentAmountPrev(releasedSoFar);
+	        installment.setEnteredBy(user);
+	        installment.setEnteredOn(now);
+	        installment.setWork(work);
+
+	        // Decide next step (IMMEDIATE move)
+	        ProcessFlow nextStep = current.getNextStep();
+	        if (nextStep == null) {
+	            NotificationUtil.showError("Workflow misconfigured: RELEASE_INSTALLMENT has no next step.");
+	            return;
+	        }
+
+	        // History: FROM current -> TO next
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setUser(user);
+	        ph.setFromStep(current);
+	        ph.setToStep(nextStep);
+	        ph.setProcessName("Enter Installment - " + toEnter);  // clearer than repeating step name
+	        ph.setReversed(false);
+	        ph.setEnteredOn(now);
+	        ph.setRemarks(instRemarks.getValue());
+
+	        service.saveInstallment(installment);
+	        service.saveProcessHistory(ph);
+	        
+	        audit.saveAudit(work, installment, "Enter Installment - " + toEnter, "Entry");
+
+	        // Move work forward now
+	        updateWork(nextStep);
+	        fireEvent(new RefreshEvent(this, work));
+	        Notification.show("Installment " + toEnter + " Entered. Moved to " + nextStep.getStepName(),
+	                5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e.getMessage())
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
 	}
+	public void reverseFlow(TextField remarks) {
+		
+	    if (remarks.getValue() == null || remarks.getValue().trim().isEmpty()) {
+	        Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
 
-	public void saveRo() {
-	    int tableinstallments = service.getInstallments(work).size();
-	    int toEnterInstallment = tableinstallments;
-	    int index = tableinstallments - 1;
+	    work = service.getWorkById(work.getWorkId());
+	    if (work == null) {
+	        NotificationUtil.showError("Unable to reload Work. Please try again.");
+	        return;
+	    }
+
+	    ProcessFlow current = work.getProcessflow();
+	    if (current == null) {
+	        NotificationUtil.showError("Work step not found.");
+	        return;
+	    }
+
+	    // Don't allow reverse from entry step
+	    if ("WORK_ENTRY".equals(current.getStepCode())) {
+	        Notification.show("Cannot return from Work Entry.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    try {
+	        // This should internally do: latest history where toStep=current -> return fromStep
+	        ProcessFlow returnTo = service.getPrevStepFromHistory(work);
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setUser(loggedUser);
+	        ph.setFromStep(current);      // returning FROM current
+	        ph.setToStep(returnTo);       // returning TO previous
+	        ph.setProcessName("Returned To :"+ returnTo.getStepName());  // keep processName generic (optional)
+	        ph.setReversed(true);
+	        ph.setRemarks(remarks.getValue());
+	        ph.setEnteredOn(LocalDateTime.now());
+
+	        service.saveProcessHistory(ph);
+
+	        audit.saveAuditReturn(work, "Return To " + returnTo.getStepName(), "Return");
+
+	        updateWork(returnTo);
+
+	        Notification.show("Returned Successfully to " + returnTo.getStepName(), 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e.getMessage(), 7000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	
+	
+
+	public void uploadUc() {
 
 	    try {
 	        work = service.getWorkById(work.getWorkId());
 
-	        if (work.getProcessflow().getStepOrder() != 3) {
+	        if (work.getProcessflow() == null ||
+	            !"UPLOAD_UC".equals(work.getProcessflow().getStepCode())) {
+
 	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
 	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
 	            return;
 	        }
 
+	        if (ucletter.getValue() == null || ucletter.getValue().trim().isEmpty()
+	                || ucDate.getValue() == null) {
+
+	            Notification.show("Please Enter Letter No and Date", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        List<Installment> installments = service.getInstallments(work);
+	        if (installments == null || installments.isEmpty()) {
+	            Notification.show("No installment found", 4000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        int tableInstallments = installments.size();
+	        Installment latestInstallment = installments.get(tableInstallments - 1);
+
+	        if (latestInstallment.getInstallmentDate() != null &&
+	            ucDate.getValue().isBefore(latestInstallment.getInstallmentDate())) {
+
+	            Notification.show("UC Date Cannot Be Before Installment Release Date",
+	                    5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
+	            Notification.show("Please Upload UC as PDF", 3000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        Users user = service.getLoggedUser();
+	        LocalDateTime now = LocalDateTime.now();
+
+	        String safeFileName = fileStorageService.generateSafeFileName("UC", "uc.pdf");
+	        try (InputStream in = new ByteArrayInputStream(uploadedPdf1.get())) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+
+	        latestInstallment.setUcDate(ucDate.getValue());
+	        latestInstallment.setUcLetter(ucletter.getValue());
+	        latestInstallment.setEnteredBy(user);
+	        latestInstallment.setUcDocument(safeFileName);
+	        service.saveInstallment(latestInstallment);
+
+	        ProcessFlow current = work.getProcessflow();
+	        ProcessFlow next = (work.getNoOfInstallments() == tableInstallments)
+	                ? service.getStepByCode("COMPLETED")
+	                : service.getStepByCode("RELEASE_INSTALLMENT");
+
+	        if (next == null) {
+	            NotificationUtil.showError("Workflow misconfigured: next step not found.");
+	            return;
+	        }
+
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setFromStep(current);
+	        ph.setToStep(next);
+	        ph.setProcessName(current.getStepName() + "-" + latestInstallment.getInstallmentNo());
+	        ph.setUser(user);
+	        ph.setEnteredOn(now);
+	        ph.setReversed(false);
+	        ph.setRemarks(ucRemarks.getValue());
+	        ph.setDocument(safeFileName);
+	        service.saveProcessHistory(ph);
+
+	        // ✅ advance workflow
+	        work.setProcessflow(next);
+	        work.setUpdatedBy(user);
+	        work.setUpdatedOn(now);
+	        work.setWorkStatus(next.getStepName() + "-" + latestInstallment.getInstallmentNo()); // optional
+	        service.saveWork(work);
+
+	        fireEvent(new RefreshEvent(this, work));
+
+	        Notification.show("UC Uploaded Successfully", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e.getMessage(),
+	                5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void saveRf() {
+	    try {
+	        // 1) Null checks
+	        if (work == null || work.getWorkId() == 0) {
+	            Notification.show("Please select a Work first.", 4000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        // 2) Reload fresh managed Work
+	        Work dbWork = service.getWorkById(work.getWorkId());
+	        if (dbWork == null) {
+	            NotificationUtil.showError("Work not found. Page will reload.");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+	        work = dbWork;
+
+	        // 3) Validate step using stepCode (NOT stepOrder)
+	        ProcessFlow current = work.getProcessflow();
+	        String currentCode = (current != null) ? current.getStepCode() : null;
+
+	        // ✅ change this to your actual stepCode for “Fund Release / Upload Receipt”
+	        if (!"RELEASE_FUNDS".equals(currentCode)) {
+	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+
+	        // 4) Validate upload bytes
+	        if (uploadedRfPdf == null || uploadedRfPdf.get() == null || uploadedRfPdf.get().length == 0) {
+	            Notification.show("Please Select The Receipt Document to be Uploaded", 3000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        // 5) Load installments ONCE, pick latest
+	        List<Installment> installments = service.getInstallments(work);
+	        if (installments == null || installments.isEmpty()) {
+	            Notification.show("No installment found for this Work.", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        Installment latest = installments.get(installments.size() - 1);
+	        int installmentNo = latest.getInstallmentNo();
+
+	        Users user = service.getLoggedUser();
+	        LocalDateTime now = LocalDateTime.now();
+
+	        // 6) Save receipt file
+	        String safeFileName = fileStorageService.generateSafeFileName("Fund", "fund_receipt.pdf");
+	        try (InputStream in = new ByteArrayInputStream(uploadedRfPdf.get())) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+
+	        // 7) Update installment
+	        latest.setFundDocument(safeFileName);
+	        service.saveInstallment(latest);
+
+	        // 8) Move to next step via chain
+	        ProcessFlow nextStep = current.getNextStep();
+	        if (nextStep == null) {
+	            NotificationUtil.showError("Workflow misconfigured: RELEASE_FUNDS has no next step.");
+	            return;
+	        }
+
+	        // 9) Save process history (from -> to)
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setUser(user);
+	        ph.setFromStep(current);
+	        ph.setToStep(nextStep);
+	        ph.setProcessName(current.getStepName() + "-" + installmentNo);
+	        ph.setReversed(false);
+	        ph.setEnteredOn(now);
+	        ph.setRemarks(rfRemarks.getValue()); // ✅ use rfRemarks (better than roRemarks)
+	        ph.setDocument(safeFileName);
+	        service.saveProcessHistory(ph);
+
+	        // 10) Audit
+	        audit.saveAudit(work, latest, current.getStepName() + "-" + installmentNo, "Entry");
+
+	        // 11) Update work
+	        work.setProcessflow(nextStep);
+	        work.setUpdatedBy(user);
+	        work.setUpdatedOn(now);
+
+	        // If grid/UI still uses workStatus, keep it non-null
+	        work.setWorkStatus(nextStep.getStepName() + "-" + installmentNo);
+
+	        service.saveWork(work);
+	        fireEvent(new RefreshEvent(this, work));
+	        Notification.show("Fund Release saved successfully", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something went wrong: " + e.getMessage(), 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	public void saveRo() {
+
+	    try {
+	        // 1) Null check first
+	        if (work == null || work.getWorkId() == 0) {
+	            Notification.show("Please select a Work first.", 4000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        // 2) Reload fresh managed Work (prevents stale / transient issues)
+	        Work dbWork = service.getWorkById(work.getWorkId());
+	        if (dbWork == null) {
+	            NotificationUtil.showError("Work not found. Page will reload.");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+	        work = dbWork;
+
+	        // 3) Validate correct step using stepCode (NOT stepOrder)
+	        ProcessFlow current = work.getProcessflow();
+	        String currentCode = (current != null) ? current.getStepCode() : null;
+
+	        // ✅ change to your actual stepCode for "Upload RO"
+	        if (!"UPLOAD_RELEASE_ORDER".equals(currentCode)) {
+	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
+
+	        // 4) Validate letter/date
 	        if (instLetter.getValue() == null || instLetter.getValue().trim().isEmpty() || instDate.getValue() == null) {
 	            Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER)
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	            return;
 	        }
 
+	        // 5) Validate upload bytes
 	        if (uploadedPdf2 == null || uploadedPdf2.get() == null || uploadedPdf2.get().length == 0) {
 	            Notification.show("Please Select The Release Order To be Uploaded", 3000, Position.TOP_CENTER)
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	            return;
 	        }
 
+	        // 6) Load installments ONCE
+	        List<Installment> installments = service.getInstallments(work);
+	        if (installments == null || installments.isEmpty()) {
+	            Notification.show("No installment found for this Work. Enter installment first.", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
+
+	        // Latest installment (your workflow assumes RO is for latest installment)
+	        Installment latest = installments.get(installments.size() - 1);
+	        int installmentNo = latest.getInstallmentNo(); // better than using list size
+
 	        Users user = service.getLoggedUser();
+	        LocalDateTime now = LocalDateTime.now();
 
-	        // 1) generate file name for RO (not UC)
-	        String safeFileName = fileStorageService.generateSafeFileName("RO", "release_order.pdf");
-
-	        // 2) save bytes to filesystem
+	        // 7) Save RO file to filesystem
+	        String safeFileName = fileStorageService.generateSafeFileName("ROsigned", "release_order.pdf");
 	        try (InputStream in = new ByteArrayInputStream(uploadedPdf2.get())) {
 	            fileStorageService.save(in, safeFileName);
 	        }
 
-	        // 3) update installment
-	        this.installment = service.getInstallments(work).get(index);
-	        installment.setInstallmentDate(instDate.getValue());
-	        installment.setInstallmentLetter(instLetter.getValue());
+	        // 8) Update installment
+	        latest.setInstallmentDate(instDate.getValue());
+	        latest.setInstallmentLetter(instLetter.getValue());
+	        latest.setReleaseOrder(safeFileName);
+	        service.saveInstallment(latest);
 
-	        // store file key/path in installment (as your code expects)
-	        installment.setReleaseOrder(safeFileName);
+	        // 9) Advance to next step via chain
+	        ProcessFlow nextStep = current.getNextStep();
+	        if (nextStep == null) {
+	            NotificationUtil.showError("Workflow misconfigured: UPLOAD_RELEASE_ORDER has no next step.");
+	            return;
+	        }
 
-	        service.saveInstallment(installment);
-
-	        // 4) save process history
+	        // 10) Save ProcessHistory (from -> to)
 	        ProcessHistory ph = new ProcessHistory();
 	        ph.setWork(work);
-	        ph.setProcessFlow(pf3);
-	        ph.setProcessName(pf3.getStepName() + "-" + toEnterInstallment);
-	        ph.setReversed(false);
 	        ph.setUser(user);
-	        ph.setEnteredOn(LocalDateTime.now());
+	        ph.setFromStep(current);
+	        ph.setToStep(nextStep);
+	        ph.setProcessName(current.getStepName() + "-" + installmentNo);
+	        ph.setReversed(false);
+	        ph.setEnteredOn(now);
 	        ph.setRemarks(roRemarks.getValue());
-
-	        // store file key/path in history (as your code expects)
 	        ph.setDocument(safeFileName);
-
-	        audit.saveAudit(work, installment, pf3.getStepName() + "-" + toEnterInstallment, "Entry");
 	        service.saveProcessHistory(ph);
 
-	        updateWork(pf3.getStepName() + toEnterInstallment, pf4);
+	        // 11) Audit (keep your style)
+	        audit.saveAudit(work, latest, current.getStepName() + "-" + installmentNo, "Entry");
 
-	        Notification.show(pf3.getStepName() + "-" + toEnterInstallment + " Completed Successfully", 5000, Position.TOP_CENTER)
+	        // 12) Update Work current step (and optional status)
+	        work.setProcessflow(nextStep);
+	        work.setUpdatedBy(user);
+	        work.setUpdatedOn(now);
+
+	        // if you still use workStatus in UI/grid, keep it non-null:
+	        work.setWorkStatus(nextStep.getStepName() + "-" + installmentNo);
+
+	        service.saveWork(work);
+	        fireEvent(new RefreshEvent(this, work));
+	        Notification.show("Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
 	        clearFields();
-
-	    } catch (NullPointerException npe) {
-	        Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER)
-	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	        npe.printStackTrace();
-
+	        
 	    } catch (Exception e) {
-	        Notification.show("Something Went Wrong :" + e, 5000, Position.TOP_CENTER)
+	        Notification.show("Something Went Wrong: " + e.getMessage(), 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
 	    }
 	}
-	public void returnRo() {
-		if (ucRemarks.getValue() == null ||ucRemarks.getValue().trim().isEmpty()) {
-			Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_WARNING);
-		}else {
-			work = service.getWorkById(work.getWorkId());
-			
-			if(work.getProcessflow().getStepOrder()!=3) {
-				NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-				UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-				return;
-			}
-			try {
-				work.setProcessflow(pf2);
-				service.saveWork(work);
-				Users user=service.getLoggedUser();
-				ProcessHistory ph=new ProcessHistory();
-				//String prevTask=service.getProcessFlowByOrder(2).getStepName();
-				ph.setWork(work);
-				ph.setProcessFlow(pf3);
-				ph.setProcessName("Return To "+pf2.getStepName());
-				ph.setReversed(true);
-				ph.setUser(user);
-				ph.setEnteredOn(LocalDateTime.now());
-				ph.setRemarks(roRemarks.getValue());
-				service.saveProcessHistory(ph);
-				audit.saveAuditReturn(work, "Return To "+pf2.getStepName(), "Return");
-				NotificationUtil.showSuccess("Returned to "+pf2.getStepName()+" Sucessfully");
-				clearFields();
-			} catch (Exception e) {
-				NotificationUtil.showError("Error :"+e);
-
-			}
-		}
-	}
+	
 	
 	public void clearFields() {
 		
@@ -902,20 +1152,7 @@ public class WorkForm extends VerticalLayout {
 		}
 	    
 	}
-	private void updateWork(String statusText, ProcessFlow nextPf) {
-	    try {
-	        // always refresh the entity to avoid stale transitions
-	        Work dbWork = service.getWorkById(work.getWorkId());
-	        dbWork.setWorkStatus(statusText);
-	        dbWork.setProcessflow(nextPf);
-	        dbWork.setUpdatedBy(service.getLoggedUser());
-	        dbWork.setUpdatedOn(LocalDateTime.now());
-	        fireEvent(new SaveEvent(this, dbWork));
-	    } catch (Exception e) {
-	        Notification.show("Something Went Wrong: " + e)
-	            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	    }
-	}
+
 	
 	public BigDecimal calculateReleasedInstAmount(Work work) {
 	    List<Installment> list = service.getInstallments(work);
@@ -980,5 +1217,15 @@ public class WorkForm extends VerticalLayout {
 	public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
 			ComponentEventListener<T> listener) {
 		return getEventBus().addListener(eventType, listener);
+	}
+	public static class RefreshEvent extends WorkFormEvent {
+	    /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public RefreshEvent(WorkForm source, Work work) {
+	        super(source, work);
+	    }
 	}
 }

@@ -59,7 +59,7 @@ public class MainLayout extends AppLayout {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	Anchor anchor = new Anchor("", "SMIS 2.0");
+	Anchor anchor = new Anchor("", "MLALADS 1.0");
 	Dbservice service;
 	@Autowired
 	SecurityService securityService;
@@ -84,13 +84,14 @@ public class MainLayout extends AppLayout {
 	boolean isAdmin;
 	boolean isSuper;
 	private Users loggedUser;
+
 	public MainLayout(Dbservice dbservice) {
 		this.service = dbservice;
-		this.loggedUser=service.getLoggedUser();
+		this.loggedUser = service.getLoggedUser();
 		usertype.setItems("ADMIN", "USER");
 		isAdmin = service.hasRole("ADMIN");
 		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
-		isUser  = service.hasRole("USER");
+		isUser = service.hasRole("USER");
 		createHeader();
 		createDrawer();
 		checkPasswordExpiry();
@@ -98,9 +99,9 @@ public class MainLayout extends AppLayout {
 
 		// setPrimarySection(Section.DRAWER);
 	}
-	
+
 	private void checkPasswordExpiry() {
-		
+
 		LocalDateTime expiryDate = loggedUser.getPwdChangedDate();
 		LocalDateTime expiryDatePlus180Days = expiryDate.plus(180, ChronoUnit.DAYS);
 		LocalDateTime today = LocalDateTime.now();
@@ -114,182 +115,166 @@ public class MainLayout extends AppLayout {
 		district.setItems(service.getAllDistricts(state.getValue()));
 	}
 
-	
 	private Component createDrawerUserInfo() {
 
-	    String username = loggedUser.getProfileName();
-	    String roles = currentRolesText(); // the method you already fixed
-	    Span name = new Span(username);
-	    name.getStyle()
-	        .set("font-size", "var(--lumo-font-size-s)")
-	        .set("font-weight", "600");
+		String username = loggedUser.getProfileName();
+		String roles = currentRolesText(); // the method you already fixed
+		Span name = new Span(username);
+		name.getStyle().set("font-size", "var(--lumo-font-size-s)").set("font-weight", "600");
 
-	    Span role = new Span(roles);
-	    role.getStyle()
-	        .set("font-size", "var(--lumo-font-size-xs)")
-	        .set("color", "var(--lumo-secondary-text-color)");
+		Span role = new Span(roles);
+		role.getStyle().set("font-size", "var(--lumo-font-size-xs)").set("color", "var(--lumo-secondary-text-color)");
 
-	    VerticalLayout text = new VerticalLayout(name, role);
-	    text.setPadding(false);
-	    text.setSpacing(false);
+		VerticalLayout text = new VerticalLayout(name, role);
+		text.setPadding(false);
+		text.setSpacing(false);
 
-	    HorizontalLayout userInfo = new HorizontalLayout(text);
-	    userInfo.setAlignItems(FlexComponent.Alignment.CENTER);
-	    userInfo.setPadding(true);
-	    userInfo.setSpacing(true);
+		HorizontalLayout userInfo = new HorizontalLayout(text);
+		userInfo.setAlignItems(FlexComponent.Alignment.CENTER);
+		userInfo.setPadding(true);
+		userInfo.setSpacing(true);
 
-	    userInfo.getStyle()
-        .set("padding", "var(--lumo-space-s)")   // not default padding
-        .set("border-top", "1px solid var(--lumo-contrast-10pct)");
+		userInfo.getStyle().set("padding", "var(--lumo-space-s)") // not default padding
+				.set("border-top", "1px solid var(--lumo-contrast-10pct)");
 
-	    return userInfo;
+		return userInfo;
 	}
+
 	private void createDrawer() {
 
-	    VerticalLayout drawerContent = new VerticalLayout();
-	    drawerContent.setSizeFull();
-	    drawerContent.setPadding(false);     // important: root no padding
-	    drawerContent.setSpacing(false);
+		VerticalLayout drawerContent = new VerticalLayout();
+		drawerContent.setSizeFull();
+		drawerContent.setPadding(false); // important: root no padding
+		drawerContent.setSpacing(false);
 
-	    // Add navigation items with helper text
-	    SideNavItemWithHelperText home = new SideNavItemWithHelperText("Home", "", HomeView.class,
-	            LineAwesomeIcon.HOME_SOLID.create());
+		// Add navigation items with helper text
+		SideNavItemWithHelperText home = new SideNavItemWithHelperText("Home", "", HomeView.class,
+				LineAwesomeIcon.HOME_SOLID.create());
 
-	    SideNavItemWithHelperText mla = new SideNavItemWithHelperText("Inbox", "", WorkView.class,
-	            LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
+		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("Inbox", "", WorkView.class,
+				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
 
-	    SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
-	            LineAwesomeIcon.HISTORY_SOLID.create());
+		SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
+				LineAwesomeIcon.HISTORY_SOLID.create());
 
-	    SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Release Order", "", PrintView.class,
-	            LineAwesomeIcon.DONATE_SOLID.create());
+		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Release Order", "", PrintView.class,
+				LineAwesomeIcon.DONATE_SOLID.create());
 
-	    SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,
-	            LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
+		SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,
+				LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
 
-	    SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("District Master", "", DistView.class,
-	            LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
+		SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("District Master", "", DistView.class,
+				LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
 
-	    SideNavItemWithHelperText report = new SideNavItemWithHelperText("Reports", "", ReportView.class,
-	            LineAwesomeIcon.CALCULATOR_SOLID.create());
+		SideNavItemWithHelperText report = new SideNavItemWithHelperText("Reports", "", ReportView.class,
+				LineAwesomeIcon.CALCULATOR_SOLID.create());
 
-	    SideNavItemWithHelperText audit = new SideNavItemWithHelperText("Audit Trail", "", AuditView.class,
-	            LineAwesomeIcon.CALENDAR.create());
+		SideNavItemWithHelperText audit = new SideNavItemWithHelperText("Audit Trail", "", AuditView.class,
+				LineAwesomeIcon.CALENDAR.create());
 
-	    SideNavItemWithHelperText users = new SideNavItemWithHelperText("Users", "", UsersView.class,
-	            LineAwesomeIcon.USER.create());
+		SideNavItemWithHelperText users = new SideNavItemWithHelperText("Users", "", UsersView.class,
+				LineAwesomeIcon.USER.create());
 
-	    master.setVisible(isAdmin);
-	    distmaster.setVisible(isSuper);
-	    //releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
-	    releaseorder.setVisible(service.hasAuthorityForStep(loggedUser, 3));
-	    audit.setVisible(isAdmin);
-	    users.setVisible(isAdmin);
+		master.setVisible(isAdmin);
+		distmaster.setVisible(isSuper);
+		// releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
+		releaseorder.setVisible(service.hasAuthorityForStep(loggedUser, 3));
+		audit.setVisible(isAdmin);
+		users.setVisible(isAdmin);
 
-	  
-	    VerticalLayout navItems = new VerticalLayout(
-	            home, mla, history, releaseorder, master, distmaster, report, audit, users
-	    );
-	    navItems.setPadding(true);
-	    navItems.setSpacing(true);          
-	    navItems.setWidthFull();
-	    navItems.addClassName("drawer-nav"); 
+		VerticalLayout navItems = new VerticalLayout(home, mla, history, releaseorder, master, distmaster, report,
+				audit, users);
+		navItems.setPadding(true);
+		navItems.setSpacing(true);
+		navItems.setWidthFull();
+		navItems.addClassName("drawer-nav");
 
-	    Div spacer = new Div();
-	    drawerContent.expand(spacer);
+		Div spacer = new Div();
+		drawerContent.expand(spacer);
 
-	    Component userInfo = createDrawerUserInfo();
+		Component userInfo = createDrawerUserInfo();
 
-	    drawerContent.add(navItems, spacer, userInfo);
+		drawerContent.add(navItems, spacer, userInfo);
 
-	    addToDrawer(drawerContent);
+		addToDrawer(drawerContent);
 	}
 
 	private Component menuItem(VaadinIcon icon, String text) {
-	    Icon i = icon.create();
-	    i.setSize("12px");
-	    i.getStyle()
-	     .set("margin-right", "var(--lumo-space-s)")
-	     .set("color", "var(--lumo-secondary-text-color)");
+		Icon i = icon.create();
+		i.setSize("12px");
+		i.getStyle().set("margin-right", "var(--lumo-space-s)").set("color", "var(--lumo-secondary-text-color)");
 
-	    Span label = new Span(text);
-	    label.getStyle()
-	         .set("font-size", "var(--lumo-font-size-s)") //
-	         .set("line-height", "1.2");
+		Span label = new Span(text);
+		label.getStyle().set("font-size", "var(--lumo-font-size-s)") //
+				.set("line-height", "1.2");
 
-	    HorizontalLayout layout = new HorizontalLayout(i, label);
-	    layout.setAlignItems(FlexComponent.Alignment.CENTER);
-	    layout.setPadding(false);
-	    layout.setSpacing(false);
+		HorizontalLayout layout = new HorizontalLayout(i, label);
+		layout.setAlignItems(FlexComponent.Alignment.CENTER);
+		layout.setPadding(false);
+		layout.setSpacing(false);
 
-	    return layout;
+		return layout;
 	}
+
 	private String currentRolesText() {
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    if (auth == null) return "";
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null)
+			return "";
 
-	    return auth.getAuthorities().stream()
-	            .map(GrantedAuthority::getAuthority)
-	            .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r) // remove ROLE_
-	            .sorted()
-	            .collect(Collectors.joining(", "));
+		return auth.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+				.map(r -> r.startsWith("ROLE_") ? r.substring(5) : r) // remove ROLE_
+				.sorted().collect(Collectors.joining(", "));
 	}
+
 	private void createHeader() {
 
-	    Avatar avatarImage = new Avatar(loggedUser.getProfileName());
-	    avatarImage.setColorIndex(2);
+		Avatar avatarImage = new Avatar(loggedUser.getProfileName());
+		avatarImage.setColorIndex(2);
 
-	    MenuBar menuBar = new MenuBar();
-	    menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
+		MenuBar menuBar = new MenuBar();
+		menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
 
-	    MenuItem item = menuBar.addItem(avatarImage);
-	    SubMenu subMenu = item.getSubMenu();
+		MenuItem item = menuBar.addItem(avatarImage);
+		SubMenu subMenu = item.getSubMenu();
 
-	    // --- User info (non-clickable) ---
-	    String username = loggedUser.getProfileName();
-	    String role = currentRolesText();
-	    Span userNameSpan = new Span(username);
-	    userNameSpan.getStyle().set("font-weight", "600");
+		// --- User info (non-clickable) ---
+		String username = loggedUser.getProfileName();
+		String role = currentRolesText();
+		Span userNameSpan = new Span(username);
+		userNameSpan.getStyle().set("font-weight", "600");
 
-	    Span roleSpan = new Span(role);
-	    roleSpan.getStyle()
-	            .set("font-size", "var(--lumo-font-size-xs)")
-	            .set("color", "var(--lumo-secondary-text-color)");
+		Span roleSpan = new Span(role);
+		roleSpan.getStyle().set("font-size", "var(--lumo-font-size-xs)").set("color",
+				"var(--lumo-secondary-text-color)");
 
-	    VerticalLayout userInfo = new VerticalLayout(userNameSpan, roleSpan);
-	    userInfo.setPadding(false);
-	    userInfo.setSpacing(false);
-	    userInfo.getStyle().set("pointer-events", "none");
+		VerticalLayout userInfo = new VerticalLayout(userNameSpan, roleSpan);
+		userInfo.setPadding(false);
+		userInfo.setSpacing(false);
+		userInfo.getStyle().set("pointer-events", "none");
 
-	    subMenu.addItem(userInfo);
-	    subMenu.add(new Hr());
+		subMenu.addItem(userInfo);
+		subMenu.add(new Hr());
 
-	    // --- Actions ---
-	    subMenu.addItem(menuItem(VaadinIcon.INFO_CIRCLE, "About"),
-	            e -> openAboutDialog());
+		// --- Actions ---
+		subMenu.addItem(menuItem(VaadinIcon.INFO_CIRCLE, "About"), e -> openAboutDialog());
 
-	    subMenu.addItem(menuItem(VaadinIcon.KEY, "Change Password"),
-	            e -> openPasswordDialog());
+		subMenu.addItem(menuItem(VaadinIcon.KEY, "Change Password"), e -> openPasswordDialog());
 
-	    subMenu.addItem(menuItem(VaadinIcon.USER_CHECK, "Create User"),
-	            e -> createUser())
-	            .setVisible(isAdmin);
+		subMenu.addItem(menuItem(VaadinIcon.USER_CHECK, "Create User"), e -> createUser()).setVisible(isAdmin);
 
-	    subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"),
-	            e -> securityService.logout());
+		subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> securityService.logout());
 
-	    H3 logo = new H3("SMIS 2.0  || " +
-	            //service.getDistrict().getDistrictName().toUpperCase());
-	            loggedUser.getDistrict().getDistrictName());
-	    HorizontalLayout header =
-	            new HorizontalLayout(new DrawerToggle(), logo, menuBar);
+		H3 logo = new H3("MLALADS  || " +
+		// service.getDistrict().getDistrictName().toUpperCase());
+				loggedUser.getDistrict().getDistrictName());
+		HorizontalLayout header = new HorizontalLayout(new DrawerToggle(), logo, menuBar);
 
-	    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-	    header.expand(logo);
-	    header.setWidthFull();
-	    header.addClassNames("py-0", "px-m");
+		header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+		header.expand(logo);
+		header.setWidthFull();
+		header.addClassNames("py-0", "px-m");
 
-	    addToNavbar(header);
+		addToNavbar(header);
 	}
 
 	private void openAboutDialog() {
@@ -546,8 +531,9 @@ public class MainLayout extends AppLayout {
 
 	private void saveNewUser() {
 		// TODO Auto-generated method stub
-		if (district.isEmpty() || state.isEmpty() || usertype.isEmpty() || profileName.getValue().trim().isEmpty() || email.getValue().trim().isEmpty()
-				|| userName.getValue().trim().isEmpty() || newpwd.getValue().trim().isEmpty() || confirmpwd.getValue().trim().isEmpty()) {
+		if (district.isEmpty() || state.isEmpty() || usertype.isEmpty() || profileName.getValue().trim().isEmpty()
+				|| email.getValue().trim().isEmpty() || userName.getValue().trim().isEmpty()
+				|| newpwd.getValue().trim().isEmpty() || confirmpwd.getValue().trim().isEmpty()) {
 			Notification.show("Please Enter All Values", 3000, Position.TOP_CENTER)
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			return;
@@ -568,9 +554,9 @@ public class MainLayout extends AppLayout {
 					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			return;
 		}
-		if(!EmailValidator.isValidEmail(email.getValue())) {
+		if (!EmailValidator.isValidEmail(email.getValue())) {
 			Notification.show("Please Enter a Valid Email", 3000, Position.TOP_CENTER)
-			.addThemeVariants(NotificationVariant.LUMO_ERROR);
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 			return;
 		}
 		try {

@@ -15,78 +15,68 @@ import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.entity.master.District;
 
-public interface InstallmentRepository extends JpaRepository<Installment, Long>{
+public interface InstallmentRepository extends JpaRepository<Installment, Long> {
 	List<Installment> findByWork(Work work);
+
 	List<Installment> findByWorkAndInstallmentNo(Work work, int inst_no);
+
 	List<Installment> deleteByWork(Work work);
+
 	int countByWork(Work work);
-	
-	@Query("SELECT c FROM Installment c " +
-		       "WHERE c.work = :work " +
-		       "AND c.installmentNo = ( " +
-		       "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = :work " +
-		       ")")
-		Installment findByWorkWithLargestInstallment(@Param("work") Work work);
-	
+
+	@Query("SELECT c FROM Installment c " + "WHERE c.work = :work " + "AND c.installmentNo = ( "
+			+ "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = :work " + ")")
+	Installment findByWorkWithLargestInstallment(@Param("work") Work work);
+
 	@Query("select  c, d, e,f,g, h, i  from Installment c join c.work d join d.year e  join d.scheme f join d.constituency g join d.district h join d.block i where d.block=:block and d.district=:district and d.scheme=:scheme  and d.constituency=:consti and d.scheme=:scheme and d.year=:year and c.installmentNo=:installment order by d.workCode ASC")
-	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,  @Param ("block") Block block ,  @Param ("district") District district, @Param ("year") Year year, @Param ("installment") int installment);
-	
-	@Query("SELECT c FROM Installment c " +
-		       "JOIN c.work d " +
-		       "JOIN d.year e " +
-		       "JOIN d.scheme f " +
-		       "JOIN d.constituency g " +
-		       "JOIN d.district h " +
-		       "JOIN d.block i " +
-		       "WHERE d.block = :block " +
-		       "AND d.processflow = :processflow " +
-		       "AND d.district = :district " +
-		       "AND d.scheme = :scheme " +
-		       "AND d.constituency = :consti " +
-		       "AND d.year = :year " +
-		       "AND c.installmentNo = :installment " + 
-		       "AND c.installmentNo = ( " +
-		       "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = c.work " +
-		       ") " +
-		       "ORDER BY d.workCode ASC")
-		List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, 
-		                                         @Param("consti") Constituency consti, 
-		                                         @Param("processflow") ProcessFlow processflow,  
-		                                         @Param("block") Block block,  
-		                                         @Param("district") District district,  
-		                                         @Param("year") Year year,  
-		                                         @Param("installment") int installment);
-	@Query("SELECT c FROM Installment c " +
-		       "JOIN c.work d " +
-		       "JOIN d.year e " +
-		       "JOIN d.scheme f " +
-		       "JOIN d.constituency g " +
-		       "JOIN d.district h " +
-		       "JOIN d.block i " +
-		       "WHERE d.block = :block " +
-		       "AND d.processflow = :processflow " +
-		       "AND d.district = :district " +
-		       "AND d.scheme = :scheme " +
-		       "AND d.constituency = :consti " +
-		       "AND d.year = :year " +
-		       "AND c.installmentNo = ( " +
-		       "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = c.work " +
-		       ") " +
-		       "ORDER BY d.workCode ASC")
-		List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, 
-		                                         @Param("consti") Constituency consti, 
-		                                         @Param("processflow") ProcessFlow processflow,  
-		                                         @Param("block") Block block,  
-		                                         @Param("district") District district,  
-		                                         @Param("year") Year year);
-	
+	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,
+			@Param("block") Block block, @Param("district") District district, @Param("year") Year year,
+			@Param("installment") int installment);
+
+	@Query("SELECT c FROM Installment c " + "JOIN c.work d " + "JOIN d.year e " + "JOIN d.scheme f "
+			+ "JOIN d.constituency g " + "JOIN d.district h " + "JOIN d.block i " + "WHERE d.block = :block "
+			+ "AND d.processflow = :processflow " + "AND d.district = :district " + "AND d.scheme = :scheme "
+			+ "AND d.constituency = :consti " + "AND d.year = :year " + "AND c.installmentNo = :installment "
+			+ "AND c.installmentNo = ( "
+			+ "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = c.work " + ") "
+			+ "ORDER BY d.workCode ASC")
+	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,
+			@Param("processflow") ProcessFlow processflow, @Param("block") Block block,
+			@Param("district") District district, @Param("year") Year year, @Param("installment") int installment);
+
+	@Query("""
+			    SELECT i
+			    FROM Installment i
+			    WHERE i.work.scheme = :scheme
+			      AND i.work.constituency = :consti
+			      AND i.work.processflow IN :processflows
+			      AND i.work.block = :block
+			      AND i.work.district = :district
+			      AND i.work.year = :year
+			      AND i.installmentNo = :installment
+			""")
+	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,
+			@Param("processflows") List<ProcessFlow> processflows, @Param("block") Block block,
+			@Param("district") District district, @Param("year") Year year, @Param("installment") int installment);
+
+	@Query("SELECT c FROM Installment c " + "JOIN c.work d " + "JOIN d.year e " + "JOIN d.scheme f "
+			+ "JOIN d.constituency g " + "JOIN d.district h " + "JOIN d.block i " + "WHERE d.block = :block "
+			+ "AND d.processflow = :processflow " + "AND d.district = :district " + "AND d.scheme = :scheme "
+			+ "AND d.constituency = :consti " + "AND d.year = :year " + "AND c.installmentNo = ( "
+			+ "    SELECT MAX(c2.installmentNo) FROM Installment c2 WHERE c2.work = c.work " + ") "
+			+ "ORDER BY d.workCode ASC")
+	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,
+			@Param("processflow") ProcessFlow processflow, @Param("block") Block block,
+			@Param("district") District district, @Param("year") Year year);
+
 	@Query("select  c, d, e, g, h  from Installment c join c.work d join d.year e  join d.constituency g join d.district h  where  c.installmentNo=:installment and c.work=:work")
-	Installment getInstallmentByNoAndWork( int installment,  @Param ("work") Work work);
-	
+	Installment getInstallmentByNoAndWork(int installment, @Param("work") Work work);
+
 	@Query("select  a, c, d, e, f, g from Installment a join a.work c join c.constituency d join c.scheme e join c.year f join c.block g  where  c.district=:district and (c.scheme=:scheme or :scheme is null ) and (c.year=:year or :year is null ) and (c.block=:block or :block is null ) and (c.constituency=:consti or :consti is null ) order by d.constituencyLabel, g.blockLabel, e.schemeLabel, f.yearLabel, c.workCode, a.installmentNo ASC")
-	List<Installment> getReportData(@Param("scheme") Scheme scheme, @Param("district") District district, @Param("year") Year year,@Param("consti") Constituency consti, @Param("block") Block block);
-	
+	List<Installment> getReportData(@Param("scheme") Scheme scheme, @Param("district") District district,
+			@Param("year") Year year, @Param("consti") Constituency consti, @Param("block") Block block);
+
 	@Query("select  count(*) from Installment c")
 	int getInstallmentCount();
-	
+
 }

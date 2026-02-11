@@ -1,12 +1,11 @@
 package com.smis.view;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.net.URL;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,11 +36,13 @@ import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.entity.master.District;
+import com.smis.util.ButtonUtil;
 import com.smis.util.NotificationUtil;
 import com.smis.util.UploadUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -49,6 +51,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H6;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -95,10 +98,10 @@ public class PrintView extends HorizontalLayout {
 	// DatePicker compldate=new DatePicker("Completion Date");
 	TextField copyTo = new TextField("Copy To:");
 	TextField note = new TextField("Note:");
-	Button printButton = new Button("Print");
+	Button printButton = new Button("Generate RO");
 	Button uploadButton = new Button("Upload RO");
 	Button save = new Button("Save");
-	HorizontalLayout hl4 = new HorizontalLayout();
+	private Users loggedUser;
 	Anchor link = new Anchor();
 	private AtomicReference<byte[]> uploadedPdf1;
 	//MemoryBuffer buffer = new MemoryBuffer();
@@ -125,24 +128,26 @@ public class PrintView extends HorizontalLayout {
 		isUser  = service.hasRole("USER");
 		HorizontalLayout mainLayout = new HorizontalLayout(getLeftLayout(), configureSideLayout());
 		mainLayout.setSizeFull();
-		Users u = service.getLoggedUser();
-		boolean allowed = (u != null) && service.hasAuthorityForStep(u, 3);
+		mainLayout.setPadding(true);
+		setSizeFull();
+		loggedUser = service.getLoggedUser();
+		boolean allowed = (loggedUser != null) && service.hasAuthorityForStep(loggedUser, 3);
 
 		if (!allowed) {
 		    add(new H1("You Are Not Authorised To View this Page"));
 		} else {
 		    add(mainLayout);
 		}
-		setSizeFull();
+		
 	}
 
 	
 
 	public Component getLeftLayout() {
-		VerticalLayout vl = new VerticalLayout();
-		vl.add(configureTopLayout(), configureMiddleLayout(), configureBottomLayout());
-		vl.setSizeFull();
-		return vl;
+		VerticalLayout vlx = new VerticalLayout();
+		vlx.add(configureTopLayout(), configureMiddleLayout(), configureBottomLayout());
+		vlx.setSizeFull();
+		return vlx;
 	}
 
 	public Component configureTopLayout() {
@@ -173,125 +178,10 @@ public class PrintView extends HorizontalLayout {
 		layout.setWidthFull();
 		return layout;
 	}
-
-	public Component configureSideLayout() {
-
-		vlayout.setWidth("300px"); // Set a fixed width for the side layout
-		// compldate.setHelperText("As Per Scheme Duration");
-		printButton.addClickListener(e -> printReport());
-		uploadButton.addClickListener(e -> openUploadDialog());
-		vlayout.add(instletter, instdate, printButton, uploadButton);
-		vlayout.setHeightFull();
-		return vlayout;
-	}
-
-	private void openUploadDialog() {
-		if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
-			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER);
-			return;
-		}
-		uploadedPdf1 = new AtomicReference<>();
-
-		Component uploadComponent = UploadUtil.createPdfUpload(uploadedPdf1,
-		    "Upload The Release Order and click 'Save'", 
-		    "Select Document To Upload"
-		    
-		);
-		
-        // Create a new Upload component
-        //Upload pdfUpload = uploadFactory.createPdfUpload();
-		dialog = new Dialog();
-		 Button closeButton = new Button("Close", e -> {
-		        dialog.close();
-		        dialog = null; // ✅ Completely destroys the dialog
-		    });
-		save.addClickListener(e -> uploadRo());
-		dialog.add(uploadComponent);
-		dialog.getHeader().add(new H6("Upload Release Order"));
-		dialog.getFooter().add(save, closeButton);
-		dialog.open();
-
-	}
-	public boolean checkProcessFlow(Work work, int flow) {
-		if (work.getProcessflow().getStepOrder() != 3) {
-	        NotificationUtil.showError("This Page Has Expired. Please Refresh.");
-	        UI.getCurrent().getPage().reload();
-	        return false; // Indicate that the page expired
-	    }
-	    return true; 
-	}
-	private void uploadRo() {
-		Users user = service.getLoggedUser();
-		Set<Installment> installmentset = grid.getSelectedItems();
-		List<Installment> installments = new ArrayList<>(installmentset);
-		try {
-			if (uploadedPdf1 == null || uploadedPdf1.get().length == 0) {
-				Notification.show("Please Upload UC, Images etc as PDF", 3000, Position.TOP_CENTER)
-						.addThemeVariants(NotificationVariant.LUMO_ERROR);
-				return;
-			}
-			int install = instNo.getValue();
-			int selecteditems = installments.size();
-			BigDecimal totalamount = BigDecimal.ZERO;
-			for (int i = 0; i < selecteditems; i++) {
-				totalamount = installments.get(i).getInstallmentAmount().add(totalamount);
-				Installment singleinstallment = installments.get(i);
-				Work singlework = singleinstallment.getWork();
-				singlework = service.getWorkById(singlework.getWorkId());
-				if (singlework.getProcessflow().getStepOrder() != 3) {
-					NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-					UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-					return;
-				}
-				singleinstallment.setInstallmentDate(instdate.getValue());
-				singleinstallment.setInstallmentLetter(instletter.getValue());
-				// Users user = service.getLoggedUser();
-				ProcessFlow pf3 = service.getProcessFlowByOrder(3);
-				ProcessFlow pf4 = service.getProcessFlowByOrder(4);
-				// boolean exists = service.processHistoryExists(singlework, pf, user);
-				// if (!exists) {
-				ProcessHistory ph = new ProcessHistory();
-				ph.setWork(singlework);
-				ph.setProcessFlow(pf3);
-				ph.setProcessName(pf3.getStepName() + "-" + install);
-				ph.setUser(user);
-				ph.setEnteredOn(LocalDateTime.now());
-				ph.setReversed(false);
-				service.saveProcessHistory(ph);
-				// }
-				singlework.setProcessflow(pf4);
-				singlework.setWorkStatus(pf4.getStepName() + "-" + install);
-				service.saveWork(singlework);
-
-			}
-			
-			// ---- rename using helper ----
-			String safeFileName = fileStorageService.generateSafeFileName(
-			        "RO",
-			        "release_order.pdf"   // replace with real upload filename if available
-			);
-
-
-			populateGrid();
-			Notification.show(" Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
-					.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-			dialog.close();
-		} catch (NullPointerException e) {
-			Notification.show("Please Select A File To Upload", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-		}catch (Exception e) {
-			Notification.show(" Error:" + e, 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-		}
-
-	}
-	
-	
-
 	public Component configureMiddleLayout() {
 		HorizontalLayout middleLayout = new HorizontalLayout(grid);
 		middleLayout.setFlexGrow(1, grid);
-		middleLayout.setFlexGrow(1, hl4);
+		//middleLayout.setFlexGrow(1, hl4);
 
 		middleLayout.setSizeFull();
 		return middleLayout;
@@ -306,113 +196,324 @@ public class PrintView extends HorizontalLayout {
 		return bLayout;
 	}
 
+	public Component configureSideLayout() {
+		FormLayout form2 = new FormLayout();
+		//form2.setWidth("100%");
+		form2.add(instletter, 2);
+		form2.add(instdate, 2);
+		form2.add(printButton,1);
+		form2.add(uploadButton,1);
+		ButtonUtil.applyPrintStyle(printButton);
+		ButtonUtil.applyUploadStyle(uploadButton);
+		printButton.addClickListener(e -> printReport());
+		uploadButton.addClickListener(e -> openUploadDialog());
+		vlayout.setWidth("30px");
+		vlayout.add(form2);
+		return form2;
+	}
+	private void openUploadDialog() {
+
+	    if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
+	        Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER);
+	        return;
+	    }
+
+	    uploadedPdf1 = new AtomicReference<>();
+
+	    Component uploadComponent = UploadUtil.createPdfUpload(
+	            uploadedPdf1,
+	            "Upload The Release Order and click 'Save'",
+	            "Select Document To Upload"
+	    );
+
+	    Dialog dialog = new Dialog();
+
+	    Button saveBtn = new Button("Save", e -> uploadRo(dialog));  // ✅ pass dialog
+	    Button closeBtn = new Button("Close", e -> dialog.close());
+
+	    dialog.add(uploadComponent);
+	    dialog.getHeader().add(new H6("Upload Release Order"));
+	    dialog.getFooter().add(saveBtn, closeBtn);
+
+	    dialog.setModal(true);
+	    dialog.setCloseOnOutsideClick(false);
+	    dialog.setCloseOnEsc(false);
+
+	    dialog.open();
+	}
+	
+	public boolean checkProcessFlow(Work work, int flow) {
+		if (work.getProcessflow().getStepOrder() != 3) {
+	        NotificationUtil.showError("This Page Has Expired. Please Refresh.");
+	        UI.getCurrent().getPage().reload();
+	        return false; // Indicate that the page expired
+	    }
+	    return true; 
+	}
+	private void uploadRo(Dialog dialog) {
+	    Users user = service.getLoggedUser();
+
+	    Set<Installment> selected = grid.getSelectedItems();
+	    if (selected == null || selected.isEmpty()) {
+	        Notification.show("Please select at least one installment", 4000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (uploadedPdf1 == null || uploadedPdf1.get() == null || uploadedPdf1.get().length == 0) {
+	        Notification.show("Please upload Release Order as PDF", 3000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    List<Installment> installments = new ArrayList<>(selected);
+
+	    try {
+	        int install = instNo.getValue();
+	        String safeFileName = fileStorageService.generateSafeFileName("ROsigned", "release_order.pdf");
+
+	        try (InputStream in = new ByteArrayInputStream(uploadedPdf1.get())) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+
+	        for (Installment singleinstallment : installments) {
+
+	            Work singlework = service.getWorkById(singleinstallment.getWork().getWorkId());
+
+	            // ✅ use stepCode check (recommended) OR keep stepOrder if you haven't migrated yet
+	            if (singlework.getProcessflow() == null || singlework.getProcessflow().getStepOrder() != 4) {
+	                NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	                UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	                return;
+	            }
+
+	            singleinstallment.setInstallmentDate(instdate.getValue());
+	            singleinstallment.setInstallmentLetter(instletter.getValue());
+	            singleinstallment.setReleaseOrder(safeFileName);
+
+	            ProcessFlow from = service.getProcessFlowByOrder(4);
+	            ProcessFlow to = service.getProcessFlowByOrder(5);
+
+	            ProcessHistory ph = new ProcessHistory();
+	            ph.setWork(singlework);
+	            ph.setUser(user);
+	            ph.setFromStep(from);
+	            ph.setToStep(to);
+	            ph.setProcessName(from.getStepName() + "-" + install);
+	            ph.setDocument(safeFileName);
+	            ph.setEnteredOn(LocalDateTime.now());
+	            ph.setReversed(false);
+
+	            service.saveProcessHistory(ph);
+	            service.saveInstallment(singleinstallment);
+
+	            singlework.setProcessflow(to);
+	            singlework.setWorkStatus(to.getStepName() + "-" + install);
+	            service.saveWork(singlework);
+	        }
+
+	        populateGrid();
+	        Notification.show("Release Order Uploaded Successfully", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        dialog.close(); // ✅ closes the correct dialog
+
+	    } catch (Exception e) {
+	        Notification.show("Error: " + e.getMessage(), 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	
+
+	
+
 	@Transactional
 	private void printReport() {
-		Users currentUser = service.getLoggedUser();
-		int installno = instNo.getValue();
+	    Users currentUser = service.getLoggedUser();
 
-		if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
-			Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}else if(inlineEditor.getValue().length()>2900) {
-			Notification.show("'Copy To' Data has exceeded Permitted Limit", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);;
-		} else {
-			Set<Installment> installmentset = grid.getSelectedItems();
-			List<Installment> installments = new ArrayList<>(installmentset);
-			if (installments.get(0).getWork().getSanctionDate().isAfter(instdate.getValue())) {
-				Notification.show("Release Date  Cannot be before the sanction Date", 5000, Position.TOP_CENTER);
+	    // --------- Basic validations ----------
+	    if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
+	        Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
 
-			} else if (installno > 1 && service.getInstallmentByWorkAndNo(installments.get(0).getInstallmentNo() - 1,
-					installments.get(0).getWork()).getUcDate().isAfter(instdate.getValue())) {
-				Notification.show(
-						"Invalid Release  Date. Release Date Has to Be After the UC date of Previous Installment", 5000,
-						Position.TOP_CENTER);
-			} else {
-				try {
+	    if (inlineEditor.getValue() != null && inlineEditor.getValue().length() > 2900) {
+	        Notification.show("'Copy To' Data has exceeded Permitted Limit", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
 
-					int selecteditems = installments.size();
-					String schemelabel = changeAmp(installments.get(0).getWork().getScheme().getSchemeLabel());
-					String blocklabel = changeAmp(installments.get(0).getWork().getBlock().getBlockLabel());
-					String yearlabel = changeAmp(installments.get(0).getWork().getYear().getYearLabel());
-					String sanctionNo = changeAmp(installments.get(0).getWork().getSanctionNo());
-					// LocalDate completion=compldate.getValue();
-					int reportType = installments.get(0).getWork().getScheme().getSchemeReport();
-					int installNo;
+	    Set<Installment> selected = grid.getSelectedItems();
+	    if (selected == null || selected.isEmpty()) {
+	        Notification.show("Please select at least one installment", 4000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
 
-					if (instNo.getValue() < 3) {
-						installNo = instNo.getValue();
-					} else {
-						installNo = 3;
-					}
-					BigDecimal totalamount = BigDecimal.ZERO;
-					for (int i = 0; i < selecteditems; i++) {
-						totalamount = installments.get(i).getInstallmentAmount().add(totalamount);
-						Installment singleinstallment = installments.get(i);
-						singleinstallment.setInstallmentDate(instdate.getValue());
-						singleinstallment.setInstallmentLetter(instletter.getValue());
-						// service.saveInstallment(singleinstallment);
-						Work singlework = singleinstallment.getWork();
-						if (singleinstallment.getUcLetter() == null) {
-							singlework.setWorkStatus("Release Order " + singleinstallment.getInstallmentNo());
-						}
-						service.saveWork(singlework);
+	    List<Installment> installments = new ArrayList<>(selected);
 
-					}
-					String totalAmountwords = convertToIndianCurrency(totalamount + "");
-					String totalAmountnumbers = totalamount.stripTrailingZeros().toPlainString();
-					populateGrid();
-					// Report Generation starts here
-					Resource resource = new ClassPathResource(
-							"report/Release" + reportType + "" + installNo + ".jrxml"); // removePdfViewer();
-					URL res = getClass().getClassLoader()
-							.getResource("report/Release" + reportType + "" + installNo + ".jrxml");
-					File file = Paths.get(res.toURI()).toFile();
-					String absolutePath = file.getAbsolutePath();
-					String reportPath = absolutePath.substring(0, absolutePath.length() - 15);
-					// String reportPath="D:"; // before production
-					InputStream employeeReportStream = resource.getInputStream();
+	    try {
+	        // --------- Ensure all installments belong to SAME WORK ----------
+	        Long workId = installments.get(0).getWork() != null ? installments.get(0).getWork().getWorkId() : null;
+	        if (workId == null || installments.stream().anyMatch(i -> i.getWork() == null || i.getWork().getWorkId() != workId)) {
+	            Notification.show("Please select installments from the same Work only.", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
 
-					JasperReport jasperReport = JasperCompileManager.compileReport(employeeReportStream);
-					JRBeanCollectionDataSource jrBeanCollectionDataSource = new JRBeanCollectionDataSource(
-							installments);
-					Map<String, Object> parameters = new HashMap<>();
+	        // --------- Load fresh managed Work ----------
+	        Work work0 = service.getWorkById(workId);
+	        if (work0 == null) {
+	            NotificationUtil.showError("Work not found. Reloading...");
+	            UI.getCurrent().getPage().reload();
+	            return;
+	        }
 
-					parameters.put("copyTo", inlineEditor.getValue());
+	        // --------- Expiry check using STEP CODE ----------
+	        ProcessFlow currentStep = work0.getProcessflow();
+	        String stepCode = (currentStep != null) ? currentStep.getStepCode() : null;
 
-					parameters.put("Note", note.getValue());
-					parameters.put("ComplDate", "");
-					parameters.put("scheme", schemelabel);
-					parameters.put("block", blocklabel);
-					parameters.put("year", yearlabel);
-					parameters.put("sanctionNo", sanctionNo);
-					parameters.put("amount", totalAmountnumbers + " (" + totalAmountwords + ")");
+	        if (!"GENERATE_RELEASE_ORDER".equals(stepCode)) {
+	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
+	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
+	            return;
+	        }
 
-					JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters,
-							jrBeanCollectionDataSource);
-					// String username=service.getloggeduser().trim();
-					long userid = currentUser.getUserId();
-					JasperExportManager.exportReportToPdfFile(jasperPrint,
-							reportPath + "//" + userid + "releaseorder.pdf");
-					File a = new File(reportPath + "//" + userid + "releaseorder.pdf");
-					InstallmentReportNotes notes = new InstallmentReportNotes();
-					notes.setCopyTo(inlineEditor.getValue());
-					notes.setUpdatedBy(currentUser);
-					notes.setUpdatedOn(LocalDateTime.now());
-					service.saveInstallmentReport(notes);
-					for (Installment installment : installments) {
-						installment.setReportNotes(notes);
-						service.saveInstallment(installment);
-					}
-					addLinkToFile(a);
+	        // --------- Date validations ----------
+	        if (work0.getSanctionDate() != null && work0.getSanctionDate().isAfter(instdate.getValue())) {
+	            Notification.show("Release Date cannot be before the sanction Date", 5000, Position.TOP_CENTER)
+	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	            return;
+	        }
 
-				} catch (Exception e) {
-					Notification.show("Unable To Generate Report. Error:" + e, 5000, Position.TOP_CENTER);
-					// Position.TOP_CENTER);
-					// e.printStackTrace();
+	        // Determine installment number safely (use selection, not instNo field)
+	        int maxInstallNo = installments.stream()
+	                .map(Installment::getInstallmentNo)
+	                .filter(Objects::nonNull)
+	                .max(Integer::compareTo)
+	                .orElse(1);
 
-				}
-			}
-		}
+	        // Previous installment UC date check (only if applicable)
+	        if (maxInstallNo > 1) {
+	            Installment prev = service.getInstallmentByWorkAndNo(maxInstallNo - 1, work0);
+	            if (prev != null && prev.getUcDate() != null && prev.getUcDate().isAfter(instdate.getValue())) {
+	                Notification.show("Invalid Release Date. Must be after UC date of previous installment", 5000,
+	                                Position.TOP_CENTER)
+	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	                return;
+	            }
+	        }
+
+	        // --------- Labels & report selection ----------
+	        String schemelabel = changeAmp(work0.getScheme().getSchemeLabel());
+	        String blocklabel = changeAmp(work0.getBlock().getBlockLabel());
+	        String yearlabel = changeAmp(work0.getYear().getYearLabel());
+	        String sanctionNo = changeAmp(work0.getSanctionNo());
+
+	        int reportType = work0.getScheme().getSchemeReport();
+	        int installNoForReport = (maxInstallNo < 3) ? maxInstallNo : 3;
+
+	        // --------- Calculate total amount ----------
+	        BigDecimal totalamount = installments.stream()
+	                .map(Installment::getInstallmentAmount)
+	                .filter(Objects::nonNull)
+	                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+	        String totalAmountwords = convertToIndianCurrency(totalamount.toPlainString());
+	        String totalAmountnumbers = totalamount.stripTrailingZeros().toPlainString();
+
+	        // --------- Prepare data (but don't persist yet) ----------
+	        for (Installment inst : installments) {
+	            inst.setInstallmentDate(instdate.getValue());
+	            inst.setInstallmentLetter(instletter.getValue());
+	        }
+
+	        // --------- Generate Jasper report ----------
+	        Resource jrxml = new ClassPathResource("report/Release" + reportType + installNoForReport + ".jrxml");
+
+	        byte[] pdfBytes;
+	        try (InputStream jrxmlStream = jrxml.getInputStream()) {
+	            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlStream);
+	            JRBeanCollectionDataSource ds = new JRBeanCollectionDataSource(installments);
+
+	            Map<String, Object> parameters = new HashMap<>();
+	            parameters.put("copyTo", inlineEditor.getValue());
+	            parameters.put("Note", note.getValue());
+	            parameters.put("ComplDate", "");
+	            parameters.put("scheme", schemelabel);
+	            parameters.put("block", blocklabel);
+	            parameters.put("year", yearlabel);
+	            parameters.put("sanctionNo", sanctionNo);
+	            parameters.put("amount", totalAmountnumbers + " (" + totalAmountwords + ")");
+
+	            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, ds);
+	            pdfBytes = JasperExportManager.exportReportToPdf(jasperPrint);
+	        }
+
+	        // --------- Store PDF ----------
+	        String safeFileName = fileStorageService.generateSafeFileName("RO", "releaseorder.pdf");
+	        try (InputStream in = new ByteArrayInputStream(pdfBytes)) {
+	            fileStorageService.save(in, safeFileName);
+	        }
+	        UI.getCurrent().getPage().open("/files/" + safeFileName, "_blank");
+	        // --------- Save notes ----------
+	        InstallmentReportNotes notes = new InstallmentReportNotes();
+	        notes.setCopyTo(inlineEditor.getValue());
+	        notes.setUpdatedBy(currentUser);
+	        notes.setUpdatedOn(LocalDateTime.now());
+	        service.saveInstallmentReport(notes);
+
+	        // --------- Advance workflow using nextStep chain ----------
+	        ProcessFlow nextStep = currentStep.getNextStep(); // expected: UPLOAD_RELEASE_ORDER
+	        if (nextStep == null) {
+	            NotificationUtil.showError("Workflow misconfigured: GENERATE_RELEASE_ORDER has no next step.");
+	            return;
+	        }
+
+	        // ✅ Save Work transition first (managed)
+	        work0.setProcessflow(nextStep);
+	        // work0.setWorkStatus(nextStep.getStepName() + "-" + maxInstallNo); // optional
+	        work0.setUpdatedBy(currentUser);
+	        work0.setUpdatedOn(LocalDateTime.now());
+	        service.saveWork(work0);
+
+	        // --------- Update installments + history ----------
+	        for (Installment inst : installments) {
+	            inst.setReportNotes(notes);
+	            inst.setGeneratedReleaseOrder(safeFileName);
+	            service.saveInstallment(inst);
+
+	            ProcessHistory ph = new ProcessHistory();
+	            ph.setWork(work0);                       // ✅ managed work
+	            ph.setUser(currentUser);
+	            ph.setFromStep(currentStep);
+	            ph.setToStep(nextStep);
+	            ph.setProcessName(currentStep.getStepName() + "-" + maxInstallNo);
+	            ph.setDocument(safeFileName);
+	            ph.setEnteredOn(LocalDateTime.now());
+	            ph.setReversed(false);
+	            ph.setRemarks(null);
+	            service.saveProcessHistory(ph);
+	        }
+
+	        populateGrid();
+
+	        Notification.show("Release Order generated successfully", 4000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        Notification.show("Unable To Generate Report. Error: " + e.getMessage(), 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    }
 	}
+	
+	
+
+	
+	
 
 	private void addLinkToFile(File file) {
 		if (link != null) {
@@ -459,7 +560,7 @@ public class PrintView extends HorizontalLayout {
 		year.setItemLabelGenerator(year -> year.getYearLabel());
 		scheme.setItems(service.getAllSchemes());
 		scheme.setItemLabelGenerator(scheme -> scheme.getSchemeLabel());
-		block.setItems(service.getAllBlocks(false));
+		block.setItems(service.getAllBlocks(true));
 		block.setItemLabelGenerator(block -> block.getBlockLabel());
 		constituency.setItems(service.getAllConstituencies());
 		// constituency.setItemLabelGenerator(constituency->constituency.getConstituencyNo()+"
@@ -492,19 +593,64 @@ public class PrintView extends HorizontalLayout {
 		// grid.getColumns().forEach(col-> col.setAutoWidth(true));
 		grid.addSelectionListener(event -> doSomething(event));
 	}
+	public void doSomething(SelectionEvent<Grid<Installment>, Installment> e) {
 
-	public void doSomething(SelectionEvent e) {
-		LocalDate complDate = null;
+	    Set<Installment> selected = e.getAllSelectedItems();
+
+	    if (selected == null || selected.isEmpty()) {
+	        //hl4.setVisible(false);
+	        printButton.setEnabled(false);
+	        uploadButton.setEnabled(false);
+	        instletter.clear();
+	        instdate.clear();
+	        return;
+	    }
+	    //hl4.setVisible(false);
+	    uploadButton.setEnabled(true);
+	    List<Installment> installs = new ArrayList<>(selected);
+	    Installment first = installs.get(0);
+	    boolean selectionAllowsPrint = installs.stream()
+	            .map(Installment::getWork)
+	            .filter(Objects::nonNull)
+	            .allMatch(w -> w.getProcessflow() != null && w.getProcessflow().getStepOrder() == 3);
+
+	    boolean selectionAllowsUpload = installs.stream()
+	            .map(Installment::getWork)
+	            .filter(Objects::nonNull)
+	            .allMatch(w -> w.getProcessflow() != null && w.getProcessflow().getStepOrder() == 4);
+	    boolean authPrint  = service.hasAuthorityForStep(loggedUser, 3); // step for print action
+	    boolean authUpload = service.hasAuthorityForStep(loggedUser, 4);
+	    printButton.setEnabled(authPrint && selectionAllowsPrint);
+	    uploadButton.setEnabled(authUpload && selectionAllowsUpload);
+	    populateEditor(installs);
+	    // Safe set values (avoid NPE)
+	    String letter = first.getInstallmentLetter();
+	    instletter.setValue(letter != null ? letter : "");
+
+	    LocalDate date = first.getInstallmentDate();
+	    instdate.setValue(date); // can be null
+
+	   
+	}
+	public void doSomethings(SelectionEvent e) {
+		
 		if (e.getAllSelectedItems().size() > 0) {
-			hl4.setVisible(false);
+			//hl4.setVisible(false);
 			printButton.setEnabled(true);
 			uploadButton.setEnabled(true);
 			Set<Installment> selected = grid.getSelectedItems();
 			List<Installment> installs = new ArrayList<>(selected);
+			for(Installment installments: installs) {
+				if(installments.getWork().getProcessflow().getStepOrder()==3) {
+					printButton.setEnabled(false);
+				}
+				if(installments.getWork().getProcessflow().getStepOrder()==4) {
+					printButton.setEnabled(false);
+				}
+			}
 			Installment installsingle = installs.get(0);
-			int schemeduration = installsingle.getWork().getScheme().getSchemeDuration();
-			LocalDate sancDate = installsingle.getWork().getSanctionDate();
-			complDate = sancDate.plusMonths(schemeduration);
+			
+			
 			// compldate.setValue(complDate);
 			instdate.setValue(installsingle.getInstallmentDate());
 			populateEditor(installs);
@@ -523,8 +669,6 @@ public class PrintView extends HorizontalLayout {
 			uploadButton.setEnabled(false);
 			instletter.setValue("");
 			instdate.setValue(null);
-			// installmentcheque.setValue("");
-			// inlineEditor.setValue("");
 		}
 	}
 
@@ -635,13 +779,12 @@ public class PrintView extends HorizontalLayout {
 			int instno = instNo.getValue();
 			if (scheme.getValue() != null || year.getValue() != null || constituency.getValue() != null
 					|| block.getValue() != null || instno > 0 || instno <= 5) {
-				if (hl4 != null) {
-					hl4.removeAll();
-				}
+				
 				// grid.setItems(service.getFilteredInstallments(scheme.getValue(),
 				// constituency.getValue(),block.getValue(), year.getValue(), instno));
 				grid.setItems(service.getFilteredInstallments(scheme.getValue(), constituency.getValue(),
-						service.getProcessFlowByOrder(3), block.getValue(), year.getValue(), instno));
+						List.of(service.getProcessFlowByOrder(3), service.getProcessFlowByOrder(4)), block.getValue(),
+						year.getValue(), instno));
 
 				configureGrid();
 			}

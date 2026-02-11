@@ -93,4 +93,7 @@ public class FileStorageService {
 
 	    return prefix + "_" + timestamp + "_" + UUID.randomUUID() + extension;
 	}
+    public Path resolveForServing(String storagePath) {
+        return resolveSafe(storagePath);
+    }
 }

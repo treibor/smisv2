@@ -57,13 +57,26 @@ public class Installment implements Serializable {
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	@NotNull
 	private Work work;
+	@Column(length = 500)
+    private String generatedReleaseOrder;
 	
+
 	@Column(length = 500)
     private String releaseOrder;
 	
 	@Column(length = 500)
     private String ucDocument;
+	@Column(length = 500)
+    private String fundDocument;
+	
+	
+	public String getGeneratedReleaseOrder() {
+		return generatedReleaseOrder;
+	}
 
+	public void setGeneratedReleaseOrder(String generatedReleaseOrder) {
+		this.generatedReleaseOrder = generatedReleaseOrder;
+	}
 	public long getInstallmentId() {
 		return installmentId;
 	}
@@ -194,6 +207,14 @@ public class Installment implements Serializable {
 
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+
+	public String getFundDocument() {
+		return fundDocument;
+	}
+
+	public void setFundDocument(String fundDocument) {
+		this.fundDocument = fundDocument;
 	}
 	
 	

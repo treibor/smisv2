@@ -191,7 +191,7 @@ public class WorkViewHistory extends VerticalLayout {
 		dialog.setHeaderTitle(work.getWorkCode() + "-" + work.getWorkName());
 		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		grid.addColumn(processhistory->processhistory.getProcessFlow().getStepName()).setHeader("Task").setAutoWidth(true);
+		grid.addColumn(processhistory->processhistory.getFromStep().getStepName()).setHeader("Task").setAutoWidth(true);
 		grid.addColumn(processhistory->processhistory.getProcessName()).setHeader("Action Performed").setAutoWidth(true);
 		grid.addColumn(processhistory->processhistory.getRemarks()).setHeader("Remarks").setWidth("20%");
 		grid.addColumn(processhistory->processhistory.getUser().getProfileName()).setHeader("Performed By").setAutoWidth(true);
