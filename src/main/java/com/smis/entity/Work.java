@@ -99,9 +99,9 @@ public class Work implements Serializable{
 
 	@OneToMany(mappedBy = "work", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProcessHistory> processHistory;
-	private Boolean isOldWork;
-	private Boolean isDeleted;
-	private Boolean isRecasted;
+	private Boolean isOldWork=false;
+	private Boolean isDeleted=false;
+	private Boolean isRecasted=false;
 	private String Remarks;
 	
 	

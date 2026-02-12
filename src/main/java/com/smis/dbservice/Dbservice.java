@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,8 @@ import com.smis.security.SecurityService;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class Dbservice implements Serializable{
@@ -146,11 +149,7 @@ public class Dbservice implements Serializable{
 	            .anyMatch(roleName::equals);
 	}
 	
-	public boolean hasAuthorityForStep(int stepOrder) {
-	    return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(
-	            getLoggedUser(), stepOrder
-	    );
-	}
+	
 	public boolean hasAuthorityForStep(Users user, String stepCode) {
 	    ProcessFlow step = pflowrepo.findByStepCode(stepCode)
 	            .orElse(null);
@@ -403,43 +402,30 @@ public class Dbservice implements Serializable{
 		return urepo.findAll();
 	}
 
-	public BigDecimal calculateTotalReleasedAmount(Scheme scheme, Year year) {
-		BigDecimal amount = BigDecimal.ZERO;
-		List<Work> worksentered = wrepo.getWorksForCalculation(scheme, getDistrict(), year);
-		int count = worksentered.size();
-		if (count > 0) {
-			for (int i = 0; i < count; i++) {
-				amount = amount.add(worksentered.get(i).getWorkAmount());
-			}
-			return amount;
-		} else {
-			return BigDecimal.ZERO;
-		}
-	}
+	
 
 	// Installment Service
+	@Transactional
+	public void markLatestInstallmentDeletedIfExists(Work work) {
+
+	    Optional<Installment> optionalInstallment =
+	            irepo.findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(work);
+
+	    if (optionalInstallment.isEmpty()) {
+	        return; // Nothing to delete
+	    }
+
+	    Installment last = optionalInstallment.get();
+
+	    last.setDeleted(true);
+	    irepo.save(last);
+	}
 	public int getInstallmentCount(Work work) {
-		return irepo.countByWork(work);
+		return irepo.countByWorkAndIsDeletedFalse(work);
 	}
-	public Installment getByWorkWithLargestInstallment(Work work) {
-		return irepo.findByWorkWithLargestInstallment(work);
-	}
+	
 	public List<Installment> getInstallments(Work work) {
-		return irepo.findByWork(work);
-	}
-
-	public List<Installment> getMaxInstallment(Work work, int inst_no) {
-		return irepo.findByWorkAndInstallmentNo(work, inst_no);
-	}
-
-	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, Block block, Year year,
-			int installment) {
-		return irepo.getFilteredInstallment(scheme, consti, block, getDistrict(), year, installment);
-	}
-	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, ProcessFlow pflow, Block block, Year year,
-			int installment) {
-		
-		return irepo.getFilteredInstallment(scheme, consti,pflow, block, getDistrict(), year, installment);
+		return irepo.findByWorkAndIsDeletedFalse(work);
 	}
 
 	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, List<ProcessFlow> pflows,
@@ -447,10 +433,7 @@ public class Dbservice implements Serializable{
 
 		return irepo.getFilteredInstallment(scheme, consti, pflows, block, getDistrict(), year, installment);
 	}
-	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, ProcessFlow pflow, Block block, Year year) {
-		
-		return irepo.getFilteredInstallment(scheme, consti,pflow, block, getDistrict(), year);
-	}
+	
 	public Installment getInstallmentByWorkAndNo(int insallment, Work work) {
 		return irepo.getInstallmentByNoAndWork(insallment, work);
 	}
@@ -471,13 +454,7 @@ public class Dbservice implements Serializable{
 		}
 	}
 
-	public void deleteInstallments(Work work) {
-		try {
-			irepo.deleteByWork(work);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete Installment. Error:" + e, 5000, Position.TOP_CENTER);
-		}
-	}
+
 
 	// Works Queries
 	public List<Work> getWorks() {
@@ -487,30 +464,14 @@ public class Dbservice implements Serializable{
 			return wrepo.findWorksByUser(getLoggedUser());
 		}
     }
+	
 	public Work getWorkById(long id) {
 		return wrepo.findById(id);
 	}
-	public List<Work> getWorksAssignedToUser() {
-        return wrepo.findWorksByUser(getLoggedUser());
-    }
 	
 	
-	public List<Work> getFilteredWorks(String searchTerm) {
-		try {
-			return wrepo.search(searchTerm, getDistrict());
-		} catch (Exception e) {
-			return Collections.emptyList();
-		}
-	}
 	
 	
-	public List<Work> getFilteredWorkss(String searchTerm) {
-		try {
-			return wrepo.searchAll(searchTerm, getDistrict());
-		} catch (Exception e) {
-			return Collections.emptyList();
-		}
-	}
 	public List<Work> getFilteredWorksAndSearch(String searchTerm) {
 		try {
 			return wrepo.findWorksByUserAndSearch(getLoggedUser(), getDistrict(),searchTerm);
@@ -525,15 +486,7 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
-	public List<Work> getFilteredWorks(Scheme scheme, Constituency consti, Block block, Year year) {
-		try {
-			return wrepo.getFilteredWorks(scheme, getDistrict(), year, consti, block);
-		} catch (Exception e) {
-
-			return Collections.emptyList();
-
-		}
-	}
+	
 	public List<Work> getFilteredWorksByUser(Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
 			return wrepo.getFilteredWorksByUser(getLoggedUser(),scheme, getDistrict(), year, consti, block);
@@ -557,12 +510,12 @@ public class Dbservice implements Serializable{
 		return wrepo.findMaxWorkCode(getDistrict());
 	}
 
-	public long getWorkCount(Constituency consti) {
-		return wrepo.findByConstituency(consti).size();
+	public long getWorkCountByConstituency(Constituency consti) {
+		return wrepo.findByConstituencyAndIsDeletedFalseAndIsRecastedFalse(consti).size();
 	}
 
-	public long getWorkCount(Scheme scheme) {
-		return wrepo.findByScheme(scheme).size();
+	public long getWorkCountByScheme(Scheme scheme) {
+		return wrepo.findBySchemeAndIsDeletedFalseAndIsRecastedFalse(scheme).size();
 	}
 
 	public void saveWork(Work work) {
@@ -689,27 +642,9 @@ public class Dbservice implements Serializable{
 		return drepo.findMaxDistrictCode(state);
 	}
 
-	// save & Delete impldistrict
 	
-	
-
-	// Methods to Get All Data from Individual Tables
-	public List<Work> getAllWorks() {
-		if (isSuperAdmin()) {
-			return wrepo.findAll();
-		} else {
-			// return wrepo.findByDistrict(getDistrict());
-			return wrepo.findByDistrictOrderByWorkCodeDesc(getDistrict());
-		}
-	}
-
-	
-
-	
-
-	
-	public List<String> getWorkNames(){
-		return wrepo.findWorkNames();
+	public List<String> getWorkNamesList(){
+		return wrepo.findWorkNamesList();
 	}
 	public List<String> getSanctionNos(){
 		return wrepo.findSanctionNos();
@@ -799,7 +734,7 @@ public class Dbservice implements Serializable{
 		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
 	}
 
-	public boolean hasAuthorityForStep(Users user, int stepOrder) {
+	public boolean hasAuthorityForStepR(Users user, int stepOrder) {
 	    return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
 	}
 	public void deleteProcessFlowUser(ProcessFlowUser pfu) {

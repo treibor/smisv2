@@ -131,8 +131,11 @@ public class PrintView extends HorizontalLayout {
 		mainLayout.setPadding(true);
 		setSizeFull();
 		loggedUser = service.getLoggedUser();
-		boolean allowed = (loggedUser != null) && service.hasAuthorityForStep(loggedUser, 3);
-
+		boolean allowed = loggedUser != null &&
+		        (
+		            service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER") ||
+		            service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER")
+		        );
 		if (!allowed) {
 		    add(new H1("You Are Not Authorised To View this Page"));
 		} else {
@@ -618,8 +621,8 @@ public class PrintView extends HorizontalLayout {
 	            .map(Installment::getWork)
 	            .filter(Objects::nonNull)
 	            .allMatch(w -> w.getProcessflow() != null && w.getProcessflow().getStepOrder() == 4);
-	    boolean authPrint  = service.hasAuthorityForStep(loggedUser, 3); // step for print action
-	    boolean authUpload = service.hasAuthorityForStep(loggedUser, 4);
+	    boolean authPrint  = service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER"); // step for print action
+	    boolean authUpload = service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER");
 	    printButton.setEnabled(authPrint && selectionAllowsPrint);
 	    uploadButton.setEnabled(authUpload && selectionAllowsUpload);
 	    populateEditor(installs);

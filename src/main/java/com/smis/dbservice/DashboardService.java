@@ -25,7 +25,7 @@ public class DashboardService {
 	}
 	
 	public int getInstallmentCount() {
-		return instrepo.getInstallmentCount();
+		return instrepo.countByIsDeletedFalse();
 	}
 	public int getMonthData(){
 		//List<Integer> yearData = new ArrayList<>();

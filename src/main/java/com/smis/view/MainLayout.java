@@ -178,7 +178,11 @@ public class MainLayout extends AppLayout {
 		master.setVisible(isAdmin);
 		distmaster.setVisible(isSuper);
 		// releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
-		releaseorder.setVisible(service.hasAuthorityForStep(loggedUser, 3));
+		releaseorder.setVisible(
+		        service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER")
+		        ||
+		        service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER")
+		);
 		audit.setVisible(isAdmin);
 		users.setVisible(isAdmin);
 
@@ -340,7 +344,8 @@ public class MainLayout extends AppLayout {
 		// oldpwd.setValue("");
 		// cancelButton.setText(//userType);
 		cancelButton.addClickListener(e -> securityService.logout());
-		saveButton.addClickListener(e -> changePassword());
+		Button saveButton = new Button("Save", e ->
+        changePassword(oldpwd, newpwd, confirmpwd, dialog));
 		VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
 		fieldLayout.setSpacing(false);
 		fieldLayout.setPadding(false);
@@ -371,7 +376,8 @@ public class MainLayout extends AppLayout {
 		confirmpwd.setRevealButtonVisible(false);
 		// oldpwd.setValue("");
 		cancelButton.addClickListener(e -> dialog.close());
-		saveButton.addClickListener(e -> changePassword());
+		Button saveButton = new Button("Save", e ->
+        changePassword(oldpwd, newpwd, confirmpwd, dialog));
 		VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
 		fieldLayout.setSpacing(false);
 		fieldLayout.setPadding(false);
@@ -395,38 +401,53 @@ public class MainLayout extends AppLayout {
 		newpwd.setValue("");
 	}
 
-	private void changePassword() {
-		if (oldpwd.getValue().trim().isEmpty() || newpwd.getValue().trim().isEmpty()
-				|| confirmpwd.getValue().trim().isEmpty()) {
-			Notification.show("Error: Enter All Values, Please", 3000, Position.TOP_CENTER)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			return;
-		}
-		if (!checkPasswordStrength(newpwd.getValue())) {
-			Notification.show(
-					"Password is too weak. Please use a combination of Lower case, Upper case, Number and Special Charaters")
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			return;
-		}
-		if (newpwd.getValue().trim().equals(confirmpwd.getValue().trim())) {
-			String pwd = oldpwd.getValue();
-			if (passwordEncoder.matches(pwd, loggedUser.getPassword())) {
-				Users user = loggedUser;
-				user.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
-				user.setPwdChangedDate(LocalDateTime.now());
-				service.saveUser(user);
-				showConfirmationDialog();
+	private void changePassword(
+	        PasswordField oldpwd,
+	        PasswordField newpwd,
+	        PasswordField confirmpwd,
+	        Dialog dialog
+	) {
 
-			} else {
-				Notification.show("Unauthorised User", 3000, Position.TOP_CENTER)
-						.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			}
-		} else {
-			Notification.show("Please check and confirm your passwords", 3000, Position.TOP_CENTER)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-		}
+	    if (oldpwd.getValue().trim().isEmpty()
+	            || newpwd.getValue().trim().isEmpty()
+	            || confirmpwd.getValue().trim().isEmpty()) {
+
+	        Notification.show("Error: Enter All Values, Please", 3000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (!checkPasswordStrength(newpwd.getValue())) {
+	        Notification.show(
+	                "Password is too weak. Please use Lower case, Upper case, Number and Special Characters")
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    if (!newpwd.getValue().equals(confirmpwd.getValue())) {
+	        Notification.show("Please check and confirm your passwords", 3000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    String pwd = oldpwd.getValue();
+
+	    if (!passwordEncoder.matches(pwd, loggedUser.getPassword())) {
+	        Notification.show("Incorrect Old Password", 3000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    // Update password
+	    loggedUser.setPassword(passwordEncoder.encode(newpwd.getValue().trim()));
+	    loggedUser.setPwdChangedDate(LocalDateTime.now());
+
+	    service.saveUser(loggedUser);
+
+	    dialog.close();  // close dialog safely
+
+	    showConfirmationDialog();
 	}
-
 	private void showConfirmationDialog() {
 		ConfirmDialog dialog = new ConfirmDialog();
 		dialog.setHeader("Password Changed");

@@ -74,7 +74,7 @@ public class StatsView extends VerticalLayout {
         	
         	labels.add(service.getAllConstituencies().get(index).getConstituencyLabel());
         	//service.getWorkCount(null)
-        	data.add(service.getWorkCount(service.getAllConstituencies().get(index)));
+        	data.add(service.getWorkCountByConstituency(service.getAllConstituencies().get(index)));
         }
         BarChart bc = new BarChart(labels, data);
         RectangularCoordinate rc;
@@ -122,7 +122,7 @@ public class StatsView extends VerticalLayout {
         	
         	labels.add(service.getAllSchemesWIthNotInUse().get(index).getSchemeLabel());
         	//service.getWorkCount(null)
-        	data.add(service.getWorkCount(service.getAllSchemes().get(index)));
+        	data.add(service.getWorkCountByScheme(service.getAllSchemes().get(index)));
         }
         BarChart bc = new BarChart(labels, data);
         bc.setName("Works");

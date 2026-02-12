@@ -32,7 +32,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -69,7 +68,7 @@ public class WorkForm extends VerticalLayout {
 	private Audit audit;
 	private Work work;
 	//private WorkView workview;
-	private Installment installment;
+	//private Installment installment;
 	Binder<Work> binder = new BeanValidationBinder<>(Work.class);
 	ComboBox<Scheme> scheme = new ComboBox<>("Schemes");
 	ComboBox<Year> year = new ComboBox<>("Financial Year");
@@ -107,8 +106,8 @@ public class WorkForm extends VerticalLayout {
 	TextField rfRemarks = new TextField("Remarks");
 	TextField genroRemarks = new TextField("Remarks");
 	DatePicker ucDate = new DatePicker("UC Date");
-	public TextField instLetter = new TextField("Release Letter No.");
-	public DatePicker instDate = new DatePicker("Release Date");
+	//public TextField instLetter = new TextField("Release Letter No.");
+	//public DatePicker instDate = new DatePicker("Release Date");
 	//Notification notify = new Notification();
 	Accordion accordion = new Accordion();
 	public AccordionPanel workaccordion = new AccordionPanel();
@@ -122,10 +121,12 @@ public class WorkForm extends VerticalLayout {
 	H6 installmentmaster = new H6("");
 	H6 ucmaster = new H6("");
 	H6 genroText = new H6("");
+	H6 complText = new H6("");
 	public RadioButtonGroup<String> ucAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> roAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> instAction = new RadioButtonGroup<>();
 	public RadioButtonGroup<String> rfAction = new RadioButtonGroup<>();
+	
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
@@ -209,7 +210,7 @@ public class WorkForm extends VerticalLayout {
 		workName.setMinLength(5);
 		workName.setMaxLength(999);
 		// Work work=new Work();
-		workSelect.setItems(service.getWorkNames());
+		workSelect.setItems(service.getWorkNamesList());
 		workSelect.setAllowCustomValue(true);
 		workSelect.addCustomValueSetListener(e -> {
 			String workname = e.getDetail();
@@ -424,11 +425,12 @@ public class WorkForm extends VerticalLayout {
 		vlayout2=new VerticalLayout();
 		roUpload = UploadUtil.createPdfUpload(uploadedPdf2, "Upload Document", "Select Signed Release Order");
 		vlayout2.add(roUpload);
-		
+		ButtonUtil.applySaveStyle(rosave);
+		ButtonUtil.applyCloseStyle(roclose);
 		form2.setWidth("100%");
-		//form2.add(roAction, 2);
-		form2.add(instLetter, 1);
-		form2.add(instDate, 1);
+		form2.add(roAction, 2);
+		//form2.add(instLetter, 1);
+		//form2.add(instDate, 1);
 		//form2.add(UploadUtil.createPdfUpload(uploadedPdf2,"Upload Document","Select Document"), 2);
 		form2.add(vlayout2, 2);
 		form2.add(roRemarks,2);
@@ -442,7 +444,7 @@ public class WorkForm extends VerticalLayout {
 		roclose.addClickListener(event -> fireEvent(new CloseEvent(this)));
 		rosave.addClickListener(event -> {
 		    if (roAction.getValue().equals("Forward")) {
-		        saveRo();
+		        uploadRo();
 		    } else {
 		        reverseFlow(roRemarks);
 		    }
@@ -452,13 +454,13 @@ public class WorkForm extends VerticalLayout {
 		    if ("Forward".equals(selectedValue)) {
 		    	//roRemarks.setVisible(false);
 		    	vlayout2.setVisible(true);
-		    	instLetter.setVisible(true);
-		    	instDate.setVisible(true);
+		    	//instLetter.setVisible(true);
+		    	//instDate.setVisible(true);
 		    }else {
 		    	//roRemarks.setVisible(true);
 		    	vlayout2.setVisible(false);
-		    	instLetter.setVisible(false);
-		    	instDate.setVisible(false);
+		    	//instLetter.setVisible(false);
+		    	//instDate.setVisible(false);
 		    }
 		});
 
@@ -492,6 +494,7 @@ public class WorkForm extends VerticalLayout {
 		ValidationUtil.applyValidation(complRemarks);
 		FormLayout form2 = new FormLayout();
 		form2.setWidthFull();
+		form2.add(complText, 2);
 		form2.add(complRemarks, 2);
 		form2.add(complsave, 1);
 		form2.add(complclose, 1);
@@ -547,10 +550,7 @@ public class WorkForm extends VerticalLayout {
 	    }
 
 	    try {
-	        // Stronger "new" check
 	        boolean isNew = work.getWorkId() == 0;
-
-	        // Optional but recommended: stop early if binder invalid
 	        if (!binder.validate().isOk()) {
 	            Notification.show("Please fill all mandatory fields.", 5000, Position.TOP_CENTER)
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -560,7 +560,7 @@ public class WorkForm extends VerticalLayout {
 
 	        Users user = service.getLoggedUser();
 	        LocalDateTime now = LocalDateTime.now();
-
+	        
 	        work.setDistrict(service.getDistrict());
 	        work.setUpdatedBy(user);
 	        work.setUpdatedOn(now);
@@ -572,32 +572,33 @@ public class WorkForm extends VerticalLayout {
 	            newWorkCode = service.getWorkCode() + 1;
 	            work.setWorkCode(newWorkCode);
 
-	            ProcessFlow entryStep = service.getStepByCode("WORK_ENTRY");
-	            if (entryStep == null) {
-	                Notification.show("Workflow misconfigured: WORK_ENTRY step not found.", 6000, Position.TOP_CENTER)
-	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	                return;
-	            }
-
-	            ProcessFlow nextStep = entryStep.getNextStep();
-	            if (nextStep == null) {
-	                Notification.show("Workflow misconfigured: WORK_ENTRY has no next step.", 6000, Position.TOP_CENTER)
-	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	                return;
-	            }
-
-	            work.setProcessflow(nextStep);
-
-	            ph = new ProcessHistory();
-	            ph.setWork(work);
-	            ph.setUser(user);
-	            ph.setFromStep(entryStep);
-	            ph.setToStep(nextStep);
-	            ph.setProcessName(entryStep.getStepName()); // or "Entry"
-	            ph.setReversed(false);
-	            ph.setEnteredOn(now);
-	            ph.setRemarks(null);
+	            
 	        }
+	        ProcessFlow entryStep = service.getStepByCode("WORK_ENTRY");
+            if (entryStep == null) {
+                Notification.show("Workflow misconfigured: WORK_ENTRY step not found.", 6000, Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            ProcessFlow nextStep = entryStep.getNextStep();
+            if (nextStep == null) {
+                Notification.show("Workflow misconfigured: WORK_ENTRY has no next step.", 6000, Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            work.setProcessflow(nextStep);
+
+            ph = new ProcessHistory();
+            ph.setWork(work);
+            ph.setUser(user);
+            ph.setFromStep(entryStep);
+            ph.setToStep(nextStep);
+            ph.setProcessName(entryStep.getStepName()); // or "Entry"
+            ph.setReversed(false);
+            ph.setEnteredOn(now);
+            ph.setRemarks(null);
 
 	        // Save Work
 	        fireEvent(new SaveEvent(this, work));
@@ -716,17 +717,13 @@ public class WorkForm extends VerticalLayout {
 	        ph.setUser(user);
 	        ph.setFromStep(current);
 	        ph.setToStep(nextStep);
-	        ph.setProcessName("Enter Installment - " + toEnter);  // clearer than repeating step name
+	        ph.setProcessName(current.getStepName()+" - " + toEnter);  // clearer than repeating step name
 	        ph.setReversed(false);
 	        ph.setEnteredOn(now);
 	        ph.setRemarks(instRemarks.getValue());
 
 	        service.saveInstallment(installment);
 	        service.saveProcessHistory(ph);
-	        
-	        audit.saveAudit(work, installment, "Enter Installment - " + toEnter, "Entry");
-
-	        // Move work forward now
 	        updateWork(nextStep);
 	        fireEvent(new RefreshEvent(this, work));
 	        Notification.show("Installment " + toEnter + " Entered. Moved to " + nextStep.getStepName(),
@@ -768,24 +765,22 @@ public class WorkForm extends VerticalLayout {
 	    }
 
 	    try {
-	        // This should internally do: latest history where toStep=current -> return fromStep
 	        ProcessFlow returnTo = service.getPrevStepFromHistory(work);
+	        if ("RELEASE_INSTALLMENT".equals(returnTo.getStepCode())) {
+	            service.markLatestInstallmentDeletedIfExists(work);
+	        }
 	        ProcessHistory ph = new ProcessHistory();
 	        ph.setWork(work);
 	        ph.setUser(loggedUser);
 	        ph.setFromStep(current);      // returning FROM current
 	        ph.setToStep(returnTo);       // returning TO previous
-	        ph.setProcessName("Returned To :"+ returnTo.getStepName());  // keep processName generic (optional)
+	        ph.setProcessName("Returned To : "+ returnTo.getStepName());  // keep processName generic (optional)
 	        ph.setReversed(true);
 	        ph.setRemarks(remarks.getValue());
 	        ph.setEnteredOn(LocalDateTime.now());
 
 	        service.saveProcessHistory(ph);
-
-	        audit.saveAuditReturn(work, "Return To " + returnTo.getStepName(), "Return");
-
 	        updateWork(returnTo);
-
 	        Notification.show("Returned Successfully to " + returnTo.getStepName(), 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
@@ -984,7 +979,7 @@ public class WorkForm extends VerticalLayout {
 	        service.saveProcessHistory(ph);
 
 	        // 10) Audit
-	        audit.saveAudit(work, latest, current.getStepName() + "-" + installmentNo, "Entry");
+	        //audit.saveAudit(work, latest, current.getStepName() + "-" + installmentNo, "Entry");
 
 	        // 11) Update work
 	        work.setProcessflow(nextStep);
@@ -1007,7 +1002,7 @@ public class WorkForm extends VerticalLayout {
 	        e.printStackTrace();
 	    }
 	}
-	public void saveRo() {
+	public void uploadRo() {
 
 	    try {
 	        // 1) Null check first
@@ -1037,14 +1032,7 @@ public class WorkForm extends VerticalLayout {
 	            return;
 	        }
 
-	        // 4) Validate letter/date
-	        if (instLetter.getValue() == null || instLetter.getValue().trim().isEmpty() || instDate.getValue() == null) {
-	            Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER)
-	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	            return;
-	        }
-
-	        // 5) Validate upload bytes
+	       
 	        if (uploadedPdf2 == null || uploadedPdf2.get() == null || uploadedPdf2.get().length == 0) {
 	            Notification.show("Please Select The Release Order To be Uploaded", 3000, Position.TOP_CENTER)
 	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -1073,8 +1061,6 @@ public class WorkForm extends VerticalLayout {
 	        }
 
 	        // 8) Update installment
-	        latest.setInstallmentDate(instDate.getValue());
-	        latest.setInstallmentLetter(instLetter.getValue());
 	        latest.setReleaseOrder(safeFileName);
 	        service.saveInstallment(latest);
 
@@ -1127,8 +1113,6 @@ public class WorkForm extends VerticalLayout {
 	public void clearFields() {
 		
 		installmentAmount.setValue(BigDecimal.ZERO);
-		instLetter.setValue("");
-		instDate.setValue(null);
 		ucletter.setValue("");
 		ucDate.setValue(null);
 		fireEvent(new CloseEvent(this));

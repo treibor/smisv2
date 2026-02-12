@@ -68,7 +68,7 @@ public class Installment implements Serializable {
     private String ucDocument;
 	@Column(length = 500)
     private String fundDocument;
-	
+	private boolean isDeleted=false;
 	
 	public String getGeneratedReleaseOrder() {
 		return generatedReleaseOrder;
@@ -215,6 +215,14 @@ public class Installment implements Serializable {
 
 	public void setFundDocument(String fundDocument) {
 		this.fundDocument = fundDocument;
+	}
+
+	public boolean isDeleted() {
+		return isDeleted;
+	}
+
+	public void setDeleted(boolean isDeleted) {
+		this.isDeleted = isDeleted;
 	}
 	
 	

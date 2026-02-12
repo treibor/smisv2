@@ -130,10 +130,9 @@ a.drawer-tile-item[aria-current="page"] {
 }
 
 .history-dialog::part(header) {
-  background-color: var(--lumo-primary-color);
-  color: var(--lumo-base-color);
+    background-color: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
 }
-
 .history-dialog::part(title) {
   color: var(--lumo-base-color);
 }

@@ -130,7 +130,7 @@ public class HomeView extends VerticalLayout {
         	
         	labels.add(service.getAllConstituencies().get(index).getConstituencyLabel());
         	//service.getWorkCount(null)
-        	data.add(service.getWorkCount(service.getAllConstituencies().get(index)));
+        	data.add(service.getWorkCountByConstituency(service.getAllConstituencies().get(index)));
         }
         BarChart bc = new BarChart(labels, data);
         RectangularCoordinate rc;
@@ -174,7 +174,7 @@ public class HomeView extends VerticalLayout {
     	List<Scheme> schemes = service.getAllSchemesWIthNotInUse(); // or getAllSchemes()
     	for (Scheme sc : schemes) {
     	    labels.add(sc.getSchemeLabel());
-    	    data.add(service.getWorkCount(sc));
+    	    data.add(service.getWorkCountByScheme(sc));
     	}
         BarChart bc = new BarChart(labels, data);
         bc.setName("Works");

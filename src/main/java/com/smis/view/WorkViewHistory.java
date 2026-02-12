@@ -230,7 +230,7 @@ public class WorkViewHistory extends VerticalLayout {
 	public void updateGrid() {
 		//grid.setItems(service.getAllWorks());
 		//grid.setItems(service.getAllWorks());
-		grid.setItems(service.getWorksAssignedToUser());
+		grid.setItems(service.getWorks());
 		gridhistory.setItems(service.getWorkHistory());
 	}
 
@@ -261,13 +261,6 @@ public class WorkViewHistory extends VerticalLayout {
 
 	
 
-	
-
-
-
-	
-
-	
 
 	private void updateList() {
 		block.clear();

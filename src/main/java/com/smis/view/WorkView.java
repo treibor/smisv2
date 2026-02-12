@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.smis.audit.Audit;
@@ -278,7 +278,34 @@ public class WorkView extends VerticalLayout {
 	        return link;
 
 	    }).setHeader("Uploaded RO").setAutoWidth(true);
+	    installmentGrid.addComponentColumn(installment -> {
+	        String rfPath = installment.getFundDocument();
 
+	        if (rfPath == null || rfPath.isBlank()) {
+	            return new Span("");
+	        }
+
+	        if (!fileStorageService.exists(rfPath)) {
+	            Span missing = new Span("Missing file");
+	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
+	            missing.getStyle().set("font-weight", "500");
+	            return missing;
+	        }
+
+	        StreamResource resource = new StreamResource(rfPath, () -> {
+	            try {
+	                return fileStorageService.open(rfPath);
+	            } catch (IOException ex) {
+	                throw new UncheckedIOException(ex);
+	            }
+	        });
+	        resource.setContentType("application/pdf");
+
+	        Anchor link = new Anchor(resource, "View");
+	        link.setTarget("_blank");
+	        return link;
+
+	    }).setHeader("Fund Receipt").setAutoWidth(true);
 	    installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
 	    installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
 	            .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
@@ -313,98 +340,141 @@ public class WorkView extends VerticalLayout {
 	            .setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
 
 	    Button closeButton = new Button("Close", e -> dialog.close());
-	    Button deleteButton = new Button("Delete", e -> deleteInstallment(installmentGrid.asSingleSelect().getValue()));
-	    deleteButton.setEnabled(false);
-
+	    
 	    ButtonUtil.applyCloseStyle(closeButton);
-	    ButtonUtil.applyDeleteStyle(deleteButton);
-
+	    
 	    List<Installment> installments = service.getInstallments(work);
 	    installmentGrid.setItems(installments);
 	    installmentGrid.setAllRowsVisible(true);
 
-	    installmentGrid.asSingleSelect().addValueChangeListener(event -> {
-	        Installment selectedItem = event.getValue();
-	        deleteButton.setEnabled(selectedItem != null && isAdmin);
-	        deleteButton.setVisible(isAdmin);
-	    });
+	   
 
 	    dialog.setModal(true);
 	    dialog.setCloseOnOutsideClick(false);
 	    dialog.setCloseOnEsc(false);
 
 	    dialog.add(installmentGrid);
-	    dialog.getFooter().add(deleteButton, closeButton);
+	    dialog.getFooter().add( closeButton);
 	    dialog.open();
 	}
 
-	public void deleteInstallment(Installment inst) {
+	private void showHistoryDialog(Work work) {
 
+	    Dialog dialog = new Dialog();
+	    dialog.setWidth("90vw");
+	    dialog.addClassName("history-dialog");
+	    dialog.setHeaderTitle("History : " + work.getWorkCode() + " - " + work.getWorkName());
+
+	    Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
+
+	    List<ProcessHistory> history = service.getProcessHistory(work);
+
+	    // 1️⃣ Serial Number Column
+	    grid.addColumn(ph -> history.indexOf(ph) + 1)
+	            .setHeader("Sl. No.")
+	            .setWidth("90px")
+	            .setFlexGrow(0);
+
+	    // 2️⃣ Task
+	    grid.addColumn(ph -> ph.getFromStep() != null
+	                    ? ph.getFromStep().getStepName()
+	                    : "")
+	            .setHeader("Task")
+	            .setAutoWidth(true);
+
+	    // 3️⃣ Action Performed (Arrow + Text)
+	    grid.addComponentColumn(ph -> {
+
+	        Icon icon;
+	        if (ph.isReversed()) {
+	            icon = VaadinIcon.ARROW_BACKWARD.create();
+	            icon.getStyle().set("color", "var(--lumo-error-color)");
+	            icon.getElement().setAttribute("title", "Reverse");
+	        } else {
+	            icon = VaadinIcon.ARROW_FORWARD.create();
+	            icon.getStyle().set("color", "var(--lumo-success-color)");
+	            icon.getElement().setAttribute("title", "Forward");
+	        }
+	        icon.setSize("16px");
+
+	        Span text = new Span(ph.getProcessName() != null ? ph.getProcessName() : "");
+
+	        HorizontalLayout layout = new HorizontalLayout(icon, text);
+	        layout.getStyle().set("align-items", "center");
+	        layout.setSpacing(true);
+	        layout.setPadding(false);
+
+	        return layout;
+
+	    }).setHeader("Action Performed").setAutoWidth(true);
+
+	    // 4️⃣ Remarks
+	    grid.addColumn(ph -> ph.getRemarks() != null ? ph.getRemarks() : "")
+	            .setHeader("Remarks")
+	            .setWidth("35%")
+	            .setResizable(true);
+
+	    // 5️⃣ Performed By
+	    grid.addColumn(ph -> ph.getUser() != null
+	                    ? ph.getUser().getProfileName()
+	                    : "")
+	            .setHeader("Performed By")
+	            .setAutoWidth(true);
+
+	    // 6️⃣ Document
+	    grid.addComponentColumn(ph -> {
+
+	        String path = ph.getDocument();
+
+	        if (path == null || path.isBlank()) {
+	            return new Span("");
+	        }
+
+	        if (!fileStorageService.exists(path)) {
+	            Span missing = new Span("Missing file");
+	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
+	            return missing;
+	        }
+
+	        StreamResource resource = new StreamResource(path, () -> {
+	            try {
+	                return fileStorageService.open(path);
+	            } catch (IOException ex) {
+	                throw new UncheckedIOException(ex);
+	            }
+	        });
+	        resource.setContentType("application/pdf");
+
+	        Anchor link = new Anchor(resource, "View");
+	        link.setTarget("_blank");
+	        return link;
+
+	    }).setHeader("Document").setAutoWidth(true);
+
+	    // 7️⃣ Date
+	    grid.addColumn(ph -> ph.getEnteredOn() != null
+	                    ? ph.getEnteredOn().format(timeFormatter)
+	                    : "No Date")
+	            .setHeader("Action Taken On")
+	            .setSortable(true)
+	            .setAutoWidth(true);
+
+	    grid.setItems(history);
+	    grid.setAllRowsVisible(true);
+	    grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+
+	    Button closeButton = new Button("Close", e -> dialog.close());
+	    ButtonUtil.applyCloseStyle(closeButton);
+
+	    dialog.add(grid);
+	    dialog.getFooter().add(closeButton);
+
+	    dialog.setModal(true);
+	    dialog.setCloseOnOutsideClick(false);
+	    dialog.setCloseOnEsc(false);
+	    dialog.open();
 	}
-
-	private void showHistoryDialog(Work work) { // Create a dialog
-		Dialog dialog = new Dialog();
-		dialog.setWidth("90vw");
-		dialog.addClassName("history-dialog");
-		dialog.setHeaderTitle("History :" + work.getWorkCode() + "-" + work.getWorkName());
-		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
-		// DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-		grid.addColumn(ph -> ph.getFromStep() != null ? ph.getFromStep().getStepName() : "")
-	    .setHeader("Task")
-	    .setAutoWidth(true);
-		grid.addColumn(processhistory -> processhistory.getProcessName()).setHeader("Action Performed")
-				.setAutoWidth(true);
-		grid.addColumn(processhistory -> processhistory.getRemarks()).setHeader("Remarks").setWidth("40%")
-				.setResizable(true);
-		grid.addColumn(processhistory -> processhistory.getUser().getProfileName()).setHeader("Performed By")
-				.setAutoWidth(true);
-		grid.addComponentColumn(ph -> {
-		    String path = ph.getDocument();
-
-		    if (path == null || path.isBlank()) {
-		        return new Span("");
-		    }
-
-		    if (!fileStorageService.exists(path)) {
-		        Span missing = new Span("Missing file");
-		        missing.getStyle().set("color", "var(--lumo-error-text-color)");
-		        return missing;
-		    }
-
-		    StreamResource resource = new StreamResource(path, () -> {
-		        try {
-		            return fileStorageService.open(path);
-		        } catch (IOException ex) {
-		            throw new UncheckedIOException(ex);
-		        }
-		    });
-		    resource.setContentType("application/pdf");
-
-		    Anchor link = new Anchor(resource, "View");
-		    link.setTarget("_blank");
-		    return link;
-
-		}).setHeader("Document").setAutoWidth(true);
-
-		grid.addColumn(processhistory -> processhistory.getEnteredOn() != null
-				? processhistory.getEnteredOn().format(timeFormatter)
-				: "No Date").setHeader("Action Taken On").setResizable(true).setSortable(true).setAutoWidth(true);
-
-		List<ProcessHistory> history = service.getProcessHistory(work);
-		grid.setItems(history);
-		grid.setAllRowsVisible(true);
-		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
-		Button closeButton = new Button("Close", e -> dialog.close());
-		ButtonUtil.applyCloseStyle(closeButton);
-		dialog.add(grid);
-		dialog.getFooter().add(closeButton);
-
-		dialog.setModal(true);
-		dialog.setCloseOnOutsideClick(false);
-		dialog.setCloseOnEsc(false);
-		dialog.open();
-	}
-
+	
 	public void filterGrid() {
 
 		// grid.setItems(service.getFilteredWorks(scheme.getValue(), consti.getValue(),
@@ -440,7 +510,8 @@ public class WorkView extends VerticalLayout {
 		expButton.addClickListener(e -> GridExporter.newWithDefaults(grid).open());
 		expButton.setIcon(new Icon(VaadinIcon.EXTERNAL_LINK));
 		Button addButton = new Button("New Work");
-		addButton.setIcon(new Icon(VaadinIcon.PLUS_CIRCLE_O));
+		ButtonUtil.applyNewStyle(addButton);
+		//addButton.setIcon(new Icon(VaadinIcon.PLUS_CIRCLE_O));
 		addButton.addClickListener(e -> addWork());
 		addButton.setVisible(service.hasAuthorityForStep(loggedUser, "WORK_ENTRY"));
 		configureCombos();
@@ -491,9 +562,7 @@ public class WorkView extends VerticalLayout {
 	private void addWorkAgain(Work work) {
 		// workform.save.setEnabled(true);
 		grid.asSingleSelect().clear();
-		workform.installaccordion.setEnabled(false);
-		workform.ucaccordion.setEnabled(false);
-
+		closeAllAccordions();
 		Work newWork = new Work();
 		newWork.setBlock(work.getBlock());
 		newWork.setConstituency(work.getConstituency());
@@ -588,7 +657,13 @@ public class WorkView extends VerticalLayout {
 	        String stepCode = (pf != null) ? pf.getStepCode() : null;
 
 	        // -------------- step-specific UI --------------
-	        if ("RELEASE_INSTALLMENT".equals(stepCode)) {
+	        if ("WORK_ENTRY".equals(stepCode)) {
+
+	            // ✅ return-to from HISTORY (must ignore reversed rows in query)
+	            
+	            showOnly(workform.workaccordion);
+
+	        }else if ("RELEASE_INSTALLMENT".equals(stepCode)) {
 
 	            // ✅ return-to from HISTORY (must ignore reversed rows in query)
 	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
@@ -602,7 +677,7 @@ public class WorkView extends VerticalLayout {
 
 	                workform.installmentAmount.setValue(remaining);
 	                workform.installmentmaster.setText("Installment: " + (instcount + 1));
-	                workform.instAction.setVisible(true);
+	                //workform.instAction.setVisible(true);
 	            } else {
 	                // default first installment suggestion
 	                BigDecimal perInst = work.getWorkAmount().divide(
@@ -612,7 +687,7 @@ public class WorkView extends VerticalLayout {
 	                );
 	                workform.installmentAmount.setValue(perInst);
 	                workform.installmentmaster.setText("Installment: 1");
-	                workform.instAction.setVisible(false);
+	                //workform.instAction.setVisible(false);
 	            }
 
 	            showOnly(workform.installaccordion);
@@ -622,15 +697,7 @@ public class WorkView extends VerticalLayout {
 	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
 	            workform.genroText.setText("Return to " + returnTo.getStepName());
 	            
-	            if (instcount > 0 && installments.size() >= instcount) {
-	                Installment latest = installments.get(instcount - 1);
-	                workform.instLetter.setValue(java.util.Objects.toString(latest.getInstallmentLetter(), ""));
-	                workform.instDate.setValue(latest.getInstallmentDate());
-	            } else {
-	                workform.instLetter.setValue("");
-	                workform.instDate.clear();
-	            }
-
+	         
 	        } else if ("UPLOAD_RELEASE_ORDER".equals(stepCode)) {
 
 	            showOnly(workform.uproaccordion);
@@ -640,14 +707,6 @@ public class WorkView extends VerticalLayout {
 	            workform.roAction.setItems("Forward", "Return to " + returnTo.getStepName());
 	            workform.roAction.setValue("Forward");
 
-	            if (instcount > 0 && installments.size() >= instcount) {
-	                Installment latest = installments.get(instcount - 1);
-	                workform.instLetter.setValue(java.util.Objects.toString(latest.getInstallmentLetter(), ""));
-	                workform.instDate.setValue(latest.getInstallmentDate());
-	            } else {
-	                workform.instLetter.setValue("");
-	                workform.instDate.clear();
-	            }
 
 	        } else if ("RELEASE_FUNDS".equals(stepCode)) {
 
@@ -668,8 +727,9 @@ public class WorkView extends VerticalLayout {
 	            workform.ucAction.setValue("Forward");
 
 	        } else if ("COMPLETED".equals(stepCode)) {
-
-	            showOnly(workform.complaccordion);
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.complText.setText("Return to " + returnTo.getStepName());
+				showOnly(workform.complaccordion);
 
 	        } else {
 	            closeAllAccordions();
@@ -700,108 +760,7 @@ public class WorkView extends VerticalLayout {
 	    workform.complaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "COMPLETED"));
 	}
 	
-//	public void openComplAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.workaccordion.setEnabled(false);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//		// workform.workaccordion.setOpened(false);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.complaccordion.setOpened(true);
-//		workform.complaccordion.setEnabled(true);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//	}
-//	public void closeAllAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.workaccordion.setEnabled(false);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//	}
-//
-//	public void openWorkAccordion() {
-//		workform.workaccordion.setOpened(true);
-//		workform.workaccordion.setEnabled(true);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//		// workform.workaccordion.setOpened(false);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//	}
-//
-//	public void openInstallAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.installaccordion.setEnabled(true);
-//		workform.installaccordion.setOpened(true);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//		// workform.workaccordion.setOpened(false);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//	}
-//
-//	public void openUcAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(true);
-//		workform.ucaccordion.setOpened(true);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//	}
-//
-//	public void openRoAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//
-//		workform.uproaccordion.setOpened(true);
-//		workform.uproaccordion.setEnabled(true);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(false);
-//		workform.rfaccordion.setOpened(false);
-//	}
-//	public void openRfAccordion() {
-//		workform.workaccordion.setOpened(false);
-//		workform.installaccordion.setEnabled(false);
-//		workform.installaccordion.setOpened(false);
-//		workform.ucaccordion.setEnabled(false);
-//		workform.ucaccordion.setOpened(false);
-//		workform.uproaccordion.setOpened(false);
-//		workform.uproaccordion.setEnabled(false);
-//		workform.complaccordion.setOpened(false);
-//		workform.complaccordion.setEnabled(false);
-//		workform.rfaccordion.setEnabled(true);
-//		workform.rfaccordion.setOpened(true);
-//	}
+
 	private Map<String, AccordionPanel> stepToPanel() {
 	    return Map.of(
 	        "WORK_ENTRY", workform.workaccordion,

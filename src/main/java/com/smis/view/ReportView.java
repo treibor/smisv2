@@ -82,13 +82,13 @@ public class ReportView extends VerticalLayout {
 		reportTypemp.setItems("General Report", "Detailed Report");
 		// candi.addValueChangeListener(e-> removePdfViewer());
 		
-		add(createFinalPanel(), hl4);
+		add(createMlaPanel(), hl4);
 	}
 
 	
 
 	public void initializeMlaItems() {
-		block.setItems(service.getAllBlocks(false));
+		block.setItems(service.getAllBlocks(true));
 		scheme.setItems(service.getAllSchemes());
 		consti.setItems(service.getAllConstituencies());
 		year.setItems(service.getAllYears());
@@ -114,14 +114,7 @@ public class ReportView extends VerticalLayout {
 
 	}
 
-	public Component createFinalPanel() {
-		Accordion accordion = new Accordion();
-		accordion.add("MLA Schemes", createMlaPanel());
-		//accordion.add("MP Schemes", createMpPanel());
-		// accordion.set
-		accordion.setWidthFull();
-		return accordion;
-	}
+	
 
 	public Component createMlaPanel() {
 		FormLayout fl1 = new FormLayout();
@@ -143,24 +136,7 @@ public class ReportView extends VerticalLayout {
 		return fl1;
 	}
 
-	public Component createMpPanel() {
-		FormLayout fl2 = new FormLayout();
-		Button printMp = new Button("Print");
-		//printMp.addClickListener(e -> printMpReport());
-		fl2.add(reportTypemp, 2);
-		fl2.add(implDistrict, 2);
-		//fl2.add(constituencymp, 2);
-		fl2.add(yearmp, 2);
-		fl2.add(printMp, 2);
-		fl2.setSizeFull();
-		fl2.setResponsiveSteps(new ResponsiveStep("0", 12),
-				// Use two columns, if layout's width exceeds 500px
-				new ResponsiveStep("500px", 12));
-		// Details details=new Details("Election Personnel", fl1);
-		// details.setOpened(false);
-		// return details;
-		return fl2;
-	}
+	
 
 	
 	private void printReport() {
