@@ -23,22 +23,33 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
 	Optional<Installment> findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(Work work);
 
 	@Query("""
-			    SELECT i
-			    FROM Installment i
-			    WHERE i.work.scheme = :scheme
-			    AND i.work.isDeleted = false	
-			      AND i.work.constituency = :consti
-			      AND i.work.processflow IN :processflows
-			      AND i.work.block = :block
-			      AND i.work.district = :district
-			      AND i.work.year = :year
-			      AND i.installmentNo = :installment
-			      AND i.isDeleted = false
-			""")
-	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,
-			@Param("processflows") List<ProcessFlow> processflows, @Param("block") Block block,
-			@Param("district") District district, @Param("year") Year year, @Param("installment") int installment);
-
+		    SELECT i
+		    FROM Installment i
+		    WHERE i.work.scheme = :scheme
+		      AND i.work.isDeleted = false
+		      AND i.work.constituency = :consti
+		      AND i.work.processflow IN :processflows
+		      AND i.work.block = :block
+		      AND i.work.district = :district
+		      AND i.work.year = :year
+		      AND i.isDeleted = false
+		      AND i.installmentNo = :installment
+		      AND :installment = (
+		            SELECT MAX(i2.installmentNo)
+		            FROM Installment i2
+		            WHERE i2.work = i.work
+		              AND i2.isDeleted = false
+		      )
+		""")
+		List<Installment> getFilteredInstallment(
+		        @Param("scheme") Scheme scheme,
+		        @Param("consti") Constituency consti,
+		        @Param("processflows") List<ProcessFlow> processflows,
+		        @Param("block") Block block,
+		        @Param("district") District district,
+		        @Param("year") Year year,
+		        @Param("installment") int installment
+		);
 	
 
 	@Query("select  c, d, e, g, h  from Installment c join c.work d join d.year e  join d.constituency g join d.district h  where  c.installmentNo=:installment and c.work=:work and c.isDeleted=false")

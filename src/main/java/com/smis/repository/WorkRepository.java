@@ -45,45 +45,70 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 
 	// Find Works
 	@Query("""
-		    SELECT w
+			    SELECT w
+			    FROM Work w
+			    WHERE w.isDeleted = false
+			      AND w.isRecasted = false
+			      AND w.processflow IN (
+			            SELECT pfu.processFlow
+			            FROM ProcessFlowUser pfu
+			            WHERE pfu.user = :user
+			      )
+			      AND EXISTS (
+			            SELECT 1 FROM BlockUser bu
+			            WHERE bu.user = :user AND bu.block = w.block
+			      )
+			      AND EXISTS (
+			            SELECT 1 FROM SchemeUser su
+			            WHERE su.user = :user AND su.scheme = w.scheme
+			      )
+			      AND EXISTS (
+			            SELECT 1 FROM ConstituencyUser cu
+			            WHERE cu.user = :user AND cu.constituency = w.constituency
+			      )
+			    ORDER BY w.workCode DESC
+			""")
+	List<Work> findWorksByUser(@Param("user") Users user);
+
+	// Works Search History
+	@Query("""
+		    SELECT DISTINCT w
 		    FROM Work w
 		    WHERE w.isDeleted = false
 		      AND w.isRecasted = false
-		      AND w.processflow IN (
-		            SELECT pfu.processFlow
-		            FROM ProcessFlowUser pfu
-		            WHERE pfu.user = :user
-		      )
 		      AND EXISTS (
-		            SELECT 1 FROM BlockUser bu
-		            WHERE bu.user = :user AND bu.block = w.block
+		            SELECT 1
+		            FROM ProcessHistory ph
+		            WHERE ph.work = w
+		              AND ph.user = :user
 		      )
-		      AND EXISTS (
-		            SELECT 1 FROM SchemeUser su
-		            WHERE su.user = :user AND su.scheme = w.scheme
-		      )
-		      AND EXISTS (
-		            SELECT 1 FROM ConstituencyUser cu
-		            WHERE cu.user = :user AND cu.constituency = w.constituency
+		      AND (:district IS NULL OR w.district = :district)
+		      AND (:scheme IS NULL OR w.scheme = :scheme)
+		      AND (:year IS NULL OR w.year = :year)
+		      AND (:consti IS NULL OR w.constituency = :consti)
+		      AND (:block IS NULL OR w.block = :block)
+		      AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = w.block)
+		      AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = w.scheme)
+		      AND EXISTS (SELECT 1 FROM ConstituencyUser cu WHERE cu.user = :user AND cu.constituency = w.constituency)
+		      AND (
+		            :searchTerm IS NULL
+		         OR CAST(w.workCode AS string) = :searchTerm
+		         OR LOWER(w.workName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+		         OR LOWER(w.sanctionNo) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
 		      )
 		    ORDER BY w.workCode DESC
 		""")
-		List<Work> findWorksByUser(@Param("user") Users user);
-	
-	// Works Search
-	@Query("SELECT w FROM Work w where  w.isDeleted=false and w.isRecasted=false " + "AND w.processflow IN "
-			+ "(SELECT pfu.processFlow FROM ProcessFlowUser pfu WHERE pfu.user = :user) "
-			+ "AND w.district = :district "
-			+ "AND EXISTS (SELECT 1 FROM BlockUser bu WHERE bu.user = :user AND bu.block = w.block) " + // Block check
-			"AND EXISTS (SELECT 1 FROM SchemeUser su WHERE su.user = :user AND su.scheme = w.scheme) " + // Scheme check
-			"AND EXISTS (SELECT 1 FROM ConstituencyUser cu WHERE cu.user = :user AND cu.constituency = w.constituency) "
-			+ // Consti check
-			"AND (CAST(w.workCode AS string) = :searchTerm "
-			+ "     OR LOWER(w.workName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) "
-			+ "     OR LOWER(w.sanctionNo) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " + "ORDER BY w.workCode DESC")
-	List<Work> findWorksByUserAndSearch(@Param("user") Users user, @Param("district") District district,
-			@Param("searchTerm") String searchTerm);
+		List<Work> findWorksEverProcessedByUserAndSearch(
+		        @Param("user") Users user,
+		        @Param("scheme") Scheme scheme,
+		        @Param("district") District district,
+		        @Param("year") Year year,
+		        @Param("consti") Constituency consti,
+		        @Param("block") Block block,
+		        @Param("searchTerm") String searchTerm
+		);
 
+	// Inbox
 	@Query("""
 			    SELECT w
 			    FROM Work w

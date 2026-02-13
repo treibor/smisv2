@@ -333,11 +333,7 @@ public class WorkView extends VerticalLayout {
 	        return new Span("");
 	    }).setHeader("UC Documents").setAutoWidth(true);
 
-	    installmentGrid.addColumn(inst -> inst.getEnteredBy().getProfileName()).setHeader("Entered By")
-	            .setResizable(true).setVisible(isAdmin);
-
-	    installmentGrid.addColumn(inst -> inst.getEnteredOn() != null ? inst.getEnteredOn().format(timeFormatter) : "")
-	            .setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true).setVisible(isAdmin);
+	    
 
 	    Button closeButton = new Button("Close", e -> dialog.close());
 	    

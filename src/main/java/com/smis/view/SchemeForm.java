@@ -75,15 +75,31 @@ public class SchemeForm extends FormLayout{
 	
 	
 	
-	
-	
-	
 	private Component createSchemeLayout() {
-		masterScheme.setItems(service.getMasterSchemes());
-		masterScheme.setItemLabelGenerator(masterscheme->masterscheme.getSchemeName());
-		VerticalLayout layout=new VerticalLayout(new Span("* Click New Button To Add New Item"),masterScheme,schemeLabel, schemeNameLong, schemeDept, schemeDuration,   schemeReport,inUse, createButtonsLayout());
-		layout.setSizeFull();
-		return layout;
+
+	    masterScheme.setItems(service.getMasterSchemes());
+	    masterScheme.setItemLabelGenerator(m -> m.getSchemeName());
+
+	    FormLayout form = new FormLayout();
+
+	    form.add(new Span("* Click New Button To Add New Item"), 2);
+	    form.add(masterScheme, 2);
+	    form.add(schemeLabel, 1);
+	    form.add(schemeNameLong, 1);
+	    form.add(schemeDept, 1);
+	    form.add(schemeDuration, 1);
+	    form.add(schemeReport, 1);
+	    form.add(inUse, 1);
+	    form.add(createButtonsLayout(), 2);
+
+	    form.setResponsiveSteps(
+	            new FormLayout.ResponsiveStep("0", 1),
+	            new FormLayout.ResponsiveStep("600px", 2)
+	    );
+
+	    form.setWidthFull();
+
+	    return form;
 	}
 	private Component createButtonsLayout() {
 		// TODO Auto-generated method stub

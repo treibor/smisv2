@@ -428,10 +428,17 @@ public class Dbservice implements Serializable{
 		return irepo.findByWorkAndIsDeletedFalse(work);
 	}
 
-	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, List<ProcessFlow> pflows,
-			Block block, Year year, int installment) {
-
-		return irepo.getFilteredInstallment(scheme, consti, pflows, block, getDistrict(), year, installment);
+	public List<Installment> getFilteredInstallments(
+	        Scheme scheme,
+	        Constituency consti,
+	        List<ProcessFlow> pflows,
+	        Block block,
+	        Year year,
+	        int inst
+	) {
+	    return irepo.getFilteredInstallment(
+	            scheme, consti, pflows, block, getDistrict(), year, inst
+	    );
 	}
 	
 	public Installment getInstallmentByWorkAndNo(int insallment, Work work) {
@@ -468,14 +475,24 @@ public class Dbservice implements Serializable{
 	public Work getWorkById(long id) {
 		return wrepo.findById(id);
 	}
-	
-	
-	
-	
-	public List<Work> getFilteredWorksAndSearch(String searchTerm) {
+
+	// Inbox
+	public List<Work> getFilteredWorksByUser(Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
-			return wrepo.findWorksByUserAndSearch(getLoggedUser(), getDistrict(),searchTerm);
+			return wrepo.getFilteredWorksByUser(getLoggedUser(), scheme, getDistrict(), year, consti, block);
 		} catch (Exception e) {
+
+			return Collections.emptyList();
+
+		}
+	}
+
+	// History
+	public List<Work> getFilteredWorksAndSearch(String searchTerm,Scheme scheme, Constituency consti, Block block, Year year) {
+		try {
+			return wrepo.findWorksEverProcessedByUserAndSearch(getLoggedUser(),scheme, getDistrict(), year, consti, block,searchTerm);
+		} catch (Exception e) {
+			e.printStackTrace();
 			return Collections.emptyList();
 		}
 	}
@@ -487,15 +504,6 @@ public class Dbservice implements Serializable{
 		}
 	}
 	
-	public List<Work> getFilteredWorksByUser(Scheme scheme, Constituency consti, Block block, Year year) {
-		try {
-			return wrepo.getFilteredWorksByUser(getLoggedUser(),scheme, getDistrict(), year, consti, block);
-		} catch (Exception e) {
-
-			return Collections.emptyList();
-
-		}
-	}
 	public List<Work> getReportWorks(Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
 			return wrepo.getReportWorks(scheme, getDistrict(), year, consti, block);

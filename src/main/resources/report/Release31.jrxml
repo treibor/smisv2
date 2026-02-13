@@ -106,29 +106,14 @@
 		<property name="com.jaspersoft.studio.field.label" value="scheme_label"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="scheme"/>
 	</field>
-	<field name="work.scheme.schemeName" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="scheme_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="scheme_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="scheme"/>
-	</field>
 	<field name="work.scheme.schemeNameLong" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="scheme_name_long"/>
 		<property name="com.jaspersoft.studio.field.label" value="scheme_name_long"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="scheme"/>
 	</field>
-	<field name="work.block.blockDevelopmentOfficer" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="block_development_officer"/>
-		<property name="com.jaspersoft.studio.field.label" value="block_development_officer"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="block"/>
-	</field>
 	<field name="work.block.blockLabel" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="block_label"/>
 		<property name="com.jaspersoft.studio.field.label" value="block_label"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="block"/>
-	</field>
-	<field name="work.block.blockName" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="block_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="block_name"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="block"/>
 	</field>
 	<field name="work.constituency.constituencyLabel" class="java.lang.String">
@@ -139,16 +124,6 @@
 	<field name="work.constituency.constituencyMLA" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="constituencyMLA"/>
 		<property name="com.jaspersoft.studio.field.label" value="constituencyMLA"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="constituency"/>
-	</field>
-	<field name="work.constituency.constituencyName" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="constituency_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="constituency_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="constituency"/>
-	</field>
-	<field name="work.constituency.constituencyNo" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="constituency_no"/>
-		<property name="com.jaspersoft.studio.field.label" value="constituency_no"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="constituency"/>
 	</field>
 	<field name="work.district.deputyCommissioner" class="java.lang.String">
@@ -191,11 +166,6 @@
 		<property name="com.jaspersoft.studio.field.label" value="state_hq"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="state"/>
 	</field>
-	<field name="work.year.yearName" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="year_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="year_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="year"/>
-	</field>
 	<field name="work.year.yearLabel" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="year_label"/>
 		<property name="com.jaspersoft.studio.field.label" value="year_label"/>
@@ -236,7 +206,7 @@
 					<font fontName="Times New Roman" size="10"/>
 					<paragraph lineSpacing="1_1_2" lineSpacingSize="1.0"/>
 				</textElement>
-				<textFieldExpression><![CDATA["               Under Govt. Sanction No. <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{sanctionNo}+"</style>  dated <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$F{work.sanctionDate}.format( java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))+"</style>, Financial sanction is hereby accorded to an expenditure of <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">Rs. "+$P{amount}+"</style> for implementation of  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{scheme}+" </style> for the Year  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{year}+"</style> proposed by  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$F{work.constituency.constituencyMLA}+", MLA, "+$F{work.constituency.constituencyNo}+ "-"+$F{work.constituency.constituencyName}+" Constituency</style>  under <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{block}+"</style>  as per detailed schemes indicated below."]]></textFieldExpression>
+				<textFieldExpression><![CDATA["               Under Govt. Sanction No. <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{sanctionNo}+"</style>  dated <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$F{work.sanctionDate}.format( java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))+"</style>, Financial sanction is hereby accorded to an expenditure of <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">Rs. "+$P{amount}+"</style> for implementation of  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{scheme}+" </style> for the Year  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{year}+"</style> proposed by  <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$F{work.constituency.constituencyMLA}+", MLA, "+$F{work.constituency.constituencyLabel}+" Constituency</style>  under <style isBold=\"true\" isUnderline=\"true\" pdfFontName=\"Helvetica-Bold\">"+$P{block}+"</style>  as per detailed schemes indicated below."]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement style="Detail" x="0" y="55" width="340" height="15" uuid="d8ec7af2-9bf5-40de-8895-d03b17fccb15">

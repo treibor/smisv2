@@ -109,6 +109,7 @@ public class PrintView extends HorizontalLayout {
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
+	private boolean gridConfigured = false;
 	VerticalLayout vlayout = new VerticalLayout();
 	Dialog dialog;
 	VaadinCKEditor inlineEditor = new VaadinCKEditorBuilder().with(builder -> {
@@ -518,28 +519,6 @@ public class PrintView extends HorizontalLayout {
 	
 	
 
-	private void addLinkToFile(File file) {
-		if (link != null) {
-			vlayout.remove(link);
-		}
-		StreamResource streamResource = new StreamResource(file.getName(), () -> getStream(file));
-
-		link = new Anchor(streamResource, String.format("%s (%d KB)", file.getName(), (int) file.length() / 1024));
-		link.setTarget("_blank"); // Opens in a new tab
-
-		vlayout.add(link);
-	}
-
-	private InputStream getStream(File file) {
-		FileInputStream stream = null;
-		try {
-			stream = new FileInputStream(file);
-		} catch (FileNotFoundException e) {
-
-		}
-
-		return stream;
-	}
 
 	public String changeAmp(String label) {
 		if (label.contains("&")) {
@@ -548,14 +527,6 @@ public class PrintView extends HorizontalLayout {
 		} else {
 			return label;
 		}
-	}
-
-	private InputStream createResource(File path) {// get generated pdf file and create Resource
-		try {
-			return FileUtils.openInputStream(path);
-		} catch (Exception ex) {
-		}
-		return null;
 	}
 
 	private void populateAllFields() {
@@ -588,9 +559,7 @@ public class PrintView extends HorizontalLayout {
 				.setAutoWidth(true);
 		grid.addColumn(installment -> installment.getInstallmentLetter()).setHeader("Release No").setAutoWidth(true);
 		grid.addColumn(installment -> installment.getInstallmentDate()).setHeader("Release Date").setAutoWidth(true);
-		// grid.addColumn(installment->
-		// installment.getInstallmentCheque()).setHeader("Cheque
-		// No.").setAutoWidth(true);
+		grid.addColumn(installment-> installment.getInstallmentNo()).setHeader("Installment No").setAutoWidth(true);
 		grid.addColumn(installment -> installment.getWork().getProcessflow().getStepName()).setHeader("Current Process")
 				.setAutoWidth(true);
 		// grid.getColumns().forEach(col-> col.setAutoWidth(true));
@@ -635,46 +604,7 @@ public class PrintView extends HorizontalLayout {
 
 	   
 	}
-	public void doSomethings(SelectionEvent e) {
-		
-		if (e.getAllSelectedItems().size() > 0) {
-			//hl4.setVisible(false);
-			printButton.setEnabled(true);
-			uploadButton.setEnabled(true);
-			Set<Installment> selected = grid.getSelectedItems();
-			List<Installment> installs = new ArrayList<>(selected);
-			for(Installment installments: installs) {
-				if(installments.getWork().getProcessflow().getStepOrder()==3) {
-					printButton.setEnabled(false);
-				}
-				if(installments.getWork().getProcessflow().getStepOrder()==4) {
-					printButton.setEnabled(false);
-				}
-			}
-			Installment installsingle = installs.get(0);
-			
-			
-			// compldate.setValue(complDate);
-			instdate.setValue(installsingle.getInstallmentDate());
-			populateEditor(installs);
-			// String letterNo=installsingle.getInstallmentLetter()+"";
-			try {
-				instletter.setValue(installsingle.getInstallmentLetter());
-				// installmentcheque.setValue(installsingle.getInstallmentCheque());
-
-			} catch (NullPointerException npe) {
-				// npe.printStackTrace();
-				instletter.setValue("");
-				// installmentcheque.setValue("");
-			}
-		} else {
-			printButton.setEnabled(false);
-			uploadButton.setEnabled(false);
-			instletter.setValue("");
-			instdate.setValue(null);
-		}
-	}
-
+	
 	public void populateEditor(List<Installment> installs) {
 		Work work = installs.get(0).getWork();
 		BigDecimal total = BigDecimal.ZERO;
@@ -778,22 +708,44 @@ public class PrintView extends HorizontalLayout {
 	}
 
 	public void populateGrid() {
-		try {
-			int instno = instNo.getValue();
-			if (scheme.getValue() != null || year.getValue() != null || constituency.getValue() != null
-					|| block.getValue() != null || instno > 0 || instno <= 5) {
-				
-				// grid.setItems(service.getFilteredInstallments(scheme.getValue(),
-				// constituency.getValue(),block.getValue(), year.getValue(), instno));
-				grid.setItems(service.getFilteredInstallments(scheme.getValue(), constituency.getValue(),
-						List.of(service.getProcessFlowByOrder(3), service.getProcessFlowByOrder(4)), block.getValue(),
-						year.getValue(), instno));
+	    try {
+	        Integer instnoObj = instNo.getValue();
+	        int instno = (instnoObj != null) ? instnoObj : 1; // default
 
-				configureGrid();
-			}
-		} catch (Exception e) {
+	        boolean hasAnyFilter =
+	                scheme.getValue() != null
+	                || year.getValue() != null
+	                || constituency.getValue() != null
+	                || block.getValue() != null
+	                || (instno >= 1 && instno <= 5);
 
-		}
+	        if (!gridConfigured) {
+	            configureGrid();          // ✅ run once only
+	            gridConfigured = true;
+	        }
+
+	        if (hasAnyFilter) {
+	        	grid.setItems(service.getFilteredInstallments(
+	        	        scheme.getValue(),
+	        	        constituency.getValue(),
+	        	        List.of(
+	        	            service.getStepByCode("GENERATE_RELEASE_ORDER"),
+	        	            service.getStepByCode("UPLOAD_RELEASE_ORDER")
+	        	        ),
+	        	        block.getValue(),
+	        	        year.getValue(),
+	        	        instnoObj.intValue()
+	        	        
+	        	));
+	        } else {
+	            grid.setItems(java.util.Collections.emptyList());
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        Notification.show("Unable to load data: " + e.getMessage(), 4000, Notification.Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	    }
 	}
 
 	public static String convertToIndianCurrency(String num) {
