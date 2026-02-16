@@ -2,24 +2,27 @@ package com.smis.security;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 
+import com.smis.audit.Audit;
 import com.smis.security.captcha.Captcha;
 import com.smis.security.captcha.CapthaImpl;
 import com.smis.view.HomeView;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -46,21 +49,22 @@ import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.VaadinServletResponse;
-import com.vaadin.flow.server.WrappedSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Route("login")
 @AnonymousAllowed
 public class Login extends VerticalLayout implements BeforeEnterObserver {
-
-	
 	@Autowired
-	SessionRegistry sr;
+	private SessionAuthenticationStrategy sessionAuthenticationStrategy;
 	@Autowired
-	private AuthenticationManager authenticationManager;
+	Audit audit;
+	@Autowired
+	private AuthenticationConfiguration authenticationConfiguration;
 	@Autowired
 	SecurityContextRepository securityRepo;
 	private final AuthenticatedUser authenticatedUser;
@@ -87,8 +91,6 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		setJustifyContentMode(JustifyContentMode.CENTER);
 		setSizeFull();
 		add(createPasswordForm());
-		//getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
-		setClassName("login-view");
 		getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
 	}
 
@@ -121,14 +123,26 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 		button.setAutofocus(true);
 		anchor.setText("Forgot Password?");
-		// anchor.getElement().addEventListener("click",e-> ForgotPassword());
+		anchor.getStyle().set("cursor", "pointer");
+		anchor.getElement().addEventListener("click",e-> ForgotPassword());
 		usernameField.getElement().setAttribute("autocomplete", "off");
 		passwordField.getElement().setAttribute("autocomplete", "off");
+		button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		button.setAutofocus(true);
 
+		// Press Enter to login
+		passwordField.addKeyDownListener(Key.ENTER, e -> button.click());
+		usernameField.addKeyDownListener(Key.ENTER, e -> button.click());
 		button.addClickListener(e -> {
-			String encryptedUsername = encryptClientSide(usernameField.getValue(), dynamicKey);
-			String encryptedPassword = encryptClientSide(passwordField.getValue(), dynamicKey);
-			doLogin(encryptedUsername, encryptedPassword);
+		    button.setEnabled(false);
+		    try {
+		        String encryptedUsername = encryptClientSide(usernameField.getValue(), dynamicKey);
+		        String encryptedPassword = encryptClientSide(passwordField.getValue(), dynamicKey);
+		        doLogin(encryptedUsername, encryptedPassword);
+		    } finally {
+		        // doLogin() will navigate on success; on failure we re-enable below
+		        button.setEnabled(true);
+		    }
 		});
 
 		anchor.getStyle().set("color", "hsla(211, 100%, 50%, 0.90)").set("padding-bottom", "20px");
@@ -176,39 +190,62 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 	}
 
 	private void doLogin(String encryptedUsername, String encryptedPassword) {
-		// Handle the authentication using Spring Security
 
-		// if (captcha.checkUserAnswer(captchatext.getValue())) {
-		String username = decryptUsername(encryptedUsername, dynamicKey);
-		String password = decryptPassword(encryptedPassword, dynamicKey);
-		try {
-			invalidatePreviousSessionsForUser(username);
-			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
-			Authentication authentication = this.authenticationManager.authenticate(token);
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-			SecurityContext context = this.securityContextHolderStrategy.createEmptyContext();
-			context.setAuthentication(authentication);
-			this.securityContextHolderStrategy.setContext(context);
-			securityRepo.saveContext(context, VaadinServletRequest.getCurrent(), VaadinServletResponse.getCurrent());
-			// registerSession(ServletContext, (UserDetails) authentication.getPrincipal());
-			registerSession(VaadinService.getCurrentRequest().getWrappedSession(),
-					(UserDetails) authentication.getPrincipal());
-			
-			//audit.saveLoginAudit("Login Successfully", username);
-			UI.getCurrent().navigate(HomeView.class);
-		} catch (Exception e) {
-			// Handle login failure
-			//audit.saveLoginAudit("Login Failure- Authentication", username);
-			Notification.show("Authentication failed: Wrong User Name or Password")
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			clearFields();
+	    String usernameRaw = decryptUsername(encryptedUsername, dynamicKey);
+	    String password = decryptPassword(encryptedPassword, dynamicKey);
 
-		}
-//		}else {
-//			Notification.show("Invalid captcha").addThemeVariants(NotificationVariant.LUMO_ERROR);
-//			clearFields();
-//			//audit.saveLoginAudit("Login Failure- Captcha", username);
-//		}
+	    String username = usernameRaw == null ? "" : usernameRaw.trim();
+	    if (username.isEmpty() || password == null || password.isEmpty()) {
+	        Notification.show("Please enter username and password")
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        button.setEnabled(true);
+	        return;
+	    }
+
+	    HttpServletRequest req = VaadinServletRequest.getCurrent().getHttpServletRequest();
+	    String ip = getClientIp(req);
+	    String userAgent = req.getHeader("User-Agent");
+
+	    try {
+	        UsernamePasswordAuthenticationToken token =
+	                new UsernamePasswordAuthenticationToken(username, password);
+
+	        AuthenticationManager authenticationManager =
+	                authenticationConfiguration.getAuthenticationManager();
+
+	        Authentication authentication = authenticationManager.authenticate(token);
+
+	        HttpServletResponse res = VaadinServletResponse.getCurrent().getHttpServletResponse();
+	        sessionAuthenticationStrategy.onAuthentication(authentication, req, res);
+
+	        SecurityContext context = SecurityContextHolder.createEmptyContext();
+	        context.setAuthentication(authentication);
+	        securityContextHolderStrategy.setContext(context);
+	        securityRepo.saveContext(context,
+	                VaadinServletRequest.getCurrent(),
+	                VaadinServletResponse.getCurrent());
+
+	        audit.saveLoginAudit("Login Successfully | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
+	        UI.getCurrent().navigate(HomeView.class);
+
+	    } catch (SessionAuthenticationException e) {
+	        audit.saveLoginAudit("Login Failure - Already logged in | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
+
+	        Notification.show("This user is already logged in on another device.")
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+	        clearFields();
+	        button.setEnabled(true);
+
+	    } catch (Exception e) {
+	        audit.saveLoginAudit("Login Failure - Invalid credentials | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
+
+	        Notification.show("Invalid credentials")
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+	        clearFields();
+	        button.setEnabled(true);
+	    }
 	}
 
 	private String encryptClientSide(String value, String key) {
@@ -226,24 +263,9 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		return new String(Base64.getDecoder().decode(encryptedPassword));
 	}
 
-	private void registerSession(WrappedSession session, UserDetails userDetails) {
-		sr.registerNewSession(session.getId(), userDetails);
-	}
+	
 
-	public int getActiveSessionCountForUser(String username) {
-		int count = 0;
-		List<Object> principals = sr.getAllPrincipals();
-		for (Object principal : principals) {
-			if (principal instanceof UserDetails) {
-				UserDetails userDetails = (UserDetails) principal;
-				if (userDetails.getUsername().equals(username)) {
-					List<SessionInformation> sessionInfoList = sr.getAllSessions(userDetails, true);
-					count += sessionInfoList.size();
-				}
-			}
-		}
-		return count;
-	}
+	
 
 	public void ForgotPassword() {
 		Dialog aboutdialog = new Dialog();
@@ -271,30 +293,26 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 		aboutdialog.open();
 	}
 
-	public void invalidatePreviousSessionsForUser(String username) {
-		// Get active session count for the user
-		int activeSessionCount = getActiveSessionCountForUser(username);
+	private String getClientIp(HttpServletRequest req) {
+	    // If you are behind reverse proxy / load balancer, these headers may be set.
+	    // Only trust them if YOU control the proxy.
+	    String xff = req.getHeader("X-Forwarded-For");
+	    if (xff != null && !xff.isBlank()) {
+	        // first IP in list is the client
+	        return xff.split(",")[0].trim();
+	    }
+	    String xri = req.getHeader("X-Real-IP");
+	    if (xri != null && !xri.isBlank()) return xri.trim();
 
-		// If there are active sessions for the user, invalidate them
-		if (activeSessionCount > 0) {
-			List<Object> principals = sr.getAllPrincipals();
-			for (Object principal : principals) {
-				if (principal instanceof UserDetails) {
-					UserDetails userDetails = (UserDetails) principal;
-					if (userDetails.getUsername().equals(username)) {
-						List<SessionInformation> sessionInfoList = sr.getAllSessions(userDetails, true); // Invalidate
-																											// previous
-																											// sessions
-						for (SessionInformation sessionInfo : sessionInfoList) {
-							sessionInfo.expireNow(); // Expire session information
-
-						}
-					}
-				}
-			}
-		}
+	    return req.getRemoteAddr();
 	}
 
+	private String safeUa(String ua) {
+	    if (ua == null) return "";
+	    // avoid huge log entries / DB overflow
+	    ua = ua.trim();
+	    return ua.length() > 180 ? ua.substring(0, 180) : ua;
+	}
 	private void clearFields() {
 		regenerateCaptcha();
 		button.setEnabled(true);
@@ -324,13 +342,24 @@ public class Login extends VerticalLayout implements BeforeEnterObserver {
 
 	@Override
 	public void beforeEnter(BeforeEnterEvent event) {
-		// setCustomCookie();
-		if (authenticatedUser.get().isPresent()) {
-			// Already logged in
-			// loginOverlay.setOpened(false);
-			event.forwardTo(HomeView.class);
-		}
 
-		// loginOverlay.setError(event.getLocation().getQueryParameters().getParameters().containsKey("error"));
+	    if (authenticatedUser.get().isPresent()) {
+	        event.forwardTo("");
+	        return;
+	    }
+
+	    Map<String, List<String>> params = event.getLocation()
+	            .getQueryParameters().getParameters();
+
+	    if (params.containsKey("kicked")) {
+	        Notification.show("You were logged out because this account was used on another device.")
+	                .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+	    } else if (params.containsKey("timeout")) {
+	        Notification.show("Your session timed out due to inactivity. Please log in again.")
+	                .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+	    } else if (params.containsKey("logout")) {
+	        Notification.show("You have been logged out.")
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+	    }
 	}
 }

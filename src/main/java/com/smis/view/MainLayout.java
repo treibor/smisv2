@@ -12,15 +12,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.ProcessFlow;
-import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
 import com.smis.entity.master.District;
 import com.smis.entity.master.State;
 import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -266,8 +266,10 @@ public class MainLayout extends AppLayout {
 
 		subMenu.addItem(menuItem(VaadinIcon.USER_CHECK, "Create User"), e -> createUser()).setVisible(isAdmin);
 
-		subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> securityService.logout());
-
+		//	subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> securityService.logout());
+		subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> {
+		        securityService.logout();
+		});
 		H3 logo = new H3("MLALADS  || " +
 		// service.getDistrict().getDistrictName().toUpperCase());
 				loggedUser.getDistrict().getDistrictName());
@@ -623,4 +625,90 @@ public class MainLayout extends AppLayout {
 		newpwd.setValue("");
 		confirmpwd.setValue("");
 	}
+	
+	@Override
+	protected void onAttach(AttachEvent attachEvent) {
+	    super.onAttach(attachEvent);
+
+	    attachEvent.getUI().getPage().executeJs("""
+	      (function () {
+	        if (window.__smis_flow_error_patch) return;
+	        window.__smis_flow_error_patch = true;
+
+	        function redirectExpired() {
+	          window.location.replace('/login?expired');
+	        }
+
+	        function looksLikeExpiredSession(msg) {
+	          msg = String(msg || '');
+	          return msg.includes('Invalid JSON response') ||
+	                 msg.includes('<!doctype html') ||
+	                 msg.includes('<html') ||
+	                 msg.includes('/login');
+	        }
+
+	        function patchFlow() {
+	          try {
+	            const flow = window.Vaadin && window.Vaadin.Flow;
+	            if (!flow) return false;
+
+	            const candidates = ['showSystemError', 'showCriticalNotification', 'showCommunicationError'];
+	            let patched = false;
+
+	            candidates.forEach(fn => {
+	              if (typeof flow[fn] === 'function' && !flow[fn].__smisPatched) {
+	                const orig = flow[fn];
+	                const wrapped = function () {
+	                  try {
+	                    const firstArg = arguments && arguments.length ? arguments[0] : '';
+	                    if (looksLikeExpiredSession(firstArg)) {
+	                      redirectExpired();
+	                      return;
+	                    }
+	                  } catch (e) {}
+	                  return orig.apply(this, arguments);
+	                };
+	                wrapped.__smisPatched = true;
+	                flow[fn] = wrapped;
+	                patched = true;
+	              }
+	            });
+
+	            return patched;
+	          } catch (e) {
+	            return false;
+	          }
+	        }
+
+	        if (!patchFlow()) {
+	          let tries = 0;
+	          const t = setInterval(() => {
+	            tries++;
+	            if (patchFlow() || tries > 20) clearInterval(t);
+	          }, 250);
+	        }
+
+	        const observer = new MutationObserver(() => {
+	          const body = document.body;
+	          if (!body) return;
+
+	          const text = body.innerText || '';
+	          if (text.includes('Invalid JSON response from server') || text.includes('Invalid UIDL')) {
+
+	            document.querySelectorAll('vaadin-dialog-overlay, vaadin-confirm-dialog-overlay')
+	              .forEach(el => {
+	                const t = (el.innerText || '');
+	                if (t.includes('Invalid JSON response') || t.includes('Invalid UIDL')) el.remove();
+	              });
+
+	            Promise.resolve().then(() => redirectExpired());
+	          }
+	        });
+
+	        if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+	      })();
+	    """);
+	}
+	
+	
 }

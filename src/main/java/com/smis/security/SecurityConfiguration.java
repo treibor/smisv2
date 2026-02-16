@@ -1,160 +1,141 @@
 package com.smis.security;
 
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.access.channel.ChannelProcessingFilter;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
-import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsConfigurationSource;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 //@EnableWebSecurity
 
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurity {
-	@Autowired
-	private RateLimitingFilter rateLimitingFilter;
 	
-	@Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "PUT", "POST"));
-        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
-        configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
     }
-	
+    @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    @Bean
+    public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
+        return new ServletListenerRegistrationBean<>(new HttpSessionEventPublisher());
+    }
 
-	   
-	
-	@Bean
-	public BCryptPasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new DelegatingSecurityContextRepository(
+                new RequestAttributeSecurityContextRepository(),
+                new HttpSessionSecurityContextRepository()
+        );
+    }
+    @Bean
+    public SessionAuthenticationStrategy sessionAuthenticationStrategy(SessionRegistry sessionRegistry) {
 
-	@Bean
-	public SessionRegistry sessionRegistry() {
-		return new SessionRegistryImpl();
-	}
+        // 1) Concurrency control
+        ConcurrentSessionControlAuthenticationStrategy concurrent =
+                new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry);
+        concurrent.setMaximumSessions(1);
 
-	@Bean
-	public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEventPublisher() {
-		return new ServletListenerRegistrationBean<>(new HttpSessionEventPublisher());
-	}
+        // Choose ONE behavior:
+        concurrent.setExceptionIfMaximumExceeded(false); // false = kick old session, allow new login
+        // concurrent.setExceptionIfMaximumExceeded(true); // true = block new login if already logged in
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-			throws Exception {
-		return authenticationConfiguration.getAuthenticationManager();
-	}
+        // 2) Session fixation protection (like migrateSession)
+        SessionFixationProtectionStrategy fixation = new SessionFixationProtectionStrategy();
 
-	@Bean
-	public SecurityContextRepository securityContextRepository() {
-		return new DelegatingSecurityContextRepository(new RequestAttributeSecurityContextRepository(),
-				new HttpSessionSecurityContextRepository());
-	}
+        // 3) Register session in SessionRegistry
+        RegisterSessionAuthenticationStrategy register =
+                new RegisterSessionAuthenticationStrategy(sessionRegistry);
 
-	@Bean
-	public ConcurrentSessionControlAuthenticationStrategy concurrentSessionControlAuthenticationStrategy() {
-		ConcurrentSessionControlAuthenticationStrategy strategy = new ConcurrentSessionControlAuthenticationStrategy(
-				sessionRegistry());
-		strategy.setMaximumSessions(1); // Allow only one session per user
-		strategy.setExceptionIfMaximumExceeded(true); // Prevent new logins if maximum sessions are reached 
-		return strategy;
-	}
+        return new CompositeSessionAuthenticationStrategy(List.of(concurrent, fixation, register));
+    }
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().requestMatchers(new AntPathRequestMatcher("/images/*.png"));
+    }
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+    	 super.configure(http);
+        http
+          .headers(headers -> headers
+              .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+              .contentTypeOptions(Customizer.withDefaults())
+              .frameOptions(frame -> frame.deny())
+              .referrerPolicy(ref -> ref.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN))
+              .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", "geolocation=(self), microphone=()"))
+          )
+          .sessionManagement(session -> session
+              .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+              .sessionFixation(sf -> sf.migrateSession())
+              .invalidSessionUrl("/login")
+              .maximumSessions(1)
+                  .sessionRegistry(sessionRegistry())
+                  .expiredUrl("/login?expired")
+                  .maxSessionsPreventsLogin(false) // kick old, allow new
+          )
+          .securityContext(sc -> sc.securityContextRepository(securityContextRepository()))
+          .logout(logout -> logout
+              .logoutUrl("/logout")
+              .logoutSuccessUrl("/login?logout")
+              .invalidateHttpSession(true)
+              .clearAuthentication(true)
+              .deleteCookies("JSESSIONID")
+          );
 
-	@Bean
-	Filter disableOptionsMethodFilter() {
-		return new Filter() {
+        http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+            if (isVaadinInternalRequest(request)) {
+                response.setStatus(401);
+                response.setContentType(MediaType.TEXT_PLAIN_VALUE);
+                response.getWriter().write("SESSION_EXPIRED");
+            } else {
+                // normal browser navigation → go to login page
+                response.sendRedirect("/login?expired");
+            }
+        }));
+       
+        
+        setLoginView(http, Login.class);
+    }
+    private boolean isVaadinInternalRequest(HttpServletRequest request) {
+        // Vaadin sends this header on internal requests (UIDL, heartbeat, push, etc.)
+        String vaadinHeader = request.getHeader("X-Vaadin-Request");
+        if (vaadinHeader != null) {
+            return true;
+        }
 
-			@Override
-			public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-					throws IOException, ServletException {
-				HttpServletRequest request = (HttpServletRequest) req;
-				HttpServletResponse response = (HttpServletResponse) res;
-				String method = request.getMethod();
-				if ("OPTIONS".equals(method) || "DELETE".equals(method) || "PATCH".equals(method)
-						|| "PUT".equals(method) || "PROPFIND".equals(method) || "PROPPATCH".equals(method)
-						|| "MKCOL".equals(method) || "COPY".equals(method) || "MOVE".equals(method)
-						|| "LOCK".equals(method) || "UNLOCK".equals(method)) {
-					response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-				} else {
-					chain.doFilter(req, res);
-				}
-			}
-		};
-	}
-
-
-
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http
-		//.addFilterBefore(rateLimitingFilter, ChannelProcessingFilter.class)
-        .addFilterBefore(disableOptionsMethodFilter(), ChannelProcessingFilter.class)
-        //.addFilterBefore(new CSPNonceFilter(), ChannelProcessingFilter.class)
-        //.addFilterAfter(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-		.headers(headers -> headers
-				.addHeaderWriter(new StaticHeadersWriter("Strict-Transport-Security", "max-age=31536000"))
-	            .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-	            .addHeaderWriter(new StaticHeadersWriter("X-Content-Type-Options", "nosniff"))
-	            .addHeaderWriter(new StaticHeadersWriter("X-Frame-Options", "DENY"))
-	            .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "1; mode=block"))
-	            //.addHeaderWriter(new StaticHeadersWriter("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none';"))
-	            .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", "geolocation=(self), microphone=()"))
-	            .addHeaderWriter(new StaticHeadersWriter("Set-Cookie", "SameSite=Strict; HttpOnly; Secure;"))
-	            .addHeaderWriter(new StaticHeadersWriter("Expect-CT", "max-age=86400, enforce"))
-	            .addHeaderWriter(new StaticHeadersWriter("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"))
-	            .addHeaderWriter(new StaticHeadersWriter("Pragma", "no-cache"))
-	            .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.SAME_ORIGIN)))
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-						.invalidSessionUrl("/")
-						.sessionConcurrency(concurrency -> concurrency.maximumSessions(1).expiredUrl("/")
-								.maxSessionsPreventsLogin(true) // Prevent new logins if the max sessions are reached
-								.sessionRegistry(sessionRegistry())))
-				.securityContext(context -> context.securityContextRepository(securityContextRepository())
-						
-		);
-		http.authorizeHttpRequests(
-				authorize -> authorize.requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll());
-		super.configure(http);
-		setLoginView(http, Login.class);
-		//setLoginView(http, LoginView.class);
-	}
+        // Also match the default Vaadin servlet path
+        String uri = request.getRequestURI();
+        return uri != null && uri.contains("/vaadinServlet/");
+    }
 }

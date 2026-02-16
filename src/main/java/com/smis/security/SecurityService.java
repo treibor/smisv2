@@ -20,23 +20,17 @@ public class SecurityService {
 		this.authenticationContext = authenticationContext;
 	}
 	
-	public UserDetails getAuthenticatedUser1() {
-		
-		return authenticationContext.getAuthenticatedUser(UserDetails.class).get();
-	}
-	public UserDetails getAuthenticatedUser2() {
-		
-		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return (UserDetails) principal;
-		//SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-	}
+	
 	
 	public boolean canLogin(String user, String password) {
 		return true;
 	}
 	public void logout() {
-		//authenticationContext.
-		authenticationContext.logout();
+		
+		    // audit here (username + ip + ua)
+		    authenticationContext.logout();
+		   // UI.getCurrent().getPage().setLocation("/login?logout");
+		
 	}
 
 	public UserDetails getAuthenticatedUser() {
