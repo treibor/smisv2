@@ -1,365 +1,297 @@
 package com.smis.security;
-
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextHolderStrategy;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.SecurityContextRepository;
-
-import com.smis.audit.Audit;
-import com.smis.security.captcha.Captcha;
-import com.smis.security.captcha.CapthaImpl;
-import com.smis.view.HomeView;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.H5;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.html.Input;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinServletRequest;
-import com.vaadin.flow.server.VaadinServletResponse;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.dom.Element;
+import org.springframework.security.web.csrf.CsrfToken;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
+import java.util.Map;
+
 
 @Route("login")
 @AnonymousAllowed
-public class Login extends VerticalLayout implements BeforeEnterObserver {
-	@Autowired
-	private SessionAuthenticationStrategy sessionAuthenticationStrategy;
-	@Autowired
-	Audit audit;
-	@Autowired
-	private AuthenticationConfiguration authenticationConfiguration;
-	@Autowired
-	SecurityContextRepository securityRepo;
-	private final AuthenticatedUser authenticatedUser;
-	HorizontalLayout captchacontainer = new HorizontalLayout();
-	Button refreshButton = new Button(new Icon(VaadinIcon.REFRESH));
-	Captcha captcha = new CapthaImpl();
-	Image image;
-	public TextField captchatext = new TextField();
-	TextField usernameField = new TextField("User Name");
+public class Login extends Div implements BeforeEnterObserver {
 
-	PasswordField passwordField = new PasswordField("Password");
-	Button button = new Button("Login");
-	H3 title = new H3("Scheme MIS 2.0");
-	H2 description = new H2("Government of Meghalaya");
-	Anchor anchor = new Anchor();
-	private final SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder
-			.getContextHolderStrategy();
-	String dynamicKey = "";
+    private final TextField username = new TextField("Username");
+    private final PasswordField password = new PasswordField("Password");
+    private final TextField captcha = new TextField("Captcha");
 
-	public Login(AuthenticatedUser authenticatedUser) {
-		this.authenticatedUser = authenticatedUser;
-		this.dynamicKey = generateDynamicKey();
-		setAlignItems(Alignment.CENTER);
-		setJustifyContentMode(JustifyContentMode.CENTER);
-		setSizeFull();
-		add(createPasswordForm());
-		getStyle().set("background-color", "hsla(0, 0%, 95%, 0.69)");
-	}
+    private final Image captchaImg = new Image();
+    private final Button refresh = new Button("Refresh");
 
-	private String generateDynamicKey() {
-		String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-		StringBuilder key = new StringBuilder();
-		Random rnd = new Random();
-		while (key.length() < 5) { // length of the key
-			int index = (int) (rnd.nextFloat() * characters.length());
-			key.append(characters.charAt(index));
-		}
-		return key.toString();
-	}
+    private final Div message = new Div();
 
-	private Component createPasswordForm() {
-		captchatext.addThemeVariants(TextFieldVariant.LUMO_ALIGN_CENTER);
-		// captchacontainer.add(getCaptcha(), refreshButton);
-		usernameField.setRequired(true);
-		usernameField.setAllowedCharPattern("[0-9A-Za-z@]");
-		usernameField.setMinLength(5);
-		usernameField.setMaxLength(40);
-		passwordField.setRequired(true);
-		passwordField.setMinLength(5);
-		passwordField.setMaxLength(40);
-		captchatext.setPlaceholder("CAPTCHA");
-		captchatext.setMaxLength(6);
-		captchatext.setMinLength(6);
-		captchatext.setMaxWidth("100px");
-		captchatext.setHeightFull();
-		button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		button.setAutofocus(true);
-		anchor.setText("Forgot Password?");
-		anchor.getStyle().set("cursor", "pointer");
-		anchor.getElement().addEventListener("click",e-> ForgotPassword());
-		usernameField.getElement().setAttribute("autocomplete", "off");
-		passwordField.getElement().setAttribute("autocomplete", "off");
-		button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		button.setAutofocus(true);
+    public Login() {
+        addClassName("login-page");
+        add(buildCard());
+        smoothLogin();
+    }
+    public void smoothLogin() {
+    	  getElement().executeJs("""
+    	    const root = $0;
+    	    const form = root.querySelector('#loginForm');
+    	    if (!form || form.__wired) return;
+    	    form.__wired = true;
 
-		// Press Enter to login
-		passwordField.addKeyDownListener(Key.ENTER, e -> button.click());
-		usernameField.addKeyDownListener(Key.ENTER, e -> button.click());
-		button.addClickListener(e -> {
-		    button.setEnabled(false);
-		    try {
-		        String encryptedUsername = encryptClientSide(usernameField.getValue(), dynamicKey);
-		        String encryptedPassword = encryptClientSide(passwordField.getValue(), dynamicKey);
-		        doLogin(encryptedUsername, encryptedPassword);
-		    } finally {
-		        // doLogin() will navigate on success; on failure we re-enable below
-		        button.setEnabled(true);
-		    }
-		});
+    	    const msg = root.querySelector('.login-message');
+    	    const img = root.querySelector('.captcha-img');
+    	    const captchaHost = root.querySelector('vaadin-text-field[name="captcha"]');
+    	    const captchaInput = root.querySelector('input[name="captcha"]');
+    	    const btn = root.querySelector('.login-submit');
 
-		anchor.getStyle().set("color", "hsla(211, 100%, 50%, 0.90)").set("padding-bottom", "20px");
-		var form = new FormLayout();
-		// form.add(title, 1);
-		// form.add(description, 1);
-		form.add(usernameField, 1);
-		form.add(passwordField, 1);
+    	    // prevent overlapping timers across submits
+    	    let retryTimerId = null;
+    	    let retryUntilTs = 0;
 
-		// form.add(getCaptcha(), 1);
-		form.add(new Span(), 1);
-		// form.add(captchatext, 1);
-		// form.add(, 1);
-		form.add(button, 1);
-		// form.add(anchor, 1);
-		form.setResponsiveSteps(new ResponsiveStep("0", 1), new ResponsiveStep("300px", 1));
-		form.setWidth("320px");
-		form.getStyle().set("padding", "20px");
+    	    // 🔧 CAPTCHA RULES (change here if needed)
+    	    const CAPTCHA_REGEX = /^[A-Za-z0-9]{6}$/; // exactly 6 alphanumeric
 
-		var header = new VerticalLayout();
-		title.getStyle().set("color", "white");
-		description.getStyle().set("color", "white");
-		header.add(title, description);
-		header.getStyle().set("background-color", "hsla(211, 100%, 50%, 0.90)");
-		header.setAlignItems(Alignment.START);
-		header.setJustifyContentMode(JustifyContentMode.END);
-		header.setHeight("150px");
-		header.getStyle().set("border-radius", "10px 10px 0 0");
-		var container = new VerticalLayout();
-		container.setSizeUndefined();
-		container.getStyle().set("background-color", "white");
-		// container.getStyle().set("border", "2px solid black");
-		container.getStyle().set("border-radius", "10px");
-		container.getStyle().set("padding", "0px");
-		container.setAlignItems(Alignment.CENTER);
-		container.setJustifyContentMode(JustifyContentMode.CENTER);
-		container.add(header, form, anchor);
-		/*
-		 * var wrapper = new VerticalLayout(); wrapper.setSizeFull();
-		 * wrapper.setAlignItems(Alignment.CENTER);
-		 * wrapper.setJustifyContentMode(JustifyContentMode.CENTER);
-		 * wrapper.add(title,description, container);
-		 */
-		return container;
-	}
+    	    const clearCaptcha = () => {
+    	      if (captchaHost) captchaHost.value = '';
+    	      if (captchaInput) captchaInput.value = '';
+    	    };
 
-	private void doLogin(String encryptedUsername, String encryptedPassword) {
+    	    const getCaptchaValue = () => {
+    	      // prefer vaadin host value if present, fallback to input value
+    	      const v = (captchaHost && typeof captchaHost.value === 'string') ? captchaHost.value
+    	              : (captchaInput && typeof captchaInput.value === 'string') ? captchaInput.value
+    	              : '';
+    	      return (v || '').trim();
+    	    };
 
-	    String usernameRaw = decryptUsername(encryptedUsername, dynamicKey);
-	    String password = decryptPassword(encryptedPassword, dynamicKey);
+    	    const refreshCaptchaImage = () => {
+    	      if (img) img.src = '/captcha-image?ts=' + Date.now();
+    	    };
 
-	    String username = usernameRaw == null ? "" : usernameRaw.trim();
-	    if (username.isEmpty() || password == null || password.isEmpty()) {
-	        Notification.show("Please enter username and password")
-	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	        button.setEnabled(true);
-	        return;
-	    }
+    	    const setButtonEnabled = (enabled) => {
+    	      if (btn) btn.disabled = !enabled;
+    	    };
 
-	    HttpServletRequest req = VaadinServletRequest.getCurrent().getHttpServletRequest();
-	    String ip = getClientIp(req);
-	    String userAgent = req.getHeader("User-Agent");
+    	    const startRetryCountdown = (seconds, baseMessage) => {
+    	      seconds = Number(seconds);
+    	      if (!Number.isFinite(seconds) || seconds <= 0) seconds = 60;
 
-	    try {
-	        UsernamePasswordAuthenticationToken token =
-	                new UsernamePasswordAuthenticationToken(username, password);
+    	      if (retryTimerId) {
+    	        clearInterval(retryTimerId);
+    	        retryTimerId = null;
+    	      }
 
-	        AuthenticationManager authenticationManager =
-	                authenticationConfiguration.getAuthenticationManager();
+    	      retryUntilTs = Date.now() + seconds * 1000;
+    	      setButtonEnabled(false);
 
-	        Authentication authentication = authenticationManager.authenticate(token);
+    	      const tick = () => {
+    	        const remainingMs = retryUntilTs - Date.now();
+    	        const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
 
-	        HttpServletResponse res = VaadinServletResponse.getCurrent().getHttpServletResponse();
-	        sessionAuthenticationStrategy.onAuthentication(authentication, req, res);
+    	        if (msg) msg.textContent = `${baseMessage} Try again in ${remaining}s.`;
 
-	        SecurityContext context = SecurityContextHolder.createEmptyContext();
-	        context.setAuthentication(authentication);
-	        securityContextHolderStrategy.setContext(context);
-	        securityRepo.saveContext(context,
-	                VaadinServletRequest.getCurrent(),
-	                VaadinServletResponse.getCurrent());
+    	        if (remaining <= 0) {
+    	          if (retryTimerId) clearInterval(retryTimerId);
+    	          retryTimerId = null;
+    	          retryUntilTs = 0;
+    	          setButtonEnabled(true);
+    	          if (msg) msg.textContent = '';
+    	        }
+    	      };
 
-	        audit.saveLoginAudit("Login Successfully | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
-	        UI.getCurrent().navigate(HomeView.class);
+    	      tick();
+    	      retryTimerId = setInterval(tick, 1000);
+    	    };
 
-	    } catch (SessionAuthenticationException e) {
-	        audit.saveLoginAudit("Login Failure - Already logged in | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
+    	    form.addEventListener('submit', async (e) => {
+    	      e.preventDefault();
 
-	        Notification.show("This user is already logged in on another device.")
-	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+    	      // If we're currently in retry countdown, ignore submits
+    	      if (retryUntilTs && Date.now() < retryUntilTs) return;
 
-	        clearFields();
-	        button.setEnabled(true);
+    	      // ✅ CLIENT-SIDE CAPTCHA VALIDATION (NO SUBMIT if invalid)
+    	      const cap = getCaptchaValue();
+    	      if (!cap) {
+    	        if (msg) msg.textContent = 'Please enter captcha.';
+    	        clearCaptcha();
+    	        // optional: don't refresh image for empty, user just forgot
+    	        setButtonEnabled(true);
+    	        return;
+    	      }
+    	      if (!CAPTCHA_REGEX.test(cap)) {
+    	        if (msg) msg.textContent = 'Wrong captcha.';
+    	        clearCaptcha();
+    	        refreshCaptchaImage(); // optional: refresh so user gets a new captcha
+    	        setButtonEnabled(true);
+    	        return;
+    	      }
 
-	    } catch (Exception e) {
-	        audit.saveLoginAudit("Login Failure - Invalid credentials | ip=" + ip + " | ua=" + safeUa(userAgent), username,"","");
+    	      setButtonEnabled(false);
 
-	        Notification.show("Invalid credentials")
-	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+    	      try {
+    	        const fd = new FormData(form);
 
-	        clearFields();
-	        button.setEnabled(true);
-	    }
-	}
+    	        const res = await fetch(form.action, {
+    	          method: 'POST',
+    	          body: fd,
+    	          credentials: 'same-origin',
+    	          redirect: 'follow'
+    	        });
 
-	private String encryptClientSide(String value, String key) {
-		// Implement client-side encryption logic here
-		return Base64.getEncoder().encodeToString(value.getBytes());
-	}
+    	        // 429 rate limit
+    	        if (res.status === 429) {
+    	          const text = await res.text().catch(() => '');
+    	          const retryAfterHeader = res.headers.get('Retry-After');
+    	          const retrySeconds = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
 
-	private String decryptUsername(String encryptedUsername, String key) {
-		// Implement server-side decryption logic here
-		return new String(Base64.getDecoder().decode(encryptedUsername));
-	}
+    	          const base = (text && text.trim()) ? text.trim() : 'Too many attempts.';
+    	          if (msg) msg.textContent = base;
 
-	private String decryptPassword(String encryptedPassword, String key) {
-		// Implement server-side decryption logic here
-		return new String(Base64.getDecoder().decode(encryptedPassword));
-	}
+    	          refreshCaptchaImage();
+    	          clearCaptcha();
 
-	
+    	          startRetryCountdown(retrySeconds, base);
+    	          return;
+    	        }
 
-	
+    	        const url = res.url || '';
 
-	public void ForgotPassword() {
-		Dialog aboutdialog = new Dialog();
-		Button cancelButton = new Button("Cancel");
-		H2 headline = new H2("Forgot Password?");
-		// H3 header=new H3("Meghalaya Biodiversity Board");
-		// H3 header2=new H3("People's Biodiversity Register (PBR): Version 2.0");
-		H5 body = new H5("Please Enter Your Email Id");
-		EmailField email = new EmailField();
-		email.setPlaceholder("Email");
-		email.setMaxLength(20);
-		email.setMinLength(5);
-		Button submitbutton = new Button("Submit");
-		submitbutton.addClickListener(e -> Notification.show("To Be Implemented Using Email API. Public IP Required"));
-		headline.getStyle().set("margin", "var(--lumo-space-m) 0 0 0").set("font-size", "1.5em")
-				.set("font-weight", "bold").set("text-decoration", "underline");
-		cancelButton.addClickListener(e -> aboutdialog.close());
-		HorizontalLayout buttonLayout1 = new HorizontalLayout(submitbutton, cancelButton);
-		buttonLayout1.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-		VerticalLayout dialogLayout1 = new VerticalLayout(headline, body, email, buttonLayout1);
-		dialogLayout1.setPadding(false);
-		dialogLayout1.setAlignItems(FlexComponent.Alignment.STRETCH);
-		dialogLayout1.getStyle().set("width", "300px").set("max-width", "100%");
-		aboutdialog.add(dialogLayout1);
-		aboutdialog.open();
-	}
+    	        // success redirects away from /login
+    	        if (res.redirected && !url.includes('/login')) {
+    	          window.location.href = url;
+    	          return;
+    	        }
 
-	private String getClientIp(HttpServletRequest req) {
-	    // If you are behind reverse proxy / load balancer, these headers may be set.
-	    // Only trust them if YOU control the proxy.
-	    String xff = req.getHeader("X-Forwarded-For");
-	    if (xff != null && !xff.isBlank()) {
-	        // first IP in list is the client
-	        return xff.split(",")[0].trim();
-	    }
-	    String xri = req.getHeader("X-Real-IP");
-	    if (xri != null && !xri.isBlank()) return xri.trim();
+    	        // failure: redirected back to /login?... (captcha/error)
+    	        if (msg) {
+    	          if (url.includes('captcha')) msg.textContent = 'Invalid captcha. Please try again.';
+    	          else msg.textContent = 'Invalid username or password.';
+    	        }
 
-	    return req.getRemoteAddr();
-	}
+    	        refreshCaptchaImage();
+    	        clearCaptcha();
+    	        setButtonEnabled(true);
 
-	private String safeUa(String ua) {
-	    if (ua == null) return "";
-	    // avoid huge log entries / DB overflow
-	    ua = ua.trim();
-	    return ua.length() > 180 ? ua.substring(0, 180) : ua;
-	}
-	private void clearFields() {
-		regenerateCaptcha();
-		button.setEnabled(true);
-		passwordField.setValue("");
-		usernameField.setValue("");
-		captchatext.setValue("");
-	}
+    	      } catch (err) {
+    	        if (msg) msg.textContent = 'Unable to contact server. Please try again.';
+    	        setButtonEnabled(true);
+    	      }
+    	    });
+    	  """, getElement());
+    	}
+    
+    private Component buildCard() {
+        Div card = new Div();
+        card.addClassName("login-card");
 
-	public Component getCaptcha() {
-		image = captcha.getCaptchaImg();
-		captchacontainer.add(image, refreshButton, captchatext);
-		refreshButton.addClickListener(e -> regenerateCaptcha());
-		refreshButton.setTooltipText("Generate Another Captcha");
-		captchacontainer.setWidthFull();
-		captchacontainer.setJustifyContentMode(JustifyContentMode.CENTER);
-		captchacontainer.getStyle().set("padding", "20px");
-		return captchacontainer;
-	}
+        // ---------- HERO HEADER ----------
+        Div hero = new Div();
+        hero.addClassName("login-hero");
 
-	private void regenerateCaptcha() {
-		captchacontainer.remove(image);
-		captchacontainer.remove(refreshButton);
-		captchacontainer.remove(captchatext);
-		image = captcha.getCaptchaImg();
-		captchacontainer.add(image, refreshButton, captchatext);
-	}
+        H4 app = new H4("Scheme MIS 2.0");
+        app.addClassName("login-app");
 
-	@Override
-	public void beforeEnter(BeforeEnterEvent event) {
+        Paragraph tagline = new Paragraph("Government of Meghalaya");
+        tagline.addClassName("login-tagline");
 
-	    if (authenticatedUser.get().isPresent()) {
-	        event.forwardTo("");
-	        return;
-	    }
+        hero.add(app, tagline);
 
-	    Map<String, List<String>> params = event.getLocation()
-	            .getQueryParameters().getParameters();
+        // ---------- BODY ----------
+        Div body = new Div();
+        //body.addClassName("login-body");
 
-	    if (params.containsKey("kicked")) {
-	        Notification.show("You were logged out because this account was used on another device.")
-	                .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
-	    } else if (params.containsKey("timeout")) {
-	        Notification.show("Your session timed out due to inactivity. Please log in again.")
-	                .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
-	    } else if (params.containsKey("logout")) {
-	        Notification.show("You have been logged out.")
-	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-	    }
-	}
+        //H3 title = new H3("Log in");
+        //title.addClassName("login-title");
+
+        // Spring Security parameter names
+        username.getElement().setAttribute("name", "username");
+        password.getElement().setAttribute("name", "password");
+        captcha.getElement().setAttribute("name", "captcha");
+
+        username.setWidthFull();
+        password.setWidthFull();
+        captcha.setWidthFull();
+
+        // Captcha setup
+        captchaImg.setAlt("Captcha");
+        captchaImg.setSrc("/captcha-image?ts=" + System.currentTimeMillis());
+        captchaImg.addClassName("captcha-img");
+
+        refresh.addClassName("captcha-refresh");
+        refresh.addClickListener(e ->
+                captchaImg.setSrc("/captcha-image?ts=" + System.currentTimeMillis())
+        );
+
+        HorizontalLayout captchaRow = new HorizontalLayout(captchaImg, refresh);
+        captchaRow.addClassName("captcha-row");
+        captchaRow.setWidthFull();
+
+        message.addClassName("login-message");
+
+        Element submit = new Element("button");
+        submit.setText("Log in");
+        submit.setAttribute("type", "submit");
+        submit.getClassList().add("login-submit");
+
+        // ---- Real HTML form posting to Spring Security ----
+        Element form = new Element("form");
+        form.setAttribute("method", "post");
+        form.setAttribute("action", "/login");
+        form.getStyle().set("width", "100%");
+        form.setAttribute("id", "loginForm");
+        form.setAttribute("action", "/login");
+        // CSRF
+        CsrfToken csrf = (CsrfToken) VaadinServletRequest.getCurrent()
+                .getHttpServletRequest()
+                .getAttribute(CsrfToken.class.getName());
+
+        if (csrf != null) {
+            Element csrfInput = new Element("input");
+            csrfInput.setAttribute("type", "hidden");
+            csrfInput.setAttribute("name", csrf.getParameterName());
+            csrfInput.setAttribute("value", csrf.getToken());
+            form.appendChild(csrfInput);
+        }
+
+        body.add( username, password, captchaRow, captcha, message);
+        form.appendChild(body.getElement());      // Vaadin components inside form
+
+        form.appendChild(submit);
+        Div formWrapper = new Div();
+        formWrapper.addClassName("login-body");
+        formWrapper.getElement().appendChild(form);
+
+        card.add(hero, formWrapper);
+        return card;
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
+
+        if (params.containsKey("captcha")) {
+            message.setText("Invalid captcha. Please try again.");
+            captchaImg.setSrc("/captcha-image?ts=" + System.currentTimeMillis());
+        } else if (params.containsKey("error")) {
+            message.setText("Invalid username or password.");
+            captchaImg.setSrc("/captcha-image?ts=" + System.currentTimeMillis());
+        } else if (params.containsKey("expired")) {
+            message.setText("Session expired. Please log in again.");
+        } else if (params.containsKey("logout")) {
+            message.setText("You have been logged out.");
+        } else {
+            message.setText("");
+        }
+    }
 }

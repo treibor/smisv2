@@ -10,9 +10,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -159,17 +161,38 @@ public class Dbservice implements Serializable{
 	}
 	public Users getLoggedUser() {
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+	    // No auth or not authenticated
 	    if (auth == null || !auth.isAuthenticated()) {
-	        throw new IllegalStateException("No authenticated user");
+	        return null; // or throw IllegalStateException if you prefer
 	    }
 
-	    String username = auth.getName();
-	    Users user = urepo.findByUserName(username);
+	    // IMPORTANT: anonymous is considered "authenticated" in Spring
+	    if (auth instanceof AnonymousAuthenticationToken) {
+	        return null;
+	    }
 
+	    Object principal = auth.getPrincipal();
+
+	    // Resolve username safely
+	    String username;
+	    if (principal instanceof UserDetails ud) {
+	        username = ud.getUsername();
+	    } else if (principal instanceof String s) {
+	        // This covers cases like "anonymousUser"
+	        if ("anonymousUser".equalsIgnoreCase(s)) {
+	            return null;
+	        }
+	        username = s;
+	    } else {
+	        // Unknown principal type
+	        return null;
+	    }
+
+	    Users user = urepo.findByUserName(username);
 	    if (user == null) {
 	        throw new UsernameNotFoundException("User not found: " + username);
 	    }
-
 	    return user;
 	}
 	//________________________________________________________________________

@@ -16,7 +16,7 @@ import com.vaadin.flow.theme.Theme;
 //@Theme (variant= Lumo.LIGHT)
 //@JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 @Theme(value = "my-theme")
-@PWA(name = "Smis", shortName = "SMIS", iconPath = "/images/plant.png")
+@PWA(name = "MLA-LADS", shortName = "MLA-LADS", iconPath = "/images/plant.png")
 public class SmisApplication extends SpringBootServletInitializer implements AppShellConfigurator{
 	
 	/**
@@ -34,6 +34,6 @@ public class SmisApplication extends SpringBootServletInitializer implements App
 	public void configurePage(AppShellSettings settings) {
 		settings.addFavIcon("icon", "/images/plant.png", "192x192");
 		settings.addLink("shortcut icon", "/images/plant.png");
-		settings.setPageTitle("SMIS");
+		settings.setPageTitle("MLALADS");
 	}
 }

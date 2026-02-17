@@ -14,9 +14,9 @@ import $cssFromFile_3 from 'Frontend/generated/jar-resources/ckeditor.css?inline
 
 injectGlobalCss($cssFromFile_3.toString(), 'CSSImport end', document);
 import '@vaadin/polymer-legacy-adapter/style-modules.js';
-import '@vaadin/vertical-layout/theme/lumo/vaadin-vertical-layout.js';
 import '@vaadin/horizontal-layout/theme/lumo/vaadin-horizontal-layout.js';
 import '@vaadin/form-layout/theme/lumo/vaadin-form-layout.js';
+import '@vaadin/vertical-layout/theme/lumo/vaadin-vertical-layout.js';
 import '@vaadin/app-layout/theme/lumo/vaadin-app-layout.js';
 import 'Frontend/generated/jar-resources/so/chart/chart.js';
 import '@vaadin/field-highlighter/theme/lumo/vaadin-field-highlighter.js';
