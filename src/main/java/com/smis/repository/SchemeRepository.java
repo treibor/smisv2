@@ -15,10 +15,8 @@ public interface SchemeRepository extends JpaRepository<Scheme, Long>{
 	List<Scheme> findByDistrict(District district);
 	List<Scheme> findByDistrictAndInUse(District district, boolean inUse);
 	
-	@Query("SELECT s FROM Scheme s " +
-		       "WHERE s.inUse = :inUse " +
-		       "AND s IN (SELECT su.scheme FROM SchemeUser su WHERE su.user = :user)")
-		List<Scheme> findSchemesByUserAndStatus(@Param("user") Users user, 
-		                                        @Param("inUse") boolean inUse);
+	@Query("SELECT s FROM Scheme s WHERE s IN (SELECT su.scheme FROM SchemeUser su WHERE su.user = :user)")
+		List<Scheme> findSchemesByUser(@Param("user") Users user) 
+		                                       ;
 
 }

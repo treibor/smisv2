@@ -171,7 +171,7 @@ public class HomeView extends VerticalLayout {
     	SOChart soChart2 = new SOChart();
     	CategoryData labels = new CategoryData();
     	Data data = new Data();
-    	List<Scheme> schemes = service.getAllSchemesWIthNotInUse(); // or getAllSchemes()
+    	List<Scheme> schemes = service.getAllSchemes(); // or getAllSchemes()
     	for (Scheme sc : schemes) {
     	    labels.add(sc.getSchemeLabel());
     	    data.add(service.getWorkCountByScheme(sc));

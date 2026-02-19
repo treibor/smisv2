@@ -13,7 +13,7 @@ import com.smis.entity.master.District;
 
 public interface ConstituencyRepository extends JpaRepository<Constituency, Long>{
 	
-	
+	List<Constituency> findByDistrictOrderByConstituencyLabel(District district);
 	List<Constituency> findByDistrictAndInUseOrderByConstituencyLabel(District district, boolean inUse);
 	List<Constituency> findByDistrictAndInUseOrderByMasterConstituency_ConstituencyNameAsc(
 	        District district, boolean inUse);
@@ -24,15 +24,13 @@ public interface ConstituencyRepository extends JpaRepository<Constituency, Long
 	@Query("""
 			SELECT b
 			FROM Constituency b
-			WHERE b.inUse = :inUse
-			  AND b IN (
+			WHERE b IN (
 			      SELECT bu.constituency
 			      FROM ConstituencyUser bu
 			      WHERE bu.user = :user
 			  )
 			""")
-			List<Constituency> findConstituenciesByUserAndStatus(@Param("user") Users user,
-			                                      @Param("inUse") boolean inUse);
+			List<Constituency> findConstituenciesByUser(@Param("user") Users user);
 	
 	
 }

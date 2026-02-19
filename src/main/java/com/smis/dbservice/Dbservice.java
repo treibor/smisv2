@@ -1,6 +1,5 @@
 package com.smis.dbservice;
 
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -64,7 +63,7 @@ import com.smis.repository.UserRepository;
 import com.smis.repository.VillageRepository;
 import com.smis.repository.WorkRepository;
 import com.smis.repository.YearRepository;
-import com.smis.security.SecurityService;
+
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -72,14 +71,11 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import jakarta.transaction.Transactional;
 
 @Service
-public class Dbservice implements Serializable{
-	/**
-	 * 
-	 */
+public class Dbservice implements Serializable {
+	
+
 	@Autowired
-	SecurityService securityService;
-	@Autowired
-	private AuditRepository auditrepo; 
+	private AuditService auditservice;
 	private static final long serialVersionUID = 1L;
 	private final WorkRepository wrepo;
 	private final YearRepository yrepo;
@@ -88,31 +84,34 @@ public class Dbservice implements Serializable{
 	private final BlockRepository brepo;
 	private final DistrictRepository drepo;
 	private final InstallmentRepository irepo;
-	
+
 	private final UserRepository urepo;
 	private final StateRepository strepo;
 	private final VillageRepository vtrepo;
 	private final RoleRepository rolerepo;
-	
-	//Notification Notification = new Notification();
-	//@Autowired
+
+	// Notification Notification = new Notification();
+	// @Autowired
 	private final ProcessFlowRepo pflowrepo;
 	private final ProcessFlowUserRepo pflowuserrepo;
 	private final ProcessHistoryRepo phistoryrrepo;
 	private final BlockUserRepo buserrepo;
 	private final ConstituencyUserRepo cuserrepo;
 	private final SchemeUserRepo suserrepo;
-	//private final InstallmentDocRepository docrepo;
+	// private final InstallmentDocRepository docrepo;
 	private final InstallmentReportRepository reportrepo;
 	private final MasterConstiRepo mconstirepo;
 	private final MasterBlockRepo mblockrepo;
 	private final MasterSchemeRepo mschemerepo;
 	private final MasterYearRepo myearrepo;
+
 	public Dbservice(StateRepository strepo, UserRepository urepo, WorkRepository workrepo, YearRepository yrepo,
-			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,InstallmentReportRepository reportrepo,
-			InstallmentRepository irepo,  VillageRepository vrepo, RoleRepository rolerepo, 
-			ProcessFlowRepo pflowrepo,ProcessFlowUserRepo pflowuserrepo,ProcessHistoryRepo phistoryrrepo,BlockUserRepo buserrepo,SchemeUserRepo suserrepo,
-			MasterConstiRepo mconstirepo, MasterBlockRepo mblockrepo, MasterSchemeRepo mschemerepo,MasterYearRepo myearrepo,ConstituencyUserRepo cuserrepo) {
+			SchemeRepository srepo, ConstituencyRepository crepo, BlockRepository brepo, DistrictRepository drepo,
+			InstallmentReportRepository reportrepo, InstallmentRepository irepo, VillageRepository vrepo,
+			RoleRepository rolerepo, ProcessFlowRepo pflowrepo, ProcessFlowUserRepo pflowuserrepo,
+			ProcessHistoryRepo phistoryrrepo, BlockUserRepo buserrepo, SchemeUserRepo suserrepo,
+			MasterConstiRepo mconstirepo, MasterBlockRepo mblockrepo, MasterSchemeRepo mschemerepo,
+			MasterYearRepo myearrepo, ConstituencyUserRepo cuserrepo) {
 		this.wrepo = workrepo;
 		this.yrepo = yrepo;
 		this.srepo = srepo;
@@ -120,114 +119,208 @@ public class Dbservice implements Serializable{
 		this.brepo = brepo;
 		this.drepo = drepo;
 		this.irepo = irepo;
-		//this.idrepo = idrepo;
+		// this.idrepo = idrepo;
 		this.urepo = urepo;
 		this.strepo = strepo;
 		this.vtrepo = vrepo;
-		this.rolerepo=rolerepo;
-		
-		this.pflowrepo=pflowrepo;
-		this.pflowuserrepo=pflowuserrepo;
-		this.phistoryrrepo=phistoryrrepo;
-		this.buserrepo=buserrepo;
-		this.suserrepo=suserrepo;
-		this.reportrepo=reportrepo;
-		this.mconstirepo=mconstirepo;
-		this.mblockrepo=mblockrepo;
-		this.mschemerepo=mschemerepo;
-		this.myearrepo=myearrepo;
-		this.cuserrepo=cuserrepo;
+		this.rolerepo = rolerepo;
+
+		this.pflowrepo = pflowrepo;
+		this.pflowuserrepo = pflowuserrepo;
+		this.phistoryrrepo = phistoryrrepo;
+		this.buserrepo = buserrepo;
+		this.suserrepo = suserrepo;
+		this.reportrepo = reportrepo;
+		this.mconstirepo = mconstirepo;
+		this.mblockrepo = mblockrepo;
+		this.mschemerepo = mschemerepo;
+		this.myearrepo = myearrepo;
+		this.cuserrepo = cuserrepo;
+		// this.auditrepo=auditrepo;
 	}
-	//Roles & Users
-	//___________________________________________________________________________________
+
+	// Roles & Users
+	// ___________________________________________________________________________________
 	public boolean hasRole(String role) {
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    if (auth == null || auth.getAuthorities() == null) return false;
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || auth.getAuthorities() == null)
+			return false;
 
-	    String roleName = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+		String roleName = role.startsWith("ROLE_") ? role : "ROLE_" + role;
 
-	    return auth.getAuthorities().stream()
-	            .map(GrantedAuthority::getAuthority)
-	            .anyMatch(roleName::equals);
+		return auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch(roleName::equals);
 	}
-	
-	
+
 	public boolean hasAuthorityForStep(Users user, String stepCode) {
-	    ProcessFlow step = pflowrepo.findByStepCode(stepCode)
-	            .orElse(null);
-	    if (step == null) return false;
+		ProcessFlow step = pflowrepo.findByStepCode(stepCode).orElse(null);
+		if (step == null)
+			return false;
 
-	    return pflowuserrepo.existsByUserAndProcessFlow(user, step);
+		return pflowuserrepo.existsByUserAndProcessFlow(user, step);
 	}
+
 	public Users getLoggedUser() {
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-	    // No auth or not authenticated
-	    if (auth == null || !auth.isAuthenticated()) {
-	        return null; // or throw IllegalStateException if you prefer
-	    }
+		// No auth or not authenticated
+		if (auth == null || !auth.isAuthenticated()) {
+			return null; // or throw IllegalStateException if you prefer
+		}
 
-	    // IMPORTANT: anonymous is considered "authenticated" in Spring
-	    if (auth instanceof AnonymousAuthenticationToken) {
-	        return null;
-	    }
+		// IMPORTANT: anonymous is considered "authenticated" in Spring
+		if (auth instanceof AnonymousAuthenticationToken) {
+			return null;
+		}
 
-	    Object principal = auth.getPrincipal();
+		Object principal = auth.getPrincipal();
 
-	    // Resolve username safely
-	    String username;
-	    if (principal instanceof UserDetails ud) {
-	        username = ud.getUsername();
-	    } else if (principal instanceof String s) {
-	        // This covers cases like "anonymousUser"
-	        if ("anonymousUser".equalsIgnoreCase(s)) {
-	            return null;
-	        }
-	        username = s;
-	    } else {
-	        // Unknown principal type
-	        return null;
-	    }
+		// Resolve username safely
+		String username;
+		if (principal instanceof UserDetails ud) {
+			username = ud.getUsername();
+		} else if (principal instanceof String s) {
+			// This covers cases like "anonymousUser"
+			if ("anonymousUser".equalsIgnoreCase(s)) {
+				return null;
+			}
+			username = s;
+		} else {
+			// Unknown principal type
+			return null;
+		}
 
-	    Users user = urepo.findByUserName(username);
-	    if (user == null) {
-	        throw new UsernameNotFoundException("User not found: " + username);
-	    }
-	    return user;
+		Users user = urepo.findByUserName(username);
+		if (user == null) {
+			throw new UsernameNotFoundException("User not found: " + username);
+		}
+		return user;
 	}
-	//________________________________________________________________________
-	
+
+	public boolean isUser() {
+		return hasRole("USER");
+	}
+
+	public boolean isAdmins() {
+		return hasRole("ADMIN");
+	}
+
+	public boolean isSuperAdmin() {
+		return hasRole("SUPER");
+	}
+
+	public Users findByUserName(String username) {
+		return urepo.findByUserName(username);
+	}
+
+	public List<Users> findUsers() {
+		if (isSuperAdmin()) {
+			return urepo.findAll();
+		} else if (hasRole("ADMIN")) {
+			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
+
+		} else {
+			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
+		}
+	}
+
+	public void saveUser(Users user) {
+		try {
+			if (user == null) {
+				return;
+			}
+			String action = "Save | Update";
+			String process = "User";
+			String details = "Id:" + user.getUserId() + " | ProfileName:" + user.getProfileName() + " | UserName:"
+					+ user.getUserName();
+			String odetails = "Password Changed Date:" + user.getPwdChangedDate() + " | Email :" + user.getEmail()
+					+ " | Enabled:" + user.isEnabled();
+			urepo.save(user);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (Exception e) {
+			Notification.show("Failure :" + e);
+			e.printStackTrace();
+		}
+	}
+
+	public List<Users> getAllUsers() {
+		return urepo.findAll();
+	}
+
+	public void saveRole(UsersRoles role) {
+		try {
+			if (role == null) {
+				return;
+			}
+			String action = "Save | Update";
+			String process = "Role";
+			String details = "Id:" + role.getRoleId() + " | Role:" + role.getRoleName();
+			String odetails = "";
+			rolerepo.save(role); // Save or update the role
+			auditservice.saveAudit(action, process, details, odetails);
+		} catch (Exception e) {
+			Notification.show("Unable to Save Role. Error: " + e, 5000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}
+	}
+
+	public void deleteRole(UsersRoles role) {
+		try {
+			if (role != null) {
+				String action = "Delete";
+				String process = "Role";
+				String details = "Id:" + role.getRoleId() + " | Role:" + role.getRoleName();
+				String odetails = "";
+
+				rolerepo.delete(role); // Save or update the role
+				auditservice.saveAudit(action, process, details, odetails);
+			}
+		} catch (Exception e) {
+			Notification.show("Unable to Save Role. Error: " + e, 5000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+		}
+	}
+
 	// Constituency______________________________________________________________
-	
+
 	public List<MasterConstituency> getMasterConstituencies() {
 		return mconstirepo.findByDistrict(getDistrict());
 	}
-	public List<Constituency> getAllConstituencies() {
+
+	public List<Constituency> getConstituenciesByUser() {
 		if (isSuperAdmin()) {
 			return crepo.findAll();
 		} else {
-			return crepo.findConstituenciesByUserAndStatus(getLoggedUser(), true);
+			return crepo.findConstituenciesByUser(getLoggedUser());
 		}
 	}
-	
-	public List<Constituency> getAllConstituenciesWIthNotInUse() {
+
+	public List<Constituency> getAllConstituenciesAndInUse() {
+		return crepo.findByDistrictAndInUseOrderByConstituencyLabel(getDistrict(), true);
+	}
+
+	public List<Constituency> getAllConstituencies() {
 		if (isSuperAdmin()) {
 			return crepo.findAll();
-		} else if (isAdmin()){
-			return crepo.findByDistrictAndInUseOrderByConstituencyLabel(getDistrict(), true);
-		}else {
-			//return crepo.findByDistrict(getDistrict());
-			return crepo.findConstituenciesByUserAndStatus(getLoggedUser(), true);
-		}
+		} else
+			return crepo.findByDistrictOrderByConstituencyLabel(getDistrict());
 	}
-	
+
 	public void saveConstituency(Constituency consti) {
 		try {
 			if (consti == null) {
 
 				return;
 			}
+			String action = "Save | Update";
+			String process = "Constituency";
+			String details = "Id:" + consti.getId() + " | Label:" + consti.getConstituencyLabel() + " | MLA:"
+					+ consti.getConstituencyMLA();
+			String odetails = "Master Id:" + consti.getMasterConstituency().getConstituencymasterId() + " | Name:"
+					+ consti.getMasterConstituency().getConstituencyName();
 			crepo.save(consti);
+			auditservice.saveAudit(action, process, details, odetails);
+
 		} catch (Exception e) {
 			Notification.show("Unable to Save Constituency. Error:" + e, 5000, Position.TOP_CENTER);
 		}
@@ -236,51 +329,114 @@ public class Dbservice implements Serializable{
 
 	public void deleteConstituency(Constituency consti) {
 		try {
+			String action = "Delete";
+			String process = "Constituency";
+			String details = "Id:" + consti.getId() + " | Label:" + consti.getConstituencyLabel() + " | MLA:"
+					+ consti.getConstituencyMLA();
+			String odetails = "Master Id:" + consti.getMasterConstituency().getConstituencymasterId() + " | Name:"
+					+ consti.getMasterConstituency().getConstituencyName();
 			crepo.delete(consti);
+			auditservice.saveAudit(action, process, details, odetails);
+
 		} catch (Exception e) {
 			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
 		}
 	}
-	
 
-	//_____________________________________________________________________________
+	// _____________________________________________________________________________
 	public List<MasterBlock> getMasterBlocks() {
 		return mblockrepo.findByDistrict(getDistrict());
 	}
-	public List<Block> getAllBlocks(boolean inUse) {
+
+	public List<Block> getBlocksByUser() {
 		if (isSuperAdmin()) {
 			return brepo.findAll();
-		} 
-		else if (isAdmin()){
-			if (inUse == true) {
-				return brepo.findByDistrictAndInUseOrderByBlockLabelAsc(getDistrict(), inUse);
-			} else {
-				return brepo.findByDistrictOrderByBlockLabelAsc(getDistrict());
-			}
-		}
-		else {
-			return brepo.findBlocksByUserAndStatus(getLoggedUser(), inUse);
+		} else
+			return brepo.findBlocksByUser(getLoggedUser());
+
+	}
+
+	public List<Block> getAllBlocksAndInUse() {
+		if (isSuperAdmin()) {
+			return brepo.findAll();
+		} else {
+			return brepo.findByDistrictAndInUseOrderByBlockLabelAsc(getDistrict(), true);
 		}
 
 	}
-	//Schemes____________________________________________________________________________________
-	
+
+	public List<Block> getAllBlocks() {
+		if (isSuperAdmin()) {
+			return brepo.findAll();
+		} else {
+			return brepo.findByDistrictOrderByBlockLabelAsc(getDistrict());
+		}
+
+	}
+
+	public void saveBlock(Block block) {
+		try {
+			if (block == null) {
+
+				return;
+			}
+			String action = "Save | Update";
+			String process = "Block";
+			String details = "Id:" + block.getId() + " | Label:" + block.getBlockLabel() + " | Office Head:"
+					+ block.getBdoName();
+			String odetails = "Master Id:" + block.getMasterBlock().getBlockMasterId() + " | Name:"
+					+ block.getMasterBlock().getBlockName();
+			brepo.save(block);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (DataIntegrityViolationException e) {
+			Notification.show("Unable to Save Block/MB as It already Exists" + e, 5000, Position.TOP_CENTER);
+		}
+	}
+
+	public void deleteBlock(Block block) {
+		try {
+			if (block == null) {
+				return;
+			}
+			String action = "Delete";
+			String process = "Block";
+			String details = "Id:" + block.getId() + " | Label:" + block.getBlockLabel() + " | Office Head:"
+					+ block.getBdoName();
+			String odetails = "Master Id:" + block.getMasterBlock().getBlockMasterId() + " | Name:"
+					+ block.getMasterBlock().getBlockName();
+			brepo.delete(block);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (Exception e) {
+			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
+		}
+	}
+	// Schemes____________________________________________________________________________________
+
 	public List<MasterScheme> getMasterSchemes() {
 		return mschemerepo.findAll();
 	}
-	
-	public List<Scheme> getAllSchemes() {
+
+	public List<Scheme> getSchemesByUser() {
 		if (isSuperAdmin()) {
 			return srepo.findAll();
-		} else if (hasRole("ADMIN")) {
-			return srepo.findByDistrictAndInUse(getDistrict(), true);
 		} else {
-			return srepo.findSchemesByUserAndStatus(getLoggedUser(), true);
+			return srepo.findSchemesByUser(getLoggedUser());
 		}
 
 	}
 
-	public List<Scheme> getAllSchemesWIthNotInUse() {
+	public List<Scheme> getAllSchemesAndInUse() {
+		if (isSuperAdmin()) {
+			return srepo.findAll();
+		} else {
+			return srepo.findByDistrictAndInUse(getDistrict(), true);
+		}
+
+	}
+
+	public List<Scheme> getAllSchemes() {
 		if (isSuperAdmin()) {
 			return srepo.findAll();
 		} else {
@@ -288,12 +444,53 @@ public class Dbservice implements Serializable{
 		}
 
 	}
-	
-	//Year______________________________________________________________________________________________
+
+	// save & Delete scheme
+	public void saveScheme(Scheme scheme) {
+		try {
+			if (scheme == null) {
+				return;
+			}
+			String action = "Save | Update";
+			String process = "Scheme";
+			String details = "Id:" + scheme.getId() + " | Label:" + scheme.getSchemeLabel() + " | Dept:"
+					+ scheme.getSchemeDept() + " | Duration" + scheme.getSchemeDuration();
+			String odetails = "Master Id:" + scheme.getMasterScheme().getSchemeMasterId() + " | Name:"
+					+ scheme.getMasterScheme().getSchemeName();
+			srepo.save(scheme);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (Exception e) {
+			Notification.show("Unable to Save Scheme " + e, 5000, Position.TOP_CENTER);
+		}
+
+	}
+
+	public void deleteScheme(Scheme scheme) {
+		try {
+			if (scheme == null) {
+				return;
+			}
+			String action = "Delete";
+			String process = "Scheme";
+			String details = "Id:" + scheme.getId() + " | Label:" + scheme.getSchemeLabel() + " | Dept:"
+					+ scheme.getSchemeDept() + " | Duration" + scheme.getSchemeDuration();
+			String odetails = "Master Id:" + scheme.getMasterScheme().getSchemeMasterId() + " | Name:"
+					+ scheme.getMasterScheme().getSchemeName();
+			srepo.delete(scheme);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (Exception e) {
+			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
+		}
+
+	}
+
+	// Year______________________________________________________________________________________________
 	public List<MasterYear> getMasterYears() {
 		return myearrepo.findAll();
 	}
-	
+
 	public List<Year> getAllYears() {
 		if (isSuperAdmin()) {
 			return yrepo.findAll();
@@ -303,26 +500,55 @@ public class Dbservice implements Serializable{
 
 	}
 
+	public List<Year> getAllYearsForAdmin() {
+		if (isSuperAdmin()) {
+			return yrepo.findAll();
+		} else {
+			return yrepo.findByDistrict(getDistrict());
+		}
+
+	}
+
 	public List<Year> getAllYearsWIthNotInUse() {
 		if (isSuperAdmin()) {
 			return yrepo.findAll();
 		} else {
-			//return yrepo.findByDistrict(getDistrict());
+			// return yrepo.findByDistrict(getDistrict());
 			return yrepo.findByDistrictOrderByYearLabelDesc(getDistrict());
 		}
 
 	}
-	
-	//_______________________________________________________________________________________________________
-	
-	public void updateAudit(AuditTrail entity) {
-		auditrepo.save(entity);
+
+	public void saveYear(Year year) {
+		if (year == null) {
+			return;
+		}
+		String action = "Save | Update";
+		String process = "Year";
+		String details = "Id:" + year.getId() + " | Label:" + year.getYearLabel();
+		String odetails = "Master Id:" + year.getMasterYear().getYearId() + " | Name:"
+				+ year.getMasterYear().getYearName();
+		yrepo.save(year);
+		auditservice.saveAudit(action, process, details, odetails);
+
 	}
-	
-	public List<AuditTrail> getAuditTrail() {
-		return auditrepo.findAllByOrderByIdDesc();
+
+	public void deleteYear(Year year) {
+		try {
+			String action = "Delete";
+			String process = "Year";
+			String details = "Id:" + year.getId() + " | Label:" + year.getYearLabel();
+			String odetails = "Master Id:" + year.getMasterYear().getYearId() + " | Name:"
+					+ year.getMasterYear().getYearName();
+			yrepo.delete(year);
+			auditservice.saveAudit(action, process, details, odetails);
+
+		} catch (Exception e) {
+			Notification.show("Unable to Delete Year " + e, 5000, Position.TOP_CENTER);
+		}
 	}
-	// Development Phase only
+
+	// ________________________________________________________________________________________
 	public List<Village> getVillage(Block block) {
 		return vtrepo.findByBlock(block);
 	}
@@ -334,136 +560,37 @@ public class Dbservice implements Serializable{
 	public State getState(State state) {
 		return strepo.findByStateId(state.getStateId());
 	}
-	public List<UsersRoles> getRoles(){
+
+	public List<UsersRoles> getRoles() {
 		return rolerepo.findByUser(getLoggedUser());
 	}
-	public List<UsersRoles> getRolesByUser(Users username){
+
+	public List<UsersRoles> getRolesByUser(Users username) {
 		return rolerepo.findByUser(username);
 	}
+
 	public List<String> fetchRolesForSelectedUser(Users user) {
-	   	    // Map the UsersRoles objects to a list of role names
-	    return getRolesByUser(user).stream()
-	                    .map(UsersRoles::getRoleName)
-	                    .collect(Collectors.toList());
-	}
-	
-	public boolean isUser() {
-		return hasRole("USER");
+		// Map the UsersRoles objects to a list of role names
+		return getRolesByUser(user).stream().map(UsersRoles::getRoleName).collect(Collectors.toList());
 	}
 
-	public boolean isAdmin() {
-		return hasRole("ADMIN");
-	}
+	// Installment________________________________________________________________________________________________________
 
-	public boolean isSuperAdmin() { 
-		return hasRole("SUPER");
-	}
-	 
-	// Users
-	public Users findUser(String username) {
-		return urepo.findByUserName(username);
-	}
-	public List<Users> findUsers() {
-		if(isSuperAdmin()) {
-			return urepo.findAll();
-		}else if(hasRole("ADMIN")){
-			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
-			
-		}else {
-			return urepo.findByDistrictAndUserNameNot(getDistrict(), "superadmin");
-		}
-	}
-	public List<Users> findUsersByDistrictAndUserNameNot(District district, String username) {
-		return urepo.findByDistrictAndUserNameNot(district, username);
-	}
-
-	/*
-	 * public Users getLoggedUser() { String username = getloggeduser(); Users user
-	 * = urepo.findByUserName(username); if (user == null) {
-	 * securityService.logout(); } return user; }
-	 */
-	public Users getLoggedUserold() {//old method replaced by above
-		Users loggeduser=urepo.findByUserName(getloggeduser());
-		if(loggeduser!=null) {
-			return urepo.findByUserName(getloggeduser());
-		}else {
-			securityService.logout();
-			return null;
-		}
-	}
-	public Users getUser(String user) {
-		return urepo.findByUserName(user);
-	}
-	public String getloggeduser() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		return auth.getName();
-	}
-
-	public void saveUser(Users user) {
-		if (user == null) {
-			Notification.show("Fail Fail Fail-7734");
-			return;
-		}
-		urepo.save(user);
-
-	}
-
-	public long findMaxUserSerial() {
-
-		try {
-
-			return urepo.findMaxSerial();
-
-		} catch (NullPointerException e) {
-
-			return (long) 0;
-
-		}
-	}
-
-	public List<Users> getAllUsers() {
-		return urepo.findAll();
-	}
-
-	
-
-	// Installment Service
-	@Transactional
-	public void markLatestInstallmentDeletedIfExists(Work work) {
-
-	    Optional<Installment> optionalInstallment =
-	            irepo.findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(work);
-
-	    if (optionalInstallment.isEmpty()) {
-	        return; // Nothing to delete
-	    }
-
-	    Installment last = optionalInstallment.get();
-
-	    last.setDeleted(true);
-	    irepo.save(last);
-	}
 	public int getInstallmentCount(Work work) {
 		return irepo.countByWorkAndIsDeletedFalse(work);
 	}
-	
+	public List<Installment> getAllInstallments() {
+		return irepo.findAll();
+	}
 	public List<Installment> getInstallments(Work work) {
 		return irepo.findByWorkAndIsDeletedFalse(work);
 	}
 
-	public List<Installment> getFilteredInstallments(
-	        Scheme scheme,
-	        Constituency consti,
-	        List<ProcessFlow> pflows,
-	        Block block,
-	        Year year,
-	        int inst
-	) {
-	    return irepo.getFilteredInstallment(
-	            scheme, consti, pflows, block, getDistrict(), year, inst
-	    );
+	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, List<ProcessFlow> pflows,
+			Block block, Year year, int inst) {
+		return irepo.getFilteredInstallment(scheme, consti, pflows, block, getDistrict(), year, inst);
 	}
-	
+
 	public Installment getInstallmentByWorkAndNo(int insallment, Work work) {
 		return irepo.getInstallmentByNoAndWork(insallment, work);
 	}
@@ -475,26 +602,70 @@ public class Dbservice implements Serializable{
 	public void saveInstallment(Installment install) {
 		try {
 			if (install == null) {
-
 				return;
 			}
+			long id=install.getInstallmentId();
+			String action = "Save | Update";
+			String process = "Installment";
+			String details = "Id:" + id + " | Inst No: " + install.getInstallmentNo()
+					+ " | Work Code:" + install.getWork().getWorkCode();
+			String odetails = "Amount:" + install.getInstallmentAmount() + " | Letter:"
+					+ install.getInstallmentLetter();
 			irepo.save(install);
+			auditservice.saveAudit(action, process, details, odetails);
 		} catch (Exception e) {
 			Notification.show("Unable to Save Installment. Error:" + e, 5000, Position.TOP_CENTER);
 		}
 	}
 
+	@Transactional
+	public void markLatestInstallmentDeletedIfExists(Work work) {
+		Optional<Installment> optionalInstallment = irepo.findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(work);
+		if (optionalInstallment.isEmpty()) {
+			return; // Nothing to delete
+		}
+		Installment last = optionalInstallment.get();
+		long id=last.getInstallmentId();
+		String action = "Soft Delete";
+		String process = "Installment";
+		String details = "Id:" + id + " | Inst No: " + last.getInstallmentNo() + " | Work Code:"
+				+ last.getWork().getWorkCode();
+		String odetails = "Amount:" + last.getInstallmentAmount() + " | Letter:" + last.getInstallmentLetter();
+		last.setDeleted(true);
+		irepo.save(last);
+		auditservice.saveAudit(action, process, details, odetails);
+	}
+	
+	//Copy To Notes of Release Order
+	public void saveInstallmentReport(InstallmentReportNotes ipn) {
+		if(ipn==null) {
+			return;
+		}
+		try {
+			reportrepo.save(ipn);
+			//No need for Audit
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
-
-	// Works Queries
+	// Works
+	// Queries___________________________________________________________________________________________________
 	public List<Work> getWorks() {
 		if (isSuperAdmin()) {
 			return wrepo.findAll();
-		}else {
+		} else {
 			return wrepo.findWorksByUser(getLoggedUser());
 		}
-    }
-	
+	}
+	public List<String> getWorkNamesList() {
+		return wrepo.findWorkNamesList();
+	}
+
+	public List<String> getSanctionNos() {
+		return wrepo.findSanctionNos();
+	}
 	public Work getWorkById(long id) {
 		return wrepo.findById(id);
 	}
@@ -511,14 +682,17 @@ public class Dbservice implements Serializable{
 	}
 
 	// History
-	public List<Work> getFilteredWorksAndSearch(String searchTerm,Scheme scheme, Constituency consti, Block block, Year year) {
+	public List<Work> getFilteredWorksAndSearch(String searchTerm, Scheme scheme, Constituency consti, Block block,
+			Year year) {
 		try {
-			return wrepo.findWorksEverProcessedByUserAndSearch(getLoggedUser(),scheme, getDistrict(), year, consti, block,searchTerm);
+			return wrepo.findWorksEverProcessedByUserAndSearch(getLoggedUser(), scheme, getDistrict(), year, consti,
+					block, searchTerm);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return Collections.emptyList();
 		}
 	}
+
 	public List<Work> getWorkHistory() {
 		try {
 			return wrepo.findWorksByUserFromHistory(getLoggedUser());
@@ -526,7 +700,7 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
-	
+
 	public List<Work> getReportWorks(Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
 			return wrepo.getReportWorks(scheme, getDistrict(), year, consti, block);
@@ -552,10 +726,12 @@ public class Dbservice implements Serializable{
 	public void saveWork(Work work) {
 		try {
 			if (work == null) {
-
 				return;
 			}
+			String action = "Save | Update";
+			String process = "Work";
 			wrepo.save(work);
+			auditservice.saveAudit(work, process, action);
 		} catch (Exception e) {
 
 			Notification.show("Unable to Save Work. Error:" + e, 5000, Position.TOP_CENTER);
@@ -565,77 +741,19 @@ public class Dbservice implements Serializable{
 	public void deleteWork(Work work) {
 		// irepo.deleteByWork(work);
 		try {
-			wrepo.delete(work);
-			Notification.show("Deleted Successfully", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+			String action = "Soft Delete";
+			String process = "Work";
+			wrepo.save(work);
+			auditservice.saveAudit(work, process, action);
+			Notification.show("Deleted Successfully", 5000, Position.TOP_CENTER)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
 		} catch (Exception e) {
 			Notification.show("Unable to Delete Work. Error:" + e, 5000, Position.TOP_CENTER);
 		}
 	}
 
-	// save & Delete Constituency
+//____________________________________________________________________________________________
 	
-
-	// save & Delete Year
-	public void saveYear(Year year) {
-		if (year == null) {
-
-			return;
-		}
-		yrepo.save(year);
-	}
-
-	public void deleteYear(Year year) {
-		try {
-			yrepo.delete(year);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete Year " + e, 5000, Position.TOP_CENTER);
-		}
-	}
-
-	// save & Delete scheme
-	public void saveScheme(Scheme scheme) {
-		try {
-			if (scheme == null) {
-
-				return;
-			}
-			srepo.save(scheme);
-		} catch (Exception e) {
-			Notification.show("Unable to Save Scheme " + e, 5000, Position.TOP_CENTER);
-		}
-
-	}
-
-	public void deleteScheme(Scheme scheme) {
-		try {
-			srepo.delete(scheme);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
-		}
-
-	}
-
-	// save & Delete blocks
-	public void saveBlock(Block block) {
-		try {
-			if (block == null) {
-
-				return;
-			}
-			brepo.save(block);
-		} catch (DataIntegrityViolationException e) {
-			Notification.show("Unable to Save Block/MB as It already Exists" + e, 5000, Position.TOP_CENTER);
-		}
-	}
-
-	public void deleteBlock(Block block) {
-		try {
-			brepo.delete(block);
-		} catch (Exception e) {
-			Notification.show("Unable to Delete Constituency " + e, 5000, Position.TOP_CENTER);
-		}
-	}
-
 	// save & Delete state
 	public void saveState(State state) {
 		try {
@@ -661,26 +779,15 @@ public class Dbservice implements Serializable{
 	// save & Delete district
 	public void saveDistrict(District dist) {
 		if (dist == null) {
-
 			return;
 		}
 		drepo.save(dist);
 	}
 
-	
-
 	public long getMaxDistrictCode(State state) {
 		return drepo.findMaxDistrictCode(state);
 	}
 
-	
-	public List<String> getWorkNamesList(){
-		return wrepo.findWorkNamesList();
-	}
-	public List<String> getSanctionNos(){
-		return wrepo.findSanctionNos();
-	}
-	
 	
 
 	public List<District> getAllDistricts(State state) {
@@ -695,121 +802,57 @@ public class Dbservice implements Serializable{
 		return strepo.findAll();
 	}
 
-	public List<Installment> getAllInstallments() {
-		return irepo.findAll();
+	//ProcessFlow & History___________________________________________________________________________________
+
+	public ProcessFlow getStepByCode(String code) {
+		return pflowrepo.findByStepCode(code)
+				.orElseThrow(() -> new IllegalStateException("Missing ProcessFlow stepCode=" + code));
 	}
 
-	
-	public void saveRole(UsersRoles role) {
-	    try {
-	        if (role != null) {
-	            rolerepo.save(role); // Save or update the role
-	        }
-	    } catch (Exception e) {
-	        Notification.show("Unable to Save Role. Error: " + e, 5000, Position.TOP_CENTER)
-	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	    }
-	}
-	public void deleteRole(UsersRoles role) {
-	    try {
-	        if (role != null) {
-	            rolerepo.delete(role); // Save or update the role
-	        }
-	    } catch (Exception e) {
-	        Notification.show("Unable to Save Role. Error: " + e, 5000, Position.TOP_CENTER)
-	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	    }
-	}
-	public ProcessFlow getStepByCode(String code) {
-	    return pflowrepo.findByStepCode(code)
-	        .orElseThrow(() -> new IllegalStateException("Missing ProcessFlow stepCode=" + code));
-	}
 	public List<ProcessFlow> getAllProcessFlow() {
-		//return pflowrepo.findAll();
+		// return pflowrepo.findAll();
 		return pflowrepo.findAllByOrderByIdAsc();
 	}
+
 	public ProcessFlow getProcessFlowByOrder(int a) {
 		return pflowrepo.findByStepOrder(a);
 	}
+
 	public ProcessFlow getReturnToStepFromHistory(Work work) {
 		ProcessFlow current = work.getProcessflow();
 
-	    return phistoryrrepo
-	        .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
-	        .map(ProcessHistory::getFromStep)
-	        .orElseThrow(() -> new IllegalStateException("No previous forward step found from history."));
+		return phistoryrrepo.findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+				.map(ProcessHistory::getFromStep)
+				.orElseThrow(() -> new IllegalStateException("No previous forward step found from history."));
 	}
+
 	public ProcessFlow getPrevStepFromHistory(Work work) {
-	    ProcessFlow current = work.getProcessflow();
+		ProcessFlow current = work.getProcessflow();
 
-	    return phistoryrrepo
-	        .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
-	        .map(ProcessHistory::getFromStep)
-	        .orElseThrow(() -> new IllegalStateException(
-	            "No history found for move into " + current.getStepName()
-	        ));
-	}
-	public void saveProcessFlow(ProcessFlow processflow) {
-		pflowrepo.save(processflow);
-	}
-	
-	
-	public List<ProcessFlowUser> getProcessFlowUser(Users user) {
-		return pflowuserrepo.findByUser(user);
-	}
-	public void saveProcessFlowUser(ProcessFlowUser pfu) {
-		pflowuserrepo.save(pfu);
-	}
-
-	public ProcessFlowUser getProcessFlowUser(Users user, ProcessFlow pfu) {
-		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
-	}
-
-	public boolean hasAuthorityForStepR(Users user, int stepOrder) {
-	    return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
-	}
-	public void deleteProcessFlowUser(ProcessFlowUser pfu) {
-		pflowuserrepo.delete(pfu);
-	}
-	public BlockUser getBlockUser(Users user, Block block) {
-		return buserrepo.findByUserAndBlock(user, block);
-	}
-	public List<BlockUser> getBlockUser(Users user) {
-		return buserrepo.findByUser(user);
-	}
-	public void saveBlockUser(BlockUser bu) {
-		buserrepo.save(bu);
-	}
-	public void deleteBlockUser(BlockUser su) {
-		buserrepo.delete(su);
-	}
-	public ConstituencyUser getConstituencyUser(Users user, Constituency consti) {
-		return cuserrepo.findByUserAndConstituency(user, consti);
-	}
-	public List<ConstituencyUser> getConstituencyUser(Users user) {
-		return cuserrepo.findByUser(user);
-	}
-	public void saveConstituencyUser(ConstituencyUser bu) {
-		cuserrepo.save(bu);
-	}
-	public void deleteConstituencyUser(ConstituencyUser su) {
-		cuserrepo.delete(su);
-	}
-	public SchemeUser getSchemeUser(Users user, Scheme sch) {
-		return suserrepo.findByUserAndScheme(user, sch);
-	}
-	public List<SchemeUser> getSchemeUser(Users user) {
-		return suserrepo.findByUser(user);
-	}
-	public void saveSchemeUser(SchemeUser bu) {
-		suserrepo.save(bu);
-	}
-	public void deleteSchemeUser(SchemeUser su) {
-		suserrepo.delete(su);
+		return phistoryrrepo.findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+				.map(ProcessHistory::getFromStep).orElseThrow(
+						() -> new IllegalStateException("No history found for move into " + current.getStepName()));
 	}
 	public void saveProcessHistory(ProcessHistory pfh) {
-		phistoryrrepo.save(pfh);
+		if(pfh==null) {
+			return;
+		}
+		//long id=pfh.getId();
+		try {
+			String action = "Save | Update";
+			String process = "Process History";
+			String details = "Id:" + pfh.getId() + " | Process:" + pfh.getProcessName();
+			String odetails = "From:"+pfh.getFromStep().getStepName()+" | To:"+pfh.getToStep().getStepName();
+			phistoryrrepo.save(pfh);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
+
 	public List<ProcessHistory> getProcessHistory() {
 		try {
 			return phistoryrrepo.findByUser(getLoggedUser());
@@ -817,16 +860,69 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
-	public ProcessFlow findReturnTarget(Work work) {
-	    ProcessHistory lastForward = phistoryrrepo.findTop1ByWorkAndReversedFalseOrderByEnteredOnDesc(work)
-	        .orElseThrow(() -> new IllegalStateException("No forward history found"));
-	    return lastForward.getFromStep(); // exact path taken
+	//ProsessFlowUser______________________________________________________________
+	public List<ProcessFlowUser> getProcessFlowUser(Users user) {
+		return pflowuserrepo.findByUser(user);
 	}
 	
+	public void saveProcessFlowUser(ProcessFlowUser pfu) {
+		if(pfu==null) {
+			return;
+		}
+		
+		try {
+			long id=pfu.getId();
+			String action = "Save | Update";
+			String process = "ProcessFlow User";
+			String details = "Id:" + id + " | Process: " + pfu.getProcessFlow().getStepName();
+			String odetails = "";
+			pflowuserrepo.save(pfu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public ProcessFlowUser getProcessFlowUser(Users user, ProcessFlow pfu) {
+		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
+	}
+
+	public boolean hasAuthorityForStepR(Users user, int stepOrder) {
+		return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
+	}
+
+	public void deleteProcessFlowUser(ProcessFlowUser pfu) {
+		if(pfu==null) {
+			return;
+		}
+		
+		try {
+			long id=pfu.getId();
+			String action = "Delete";
+			String process = "ProcessFlow User";
+			String details = "Id:" + id + " | Process: " + pfu.getProcessFlow().getStepName();
+			String odetails = "";
+			pflowuserrepo.delete(pfu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	public ProcessFlow findReturnTarget(Work work) {
+		ProcessHistory lastForward = phistoryrrepo.findTop1ByWorkAndReversedFalseOrderByEnteredOnDesc(work)
+				.orElseThrow(() -> new IllegalStateException("No forward history found"));
+		return lastForward.getFromStep(); // exact path taken
+	}
+
 	public boolean processHistoryExists(Work work, ProcessFlow processFlow, Users user) {
-	    //return phistoryrrepo.existsByWorkAndProcessFlowAndUser(work, processFlow, user);
 		return true;
 	}
+
 	public List<ProcessHistory> getProcessHistory(Work work) {
 		try {
 			return phistoryrrepo.findByWork(work);
@@ -834,8 +930,158 @@ public class Dbservice implements Serializable{
 			return Collections.emptyList();
 		}
 	}
+
+	//BlockUser_____________________________________________________________________
 	
-	public void saveInstallmentReport(InstallmentReportNotes ipn) {
-		reportrepo.save(ipn);
+	public BlockUser getBlockUser(Users user, Block block) {
+		return buserrepo.findByUserAndBlock(user, block);
 	}
+
+	public List<BlockUser> getBlockUser(Users user) {
+		return buserrepo.findByUser(user);
+	}
+
+	public void saveBlockUser(BlockUser bu) {
+		
+		if(bu==null) {
+			return;
+		}
+		long id=bu.getId();
+		try {
+			String action = "Save | Update";
+			String process = "Block User";
+			String details = "Id:" + id + " | Block: " + bu.getBlock().getBlockLabel();
+			String odetails = "";
+			buserrepo.save(bu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void deleteBlockUser(BlockUser bu) {
+		if(bu==null) {
+			return;
+		}
+		long id=bu.getId();
+		try {
+			String action = "Delete";
+			String process = "Block User";
+			String details = "Id:" + id + " | Block: " + bu.getBlock().getBlockLabel();
+			String odetails = "";
+			buserrepo.delete(bu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	//_Constituency User_____________________________________________________________
+	public ConstituencyUser getConstituencyUser(Users user, Constituency consti) {
+		return cuserrepo.findByUserAndConstituency(user, consti);
+	}
+
+	public List<ConstituencyUser> getConstituencyUser(Users user) {
+		
+		return cuserrepo.findByUser(user);
+	}
+
+	public void saveConstituencyUser(ConstituencyUser bu) {
+		if(bu==null) {
+			return;
+		}
+		long id=bu.getId();
+		try {
+			String action = "Save | Update";
+			String process = "Constituency User";
+			String details = "Id:" + id + " | Constituency: " + bu.getConstituency().getConstituencyLabel();
+			String odetails = "";
+			cuserrepo.save(bu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	public void deleteConstituencyUser(ConstituencyUser su) {
+		if(su==null) {
+			return;
+		}
+		long id=su.getId();
+		try {
+			String action = "Delete";
+			String process = "Constituency User";
+			String details = "Id:" + id + " | Constituency: " + su.getConstituency().getConstituencyLabel();
+			String odetails = "";
+			cuserrepo.delete(su);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	//Scheme User____________________________________________________
+	
+	public SchemeUser getSchemeUser(Users user, Scheme sch) {
+		return suserrepo.findByUserAndScheme(user, sch);
+	}
+
+	public List<SchemeUser> getSchemeUser(Users user) {
+		return suserrepo.findByUser(user);
+	}
+
+	public void saveSchemeUser(SchemeUser bu) {
+		if(bu==null) {
+			return;
+		}
+		long id=bu.getId();
+		try {
+			String action = "Save | Update";
+			String process = "Scheme User";
+			String details = "Id:" + id + " | Constituency: " + bu.getScheme().getSchemeLabel();
+			String odetails = "";
+			suserrepo.save(bu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	public void deleteSchemeUser(SchemeUser bu) {
+		if(bu==null) {
+			return;
+		}
+		long id=bu.getId();
+		try {
+			String action = "Delete";
+			String process = "Scheme User";
+			String details = "Id:" + id + " | Constituency: " + bu.getScheme().getSchemeLabel();
+			String odetails = "";
+			suserrepo.delete(bu);
+			auditservice.saveAudit(action, process, details, odetails);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+//______________________________________________________________________________	
+
+	
 }

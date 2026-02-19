@@ -22,6 +22,7 @@ import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.util.ButtonUtil;
+import com.smis.util.StatusBadgeUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -57,7 +58,7 @@ public class WorkViewHistory extends VerticalLayout {
 	Dbservice service;
 	@Autowired
 	FileStorageService fileStorageService;
-	//Grid<Work> grid = new Grid<>(Work.class);
+	// Grid<Work> grid = new Grid<>(Work.class);
 	Grid<Work> gridhistory = new Grid<>(Work.class);
 	TextField filterText = new TextField();
 	ComboBox<Block> block = new ComboBox<Block>();
@@ -72,20 +73,19 @@ public class WorkViewHistory extends VerticalLayout {
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
-	//@Autowired
-	//private AuditTrail audit;
+	// @Autowired
+	// private AuditTrail audit;
 
 	public WorkViewHistory(Dbservice service) {
 		this.service = service;
 		setSizeFull();
 		isAdmin = service.hasRole("ADMIN");
 		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
-		isUser  = service.hasRole("USER");
-		
+		isUser = service.hasRole("USER");
+
 		configureGridHistory();
 		add(getToolbar(), getContent());
 		updateGrid();
-		
 
 	}
 
@@ -100,10 +100,10 @@ public class WorkViewHistory extends VerticalLayout {
 	}
 
 	private void configureCombos() {
-		block.setItems(service.getAllBlocks(true));
+		block.setItems(service.getBlocksByUser());
 		// block.setClearButtonVisible(true);
-		consti.setItems(service.getAllConstituencies());
-		scheme.setItems(service.getAllSchemes());
+		consti.setItems(service.getConstituenciesByUser());
+		scheme.setItems(service.getSchemesByUser());
 		year.setItems(service.getAllYears());
 		block.setClearButtonVisible(true);
 		year.setClearButtonVisible(true);
@@ -112,7 +112,8 @@ public class WorkViewHistory extends VerticalLayout {
 		block.setItemLabelGenerator(Block::getBlockLabel);
 		year.setItemLabelGenerator(Year::getYearLabel);
 		scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
-		consti.setItemLabelGenerator(constituency -> constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
+		consti.setItemLabelGenerator(
+				constituency -> constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
 		block.setPlaceholder("Block");
 		consti.setPlaceholder("Constituency");
 		year.setPlaceholder("Year");
@@ -127,45 +128,56 @@ public class WorkViewHistory extends VerticalLayout {
 		scheme.addValueChangeListener(e -> filterGrid());
 	}
 
-	
 	private void configureGridHistory() {
 		gridhistory.setSizeFull();
 		gridhistory.setColumns("workCode");
-		gridhistory.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%").setResizable(true)
-				.setSortable(true);
-		gridhistory.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true).setSortable(true)
-				.setAutoWidth(true);
+		gridhistory.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%")
+				.setResizable(true).setSortable(true);
+		gridhistory.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true)
+				.setSortable(true).setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getBlock().getBlockLabel()).setAutoWidth(true).setHeader("Block/MB")
 				.setSortable(true).setResizable(true);
 		gridhistory.addColumn(work -> work.getScheme().getSchemeLabel()).setAutoWidth(true).setHeader("Scheme")
 				.setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-" + work.getConstituency().getConstituencyMLA())
+		gridhistory
+				.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-"
+						+ work.getConstituency().getConstituencyMLA())
 				.setWidth("20%").setHeader("Constituency").setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getYear().getYearLabel()).setAutoWidth(true).setHeader("Year").setSortable(true)
-				.setResizable(true);
+		gridhistory.addColumn(work -> work.getYear().getYearLabel()).setAutoWidth(true).setHeader("Year")
+				.setSortable(true).setResizable(true);
 		gridhistory.addColumn(work -> work.getSanctionNo()).setHeader("Sanc. No").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
-		
-		//DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 		gridhistory.addColumn(
 				work -> work.getSanctionDate() != null ? work.getSanctionDate().format(dateFormatter) : "No Date")
 				.setHeader("Sanc. Date").setResizable(true).setSortable(true).setAutoWidth(true);
 		gridhistory.addColumn(work -> work.getNoOfInstallments()).setHeader("Installments").setResizable(true)
 				.setSortable(true).setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Status").setResizable(true).setSortable(true)
-				.setAutoWidth(true);
-		//gridhistory.addColumn(work -> work.getUpdatedBy().getUserName()).setHeader("Updated By").setResizable(true).setSortable(true).setAutoWidth(true);
-		//gridhistory.addColumn(work -> work.getUpdatedOn() != null ? work.getUpdatedOn().format(dateFormatter) : "No Date").setHeader("Entered On").setResizable(true).setSortable(true).setAutoWidth(true);
-		//gridhistory.asSingleSelect().addValueChangeListener(e -> editWork(e.getValue()));
-		gridhistory.getHeaderRows().clear();
-//		HeaderRow headerRow = gridhistory.appendHeaderRow();
-//		headerRow.getCell(blockColumn).setComponent(block);
-//		headerRow.getCell(constiColumn).setComponent(consti);
-//		headerRow.getCell(schemeColumn).setComponent(scheme);
-//		headerRow.getCell(yearColumn).setComponent(year);
+		gridhistory.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Process")
+				.setResizable(true).setSortable(true).setAutoWidth(true);
+		gridhistory
+				.addComponentColumn(work -> StatusBadgeUtil.workStatusBadge(work.getIsDeleted(), work.getIsRecasted()))
+				.setHeader("Status").setAutoWidth(true).setResizable(true).setComparator(work -> {
+					if (Boolean.TRUE.equals(work.getIsDeleted()))
+						return 2;
+					if (Boolean.TRUE.equals(work.getIsRecasted()))
+						return 1;
+					return 0;
+				});
+				gridhistory.getHeaderRows().clear();
 		gridhistory.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
-		
-		
+		gridhistory.setClassNameGenerator(work -> {
+			String status = work.getWorkStatus();
+
+			if ("Completed".equals(status)) {
+				return "high-rating";
+			}
+			if ("Entered".equals(status)) {
+				return "low-rating";
+			}
+			return null;
+		});
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(gridhistory);
 
 		// Add a menu item for viewing installments
@@ -183,275 +195,261 @@ public class WorkViewHistory extends VerticalLayout {
 				showHistoryDialog(work);
 			});
 		});
-
-
 	}
-	
+
 	private void showInstallmentsDialog(Work work) {
-	    Dialog dialog = new Dialog();
-	    dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
-	    dialog.setWidth("90vw");
-	    dialog.addClassName("history-dialog");
+		try {
+			Dialog dialog = new Dialog();
+			dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
+			dialog.setWidth("90vw");
+			dialog.addClassName("history-dialog");
 
-	    Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
-	    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-	    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+			Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
+			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+			DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-	    installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
-	    installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released").setResizable(true);
-	    installmentGrid.addColumn(inst -> inst.getInstallmentDate() != null ? inst.getInstallmentDate().format(dateFormatter) : "")
-	            .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
+			installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
+			installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released")
+					.setResizable(true);
+			installmentGrid.addColumn(
+					inst -> inst.getInstallmentDate() != null ? inst.getInstallmentDate().format(dateFormatter) : "")
+					.setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+			installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
 
-	    // Release Order (filesystem)
-	    installmentGrid.addComponentColumn(installment -> {
-	        String ro = installment.getGeneratedReleaseOrder();
+			// Release Order (filesystem)
+			installmentGrid.addComponentColumn(installment -> {
+				String ro = installment.getGeneratedReleaseOrder();
 
-	        if (ro == null || ro.isBlank()) {
-	            return new Span("");
-	        }
+				if (ro == null || ro.isBlank()) {
+					return new Span("");
+				}
 
-	        if (!fileStorageService.exists(ro)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+				if (!fileStorageService.exists(ro)) {
+					Span missing = new Span("Missing file");
+					missing.getStyle().set("color", "var(--lumo-error-text-color)");
+					missing.getStyle().set("font-weight", "500");
+					return missing;
+				}
 
-	        StreamResource resource = new StreamResource(ro, () -> {
-	            try {
-	                return fileStorageService.open(ro);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+				StreamResource resource = new StreamResource(ro, () -> {
+					try {
+						return fileStorageService.open(ro);
+					} catch (IOException ex) {
+						throw new UncheckedIOException(ex);
+					}
+				});
+				resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+				Anchor link = new Anchor(resource, "View");
+				link.setTarget("_blank");
+				return link;
 
-	    }).setHeader("Generated RO").setAutoWidth(true);
+			}).setHeader("Generated RO").setAutoWidth(true);
 
-	    installmentGrid.addComponentColumn(installment -> {
-	        String roPath = installment.getReleaseOrder();
+			installmentGrid.addComponentColumn(installment -> {
+				String roPath = installment.getReleaseOrder();
 
-	        if (roPath == null || roPath.isBlank()) {
-	            return new Span("");
-	        }
+				if (roPath == null || roPath.isBlank()) {
+					return new Span("");
+				}
 
-	        if (!fileStorageService.exists(roPath)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+				if (!fileStorageService.exists(roPath)) {
+					Span missing = new Span("Missing file");
+					missing.getStyle().set("color", "var(--lumo-error-text-color)");
+					missing.getStyle().set("font-weight", "500");
+					return missing;
+				}
 
-	        StreamResource resource = new StreamResource(roPath, () -> {
-	            try {
-	                return fileStorageService.open(roPath);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+				StreamResource resource = new StreamResource(roPath, () -> {
+					try {
+						return fileStorageService.open(roPath);
+					} catch (IOException ex) {
+						throw new UncheckedIOException(ex);
+					}
+				});
+				resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+				Anchor link = new Anchor(resource, "View");
+				link.setTarget("_blank");
+				return link;
 
-	    }).setHeader("Uploaded RO").setAutoWidth(true);
-	    installmentGrid.addComponentColumn(installment -> {
-	        String rfPath = installment.getFundDocument();
+			}).setHeader("Uploaded RO").setAutoWidth(true);
+			installmentGrid.addComponentColumn(installment -> {
+				String rfPath = installment.getFundDocument();
 
-	        if (rfPath == null || rfPath.isBlank()) {
-	            return new Span("");
-	        }
+				if (rfPath == null || rfPath.isBlank()) {
+					return new Span("");
+				}
 
-	        if (!fileStorageService.exists(rfPath)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+				if (!fileStorageService.exists(rfPath)) {
+					Span missing = new Span("Missing file");
+					missing.getStyle().set("color", "var(--lumo-error-text-color)");
+					missing.getStyle().set("font-weight", "500");
+					return missing;
+				}
 
-	        StreamResource resource = new StreamResource(rfPath, () -> {
-	            try {
-	                return fileStorageService.open(rfPath);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+				StreamResource resource = new StreamResource(rfPath, () -> {
+					try {
+						return fileStorageService.open(rfPath);
+					} catch (IOException ex) {
+						throw new UncheckedIOException(ex);
+					}
+				});
+				resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+				Anchor link = new Anchor(resource, "View");
+				link.setTarget("_blank");
+				return link;
 
-	    }).setHeader("Fund Receipt").setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
-	    installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
-	            .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
+			}).setHeader("Fund Receipt").setAutoWidth(true);
+			installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
+			installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
+					.setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
 
-	    // UC Document (filesystem)
-	    installmentGrid.addComponentColumn(installment -> {
-	        String ucPath = installment.getUcDocument();
-	        if (ucPath != null && !ucPath.isBlank()) {
+			// UC Document (filesystem)
+			installmentGrid.addComponentColumn(installment -> {
+				String ucPath = installment.getUcDocument();
+				if (ucPath != null && !ucPath.isBlank()) {
 
-	            String downloadName = ucPath; // or "uc.pdf"
+					String downloadName = ucPath; // or "uc.pdf"
 
-	            StreamResource resource = new StreamResource(downloadName, () -> {
-	                try {
-	                    return fileStorageService.open(ucPath); // ✅ FIXED: open UC path
-	                } catch (IOException ex) {
-	                    throw new UncheckedIOException(ex);
-	                }
-	            });
-	            resource.setContentType("application/pdf");
+					StreamResource resource = new StreamResource(downloadName, () -> {
+						try {
+							return fileStorageService.open(ucPath); // ✅ FIXED: open UC path
+						} catch (IOException ex) {
+							throw new UncheckedIOException(ex);
+						}
+					});
+					resource.setContentType("application/pdf");
 
-	            Anchor link = new Anchor(resource, "View");
-	            link.setTarget("_blank");
-	            return link;
-	        }
-	        return new Span("");
-	    }).setHeader("UC Documents").setAutoWidth(true);
+					Anchor link = new Anchor(resource, "View");
+					link.setTarget("_blank");
+					return link;
+				}
+				return new Span("");
+			}).setHeader("UC Documents").setAutoWidth(true);
 
-	    
+			Button closeButton = new Button("Close", e -> dialog.close());
 
-	    Button closeButton = new Button("Close", e -> dialog.close());
-	    
-	    ButtonUtil.applyCloseStyle(closeButton);
-	    
-	    List<Installment> installments = service.getInstallments(work);
-	    installmentGrid.setItems(installments);
-	    installmentGrid.setAllRowsVisible(true);
+			ButtonUtil.applyCloseStyle(closeButton);
 
-	   
+			List<Installment> installments = service.getInstallments(work);
+			installmentGrid.setItems(installments);
+			installmentGrid.setAllRowsVisible(true);
 
-	    dialog.setModal(true);
-	    dialog.setCloseOnOutsideClick(false);
-	    dialog.setCloseOnEsc(false);
+			dialog.setModal(true);
+			dialog.setCloseOnOutsideClick(false);
+			dialog.setCloseOnEsc(false);
 
-	    dialog.add(installmentGrid);
-	    dialog.getFooter().add( closeButton);
-	    dialog.open();
+			dialog.add(installmentGrid);
+			dialog.getFooter().add(closeButton);
+			dialog.open();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void showHistoryDialog(Work work) {
 
-	    Dialog dialog = new Dialog();
-	    dialog.setWidth("90vw");
-	    dialog.addClassName("history-dialog");
-	    dialog.setHeaderTitle("History : " + work.getWorkCode() + " - " + work.getWorkName());
+		Dialog dialog = new Dialog();
+		dialog.setWidth("90vw");
+		dialog.addClassName("history-dialog");
+		dialog.setHeaderTitle("History : " + work.getWorkCode() + " - " + work.getWorkName());
 
-	    Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
+		Grid<ProcessHistory> grid = new Grid<>(ProcessHistory.class, false);
 
-	    List<ProcessHistory> history = service.getProcessHistory(work);
+		List<ProcessHistory> history = service.getProcessHistory(work);
 
-	    // 1️⃣ Serial Number Column
-	    grid.addColumn(ph -> history.indexOf(ph) + 1)
-	            .setHeader("Sl. No.")
-	            .setWidth("90px")
-	            .setFlexGrow(0);
+		// 1️⃣ Serial Number Column
+		grid.addColumn(ph -> history.indexOf(ph) + 1).setHeader("Sl. No.").setWidth("90px").setFlexGrow(0);
 
-	    // 2️⃣ Task
-	    grid.addColumn(ph -> ph.getFromStep() != null
-	                    ? ph.getFromStep().getStepName()
-	                    : "")
-	            .setHeader("Task")
-	            .setAutoWidth(true);
+		// 2️⃣ Task
+		grid.addColumn(ph -> ph.getFromStep() != null ? ph.getFromStep().getStepName() : "").setHeader("Task")
+				.setAutoWidth(true);
 
-	    // 3️⃣ Action Performed (Arrow + Text)
-	    grid.addComponentColumn(ph -> {
+		// 3️⃣ Action Performed (Arrow + Text)
+		grid.addComponentColumn(ph -> {
 
-	        Icon icon;
-	        if (ph.isReversed()) {
-	            icon = VaadinIcon.ARROW_BACKWARD.create();
-	            icon.getStyle().set("color", "var(--lumo-error-color)");
-	            icon.getElement().setAttribute("title", "Reverse");
-	        } else {
-	            icon = VaadinIcon.ARROW_FORWARD.create();
-	            icon.getStyle().set("color", "var(--lumo-success-color)");
-	            icon.getElement().setAttribute("title", "Forward");
-	        }
-	        icon.setSize("16px");
+			Icon icon;
+			if (ph.isReversed()) {
+				icon = VaadinIcon.ARROW_BACKWARD.create();
+				icon.getStyle().set("color", "var(--lumo-error-color)");
+				icon.getElement().setAttribute("title", "Reverse");
+			} else {
+				icon = VaadinIcon.ARROW_FORWARD.create();
+				icon.getStyle().set("color", "var(--lumo-success-color)");
+				icon.getElement().setAttribute("title", "Forward");
+			}
+			icon.setSize("16px");
 
-	        Span text = new Span(ph.getProcessName() != null ? ph.getProcessName() : "");
+			Span text = new Span(ph.getProcessName() != null ? ph.getProcessName() : "");
 
-	        HorizontalLayout layout = new HorizontalLayout(icon, text);
-	        layout.getStyle().set("align-items", "center");
-	        layout.setSpacing(true);
-	        layout.setPadding(false);
+			HorizontalLayout layout = new HorizontalLayout(icon, text);
+			layout.getStyle().set("align-items", "center");
+			layout.setSpacing(true);
+			layout.setPadding(false);
 
-	        return layout;
+			return layout;
 
-	    }).setHeader("Action Performed").setAutoWidth(true);
+		}).setHeader("Action Performed").setAutoWidth(true);
 
-	    // 4️⃣ Remarks
-	    grid.addColumn(ph -> ph.getRemarks() != null ? ph.getRemarks() : "")
-	            .setHeader("Remarks")
-	            .setWidth("35%")
-	            .setResizable(true);
+		// 4️⃣ Remarks
+		grid.addColumn(ph -> ph.getRemarks() != null ? ph.getRemarks() : "").setHeader("Remarks").setWidth("35%")
+				.setResizable(true);
 
-	    // 5️⃣ Performed By
-	    grid.addColumn(ph -> ph.getUser() != null
-	                    ? ph.getUser().getProfileName()
-	                    : "")
-	            .setHeader("Performed By")
-	            .setAutoWidth(true);
+		// 5️⃣ Performed By
+		grid.addColumn(ph -> ph.getUser() != null ? ph.getUser().getProfileName() : "").setHeader("Performed By")
+				.setAutoWidth(true);
 
-	    // 6️⃣ Document
-	    grid.addComponentColumn(ph -> {
+		// 6️⃣ Document
+		grid.addComponentColumn(ph -> {
 
-	        String path = ph.getDocument();
+			String path = ph.getDocument();
 
-	        if (path == null || path.isBlank()) {
-	            return new Span("");
-	        }
+			if (path == null || path.isBlank()) {
+				return new Span("");
+			}
 
-	        if (!fileStorageService.exists(path)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            return missing;
-	        }
+			if (!fileStorageService.exists(path)) {
+				Span missing = new Span("Missing file");
+				missing.getStyle().set("color", "var(--lumo-error-text-color)");
+				return missing;
+			}
 
-	        StreamResource resource = new StreamResource(path, () -> {
-	            try {
-	                return fileStorageService.open(path);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+			StreamResource resource = new StreamResource(path, () -> {
+				try {
+					return fileStorageService.open(path);
+				} catch (IOException ex) {
+					throw new UncheckedIOException(ex);
+				}
+			});
+			resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+			Anchor link = new Anchor(resource, "View");
+			link.setTarget("_blank");
+			return link;
 
-	    }).setHeader("Document").setAutoWidth(true);
+		}).setHeader("Document").setAutoWidth(true);
 
-	    // 7️⃣ Date
-	    grid.addColumn(ph -> ph.getEnteredOn() != null
-	                    ? ph.getEnteredOn().format(timeFormatter)
-	                    : "No Date")
-	            .setHeader("Action Taken On")
-	            .setSortable(true)
-	            .setAutoWidth(true);
+		// 7️⃣ Date
+		grid.addColumn(ph -> ph.getEnteredOn() != null ? ph.getEnteredOn().format(timeFormatter) : "No Date")
+				.setHeader("Action Taken On").setSortable(true).setAutoWidth(true);
 
-	    grid.setItems(history);
-	    grid.setAllRowsVisible(true);
-	    grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+		grid.setItems(history);
+		grid.setAllRowsVisible(true);
+		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
 
-	    Button closeButton = new Button("Close", e -> dialog.close());
-	    ButtonUtil.applyCloseStyle(closeButton);
+		Button closeButton = new Button("Close", e -> dialog.close());
+		ButtonUtil.applyCloseStyle(closeButton);
 
-	    dialog.add(grid);
-	    dialog.getFooter().add(closeButton);
+		dialog.add(grid);
+		dialog.getFooter().add(closeButton);
 
-	    dialog.setModal(true);
-	    dialog.setCloseOnOutsideClick(false);
-	    dialog.setCloseOnEsc(false);
-	    dialog.open();
+		dialog.setModal(true);
+		dialog.setCloseOnOutsideClick(false);
+		dialog.setCloseOnEsc(false);
+		dialog.open();
 	}
 
 	public void filterGrid() {
@@ -459,17 +457,15 @@ public class WorkViewHistory extends VerticalLayout {
 	}
 
 	private Component getContent() {
-		//var grids=new VerticalLayout(grid, gridhistory);
-		//grids.setSizeFull();
+		// var grids=new VerticalLayout(grid, gridhistory);
+		// grids.setSizeFull();
 		HorizontalLayout content = new HorizontalLayout(gridhistory);
 		content.setFlexGrow(1, gridhistory);
-		//content.setFlexGrow(1, workform);
+		// content.setFlexGrow(1, workform);
 		content.addClassName("content");
 		content.setSizeFull();
 		return content;
 	}
-
-	
 
 	private Component getToolbar() {
 		filterText.setPlaceholder("Filter By Work Code, Name or Sanction Number");
@@ -486,7 +482,7 @@ public class WorkViewHistory extends VerticalLayout {
 		toolbar.add(block, 2);
 		toolbar.add(scheme, 1);
 		toolbar.add(year, 1);
-		
+
 		toolbar.add(expButton, 1);
 		toolbar.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2), // 1 column by default
 				new FormLayout.ResponsiveStep("600px", 4), // 2 columns for screens wider than 600px
@@ -497,20 +493,18 @@ public class WorkViewHistory extends VerticalLayout {
 	}
 
 	public void updateGrid() {
-		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),consti.getValue(), block.getValue(),year.getValue()));
+		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),
+				consti.getValue(), block.getValue(), year.getValue()));
 	}
-
 
 	private void updateList() {
 		block.clear();
 		scheme.clear();
 		consti.clear();
 		year.clear();
-		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),consti.getValue(), block.getValue(),year.getValue()));
-		
+		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),
+				consti.getValue(), block.getValue(), year.getValue()));
+
 	}
 
-	
-	
-	
 }

@@ -19,6 +19,8 @@ import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
+import com.smis.dbservice.AuditService;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +34,8 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 	private RateLimitingFilter rateLimitingFilter;
 	@Autowired
 	private LoginCaptchaFilter loginCaptchaFilter;
+	@Autowired
+	private AuditService auditService;
 	@Bean
 	public SessionRegistry sessionRegistry() {
 		return new SessionRegistryImpl();
@@ -93,15 +97,8 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 	                .sessionRegistry(sessionRegistry())
 	                .expiredUrl("/login?expired")
 	                .maxSessionsPreventsLogin(false)
-	      )
-	      .logout(logout -> logout
-	            .logoutUrl("/logout")
-	            .logoutSuccessUrl("/login?logout")
-	            .invalidateHttpSession(true)
-	            .clearAuthentication(true)
-	            .deleteCookies("JSESSIONID")
 	      );
-
+	    
 	    http.exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
 	        if (isVaadinInternalRequest(request)) {
 	            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -111,6 +108,8 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 	    }));
 
 	    http.authorizeHttpRequests(auth -> auth
+	    		.requestMatchers(new AntPathRequestMatcher("/login")).permitAll()
+	    		.requestMatchers(new AntPathRequestMatcher("/login/**")).permitAll()
 	    	    .requestMatchers(new AntPathRequestMatcher("/captcha-image")).permitAll()
 	    	    .requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll()
 	    	    .requestMatchers(new AntPathRequestMatcher("/login", "POST")).permitAll()
@@ -122,8 +121,40 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 	    	);
 
 	    super.configure(http);
-	   
+	    http.logout(logout -> logout
+	    	    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+	    	    .logoutSuccessUrl("/login?logout")
+	    	    .invalidateHttpSession(true)
+	    	    .clearAuthentication(true)
+	    	    .deleteCookies("JSESSIONID")
+	    	);
 	    setLoginView(http, Login.class);
+	    http.formLogin(form -> form
+	    	    .successHandler((request, response, authentication) -> {
+
+	    	        String username = authentication.getName();
+	    	        String roles = authentication.getAuthorities().stream()
+	    	                .map(a -> a.getAuthority())
+	    	                .distinct()
+	    	                .sorted()
+	    	                .collect(java.util.stream.Collectors.joining(", "));
+	    	        String ip = auditService.getRealClientIp(request);
+	    	        auditService.saveAuthAudit("Login",  "Login Success",username, "Roles:"+roles, ip);
+	    	        
+	    	        response.sendRedirect("/"); // change if you want a specific landing page
+	    	    })
+	    	    .failureHandler((request, response, exception) -> {
+
+	    	        String username = request.getParameter("username");
+	    	        if (username == null || username.isBlank()) username = "UNKNOWN";
+	    	        String ip = auditService.getRealClientIp(request);
+
+					auditService.saveAuthAudit("Login", "Login Fail",username,  
+							"Reason=" + exception.getClass().getSimpleName(),ip);
+					
+	    	        response.sendRedirect("/login?error");
+	    	    })
+	    	);
 	}
 
 	private boolean isVaadinInternalRequest(HttpServletRequest request) {

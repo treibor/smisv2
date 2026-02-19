@@ -2,6 +2,7 @@ package com.smis.entity;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.smis.entity.master.District;
 import com.smis.entity.master.MasterBlock;
@@ -49,6 +50,9 @@ public class Scheme implements Serializable{
 	@JoinColumn(name="scheme_master_id")
 	@NotNull(message = "Please Select The Scheme")
 	private MasterScheme masterScheme;
+	private Users updatedBy;
+	private LocalDateTime updatedOn;
+	
 	public long getId() {
 		return id;
 	}
@@ -117,6 +121,18 @@ public class Scheme implements Serializable{
 	}
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+	public Users getUpdatedBy() {
+		return updatedBy;
+	}
+	public void setUpdatedBy(Users updatedBy) {
+		this.updatedBy = updatedBy;
+	}
+	public LocalDateTime getUpdatedOn() {
+		return updatedOn;
+	}
+	public void setUpdatedOn(LocalDateTime updatedOn) {
+		this.updatedOn = updatedOn;
 	}
 	
 	

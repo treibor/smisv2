@@ -15,7 +15,7 @@ import org.springframework.core.io.Resource;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
-import com.smis.entity.Impldistrict;
+
 import com.smis.entity.Installment;
 import com.smis.entity.Scheme;
 import com.smis.entity.Work;
@@ -23,7 +23,6 @@ import com.smis.entity.Year;
 import com.smis.util.NotificationUtil;
 import com.vaadin.componentfactory.pdfviewer.PdfViewer;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -60,7 +59,7 @@ public class ReportView extends VerticalLayout {
 	ComboBox<String> reportTypemp = new ComboBox<String>("Select Report Type");
 	ComboBox<Year> yearmp = new ComboBox<Year>("Year");
 	
-	ComboBox<Impldistrict> implDistrict = new ComboBox<Impldistrict>("Implementing District");
+	//ComboBox<Impldistrict> implDistrict = new ComboBox<Impldistrict>("Implementing District");
 	DatePicker fromDate = new DatePicker("Print By Dates");
 	DatePicker toDate = new DatePicker();
 	Notification notify = new Notification();
@@ -88,9 +87,9 @@ public class ReportView extends VerticalLayout {
 	
 
 	public void initializeMlaItems() {
-		block.setItems(service.getAllBlocks(true));
-		scheme.setItems(service.getAllSchemes());
-		consti.setItems(service.getAllConstituencies());
+		block.setItems(service.getBlocksByUser());
+		scheme.setItems(service.getSchemesByUser());
+		consti.setItems(service.getConstituenciesByUser());
 		year.setItems(service.getAllYears());
 		block.setItemLabelGenerator(Block::getBlockLabel);
 		scheme.setItemLabelGenerator(Scheme::getSchemeLabel);

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.smis.audit.Audit;
+import com.smis.dbservice.AuditService;
 import com.smis.dbservice.Dbservice;
 import com.smis.dbservice.FileStorageService;
 import com.smis.entity.Block;
@@ -65,7 +65,6 @@ public class WorkForm extends VerticalLayout {
 	Dbservice service;
 	private FileStorageService fileStorageService;
 	//FileStorageService fileStorageService;
-	private Audit audit;
 	private Work work;
 	//private WorkView workview;
 	//private Installment installment;
@@ -140,10 +139,10 @@ public class WorkForm extends VerticalLayout {
 	VerticalLayout vlayout2;
 	VerticalLayout vlayoutrf;
 	Users loggedUser;
-	public WorkForm(Dbservice service, Audit audit,FileStorageService fileStorageService ) {
+	public WorkForm(Dbservice service, FileStorageService fileStorageService ) {
 		block.addValueChangeListener(e -> getVillages(e.getValue()));
 		this.service = service;
-		this.audit=audit;
+		
 		this.fileStorageService=fileStorageService;
 		//System.out.println("Audit"+audit);
 		this.loggedUser=service.getLoggedUser();
@@ -199,10 +198,10 @@ public class WorkForm extends VerticalLayout {
 		noOfInstallments.setMax(3);
 		workName.setHeight("100px");
 		noOfInstallments.setValue(1);
-		scheme.setItems(service.getAllSchemes());
+		scheme.setItems(service.getSchemesByUser());
 		year.setItems(service.getAllYears());
-		constituency.setItems(service.getAllConstituencies());
-		block.setItems(service.getAllBlocks(true));
+		constituency.setItems(service.getConstituenciesByUser());
+		block.setItems(service.getBlocksByUser());
 		scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
 		year.setItemLabelGenerator(Year::getYearLabel);
 		constituency.setItemLabelGenerator(constituency ->  constituency.getConstituencyLabel() + "-" + constituency.getConstituencyMLA());
@@ -1083,10 +1082,6 @@ public class WorkForm extends VerticalLayout {
 	        ph.setRemarks(roRemarks.getValue());
 	        ph.setDocument(safeFileName);
 	        service.saveProcessHistory(ph);
-
-	        // 11) Audit (keep your style)
-	        audit.saveAudit(work, latest, current.getStepName() + "-" + installmentNo, "Entry");
-
 	        // 12) Update Work current step (and optional status)
 	        work.setProcessflow(nextStep);
 	        work.setUpdatedBy(user);

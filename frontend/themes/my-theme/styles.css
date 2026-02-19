@@ -138,8 +138,3 @@ a.drawer-tile-item[aria-current="page"] {
 .history-dialog::part(title) {
   color: var(--lumo-base-color);
 }
-vaadin-dialog-overlay,
-vaadin-confirm-dialog-overlay {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}

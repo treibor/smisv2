@@ -3,6 +3,8 @@ package com.smis.entity;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import com.smis.entity.master.District;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 @Entity
 @Table(name="AuditTrail")
 public class AuditTrail implements Serializable {
@@ -23,9 +26,9 @@ public class AuditTrail implements Serializable {
 	private long id;
 	private String action;
 	private String ipAddress;
-	 @ManyToOne
-	    @JoinColumn(name = "userId", nullable = false)
-	    private Users actionBy;
+	@ManyToOne
+	@JoinColumn(name = "userId", nullable = true)
+	private Users actionBy;
 	private LocalDateTime actionOn;
 	@Column(length = 1000)
 	private String details;
@@ -33,7 +36,9 @@ public class AuditTrail implements Serializable {
 	private String otherDetails;
 	private String process;
 	//private int workCode;
-	
+	@ManyToOne
+	@JoinColumn(name="districtId")
+	private District district;
 	
 	public long getId() {
 		return id;
@@ -86,6 +91,18 @@ public class AuditTrail implements Serializable {
 	}
 	public void setOtherDetails(String otherDetails) {
 		this.otherDetails = otherDetails;
+	}
+
+	public District getDistrict() {
+		return district;
+	}
+
+	public void setDistrict(District district) {
+		this.district = district;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 	
 	

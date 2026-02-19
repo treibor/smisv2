@@ -74,9 +74,7 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("""
 		    SELECT DISTINCT w
 		    FROM Work w
-		    WHERE w.isDeleted = false
-		      AND w.isRecasted = false
-		      AND EXISTS (
+		    WHERE   EXISTS (
 		            SELECT 1
 		            FROM ProcessHistory ph
 		            WHERE ph.work = w

@@ -10,7 +10,7 @@ import java.util.Optional;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.smis.audit.Audit;
+import com.smis.dbservice.AuditService;
 //import com.identity.views.CheckBox;
 import com.smis.dbservice.Dbservice;
 import com.smis.dbservice.FileStorageService;
@@ -62,8 +62,6 @@ public class WorkView extends VerticalLayout {
 	private static final long serialVersionUID = 1L;
 	Dbservice service;
 	@Autowired
-	Audit audit;
-	//@Autowired
 	FileStorageService fileStorageService;
 	Grid<Work> grid = new Grid<>(Work.class);
 	Grid<Work> gridhistory = new Grid<>(Work.class);
@@ -82,9 +80,8 @@ public class WorkView extends VerticalLayout {
 	boolean isSuper;
 	private Users loggedUser;
 
-	public WorkView(Dbservice service, Audit audit, FileStorageService fss) {
+	public WorkView(Dbservice service,  FileStorageService fss) {
 		this.service = service;
-		this.audit = audit;
 		this.fileStorageService=fss;
 		setSizeFull();
 		this.loggedUser = service.getLoggedUser();
@@ -100,21 +97,13 @@ public class WorkView extends VerticalLayout {
 
 	}
 
-	public boolean checkAuthorityx(ProcessFlow pf) {
-		Users user = service.getLoggedUser();
-		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
-		if (pfu == null) {
-			return false;
-		} else {
-			return true;
-		}
-	}
+	
 
 	private void configureCombos() {
-		block.setItems(service.getAllBlocks(true));
+		block.setItems(service.getBlocksByUser());
 		// block.setClearButtonVisible(true);
-		consti.setItems(service.getAllConstituencies());
-		scheme.setItems(service.getAllSchemes());
+		consti.setItems(service.getConstituenciesByUser());
+		scheme.setItems(service.getSchemesByUser());
 		year.setItems(service.getAllYears());
 		block.setClearButtonVisible(true);
 		year.setClearButtonVisible(true);
@@ -205,153 +194,158 @@ public class WorkView extends VerticalLayout {
 	}
 
 	private void showInstallmentsDialog(Work work) {
-	    Dialog dialog = new Dialog();
-	    dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
-	    dialog.setWidth("90vw");
-	    dialog.addClassName("history-dialog");
+	    try {
+			Dialog dialog = new Dialog();
+			dialog.setHeaderTitle(work.getWorkCode() + " - " + work.getWorkName());
+			dialog.setWidth("90vw");
+			dialog.addClassName("history-dialog");
 
-	    Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
-	    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-	    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+			Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
+			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+			DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-	    installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
-	    installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released").setResizable(true);
-	    installmentGrid.addColumn(inst -> inst.getInstallmentDate() != null ? inst.getInstallmentDate().format(dateFormatter) : "")
-	            .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
+			installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
+			installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released").setResizable(true);
+			installmentGrid.addColumn(inst -> inst.getInstallmentDate() != null ? inst.getInstallmentDate().format(dateFormatter) : "")
+			        .setHeader("Released Date").setResizable(true).setSortable(true).setAutoWidth(true);
+			installmentGrid.addColumn(Installment::getInstallmentLetter).setHeader("Letter No.").setResizable(true);
 
-	    // Release Order (filesystem)
-	    installmentGrid.addComponentColumn(installment -> {
-	        String ro = installment.getGeneratedReleaseOrder();
+			// Release Order (filesystem)
+			installmentGrid.addComponentColumn(installment -> {
+			    String ro = installment.getGeneratedReleaseOrder();
 
-	        if (ro == null || ro.isBlank()) {
-	            return new Span("");
-	        }
+			    if (ro == null || ro.isBlank()) {
+			        return new Span("");
+			    }
 
-	        if (!fileStorageService.exists(ro)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+			    if (!fileStorageService.exists(ro)) {
+			        Span missing = new Span("Missing file");
+			        missing.getStyle().set("color", "var(--lumo-error-text-color)");
+			        missing.getStyle().set("font-weight", "500");
+			        return missing;
+			    }
 
-	        StreamResource resource = new StreamResource(ro, () -> {
-	            try {
-	                return fileStorageService.open(ro);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+			    StreamResource resource = new StreamResource(ro, () -> {
+			        try {
+			            return fileStorageService.open(ro);
+			        } catch (IOException ex) {
+			            throw new UncheckedIOException(ex);
+			        }
+			    });
+			    resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+			    Anchor link = new Anchor(resource, "View");
+			    link.setTarget("_blank");
+			    return link;
 
-	    }).setHeader("Generated RO").setAutoWidth(true);
+			}).setHeader("Generated RO").setAutoWidth(true);
 
-	    installmentGrid.addComponentColumn(installment -> {
-	        String roPath = installment.getReleaseOrder();
+			installmentGrid.addComponentColumn(installment -> {
+			    String roPath = installment.getReleaseOrder();
 
-	        if (roPath == null || roPath.isBlank()) {
-	            return new Span("");
-	        }
+			    if (roPath == null || roPath.isBlank()) {
+			        return new Span("");
+			    }
 
-	        if (!fileStorageService.exists(roPath)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+			    if (!fileStorageService.exists(roPath)) {
+			        Span missing = new Span("Missing file");
+			        missing.getStyle().set("color", "var(--lumo-error-text-color)");
+			        missing.getStyle().set("font-weight", "500");
+			        return missing;
+			    }
 
-	        StreamResource resource = new StreamResource(roPath, () -> {
-	            try {
-	                return fileStorageService.open(roPath);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+			    StreamResource resource = new StreamResource(roPath, () -> {
+			        try {
+			            return fileStorageService.open(roPath);
+			        } catch (IOException ex) {
+			            throw new UncheckedIOException(ex);
+			        }
+			    });
+			    resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+			    Anchor link = new Anchor(resource, "View");
+			    link.setTarget("_blank");
+			    return link;
 
-	    }).setHeader("Uploaded RO").setAutoWidth(true);
-	    installmentGrid.addComponentColumn(installment -> {
-	        String rfPath = installment.getFundDocument();
+			}).setHeader("Uploaded RO").setAutoWidth(true);
+			installmentGrid.addComponentColumn(installment -> {
+			    String rfPath = installment.getFundDocument();
 
-	        if (rfPath == null || rfPath.isBlank()) {
-	            return new Span("");
-	        }
+			    if (rfPath == null || rfPath.isBlank()) {
+			        return new Span("");
+			    }
 
-	        if (!fileStorageService.exists(rfPath)) {
-	            Span missing = new Span("Missing file");
-	            missing.getStyle().set("color", "var(--lumo-error-text-color)");
-	            missing.getStyle().set("font-weight", "500");
-	            return missing;
-	        }
+			    if (!fileStorageService.exists(rfPath)) {
+			        Span missing = new Span("Missing file");
+			        missing.getStyle().set("color", "var(--lumo-error-text-color)");
+			        missing.getStyle().set("font-weight", "500");
+			        return missing;
+			    }
 
-	        StreamResource resource = new StreamResource(rfPath, () -> {
-	            try {
-	                return fileStorageService.open(rfPath);
-	            } catch (IOException ex) {
-	                throw new UncheckedIOException(ex);
-	            }
-	        });
-	        resource.setContentType("application/pdf");
+			    StreamResource resource = new StreamResource(rfPath, () -> {
+			        try {
+			            return fileStorageService.open(rfPath);
+			        } catch (IOException ex) {
+			            throw new UncheckedIOException(ex);
+			        }
+			    });
+			    resource.setContentType("application/pdf");
 
-	        Anchor link = new Anchor(resource, "View");
-	        link.setTarget("_blank");
-	        return link;
+			    Anchor link = new Anchor(resource, "View");
+			    link.setTarget("_blank");
+			    return link;
 
-	    }).setHeader("Fund Receipt").setAutoWidth(true);
-	    installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
-	    installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
-	            .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
+			}).setHeader("Fund Receipt").setAutoWidth(true);
+			installmentGrid.addColumn(Installment::getUcLetter).setHeader("UC Letter No").setResizable(true);
+			installmentGrid.addColumn(inst -> inst.getUcDate() != null ? inst.getUcDate().format(dateFormatter) : "")
+			        .setHeader("UC Date").setResizable(true).setSortable(true).setAutoWidth(true);
 
-	    // UC Document (filesystem)
-	    installmentGrid.addComponentColumn(installment -> {
-	        String ucPath = installment.getUcDocument();
-	        if (ucPath != null && !ucPath.isBlank()) {
+			// UC Document (filesystem)
+			installmentGrid.addComponentColumn(installment -> {
+			    String ucPath = installment.getUcDocument();
+			    if (ucPath != null && !ucPath.isBlank()) {
 
-	            String downloadName = ucPath; // or "uc.pdf"
+			        String downloadName = ucPath; // or "uc.pdf"
 
-	            StreamResource resource = new StreamResource(downloadName, () -> {
-	                try {
-	                    return fileStorageService.open(ucPath); // ✅ FIXED: open UC path
-	                } catch (IOException ex) {
-	                    throw new UncheckedIOException(ex);
-	                }
-	            });
-	            resource.setContentType("application/pdf");
+			        StreamResource resource = new StreamResource(downloadName, () -> {
+			            try {
+			                return fileStorageService.open(ucPath); // ✅ FIXED: open UC path
+			            } catch (IOException ex) {
+			                throw new UncheckedIOException(ex);
+			            }
+			        });
+			        resource.setContentType("application/pdf");
 
-	            Anchor link = new Anchor(resource, "View");
-	            link.setTarget("_blank");
-	            return link;
-	        }
-	        return new Span("");
-	    }).setHeader("UC Documents").setAutoWidth(true);
+			        Anchor link = new Anchor(resource, "View");
+			        link.setTarget("_blank");
+			        return link;
+			    }
+			    return new Span("");
+			}).setHeader("UC Documents").setAutoWidth(true);
 
-	    
+			
 
-	    Button closeButton = new Button("Close", e -> dialog.close());
-	    
-	    ButtonUtil.applyCloseStyle(closeButton);
-	    
-	    List<Installment> installments = service.getInstallments(work);
-	    installmentGrid.setItems(installments);
-	    installmentGrid.setAllRowsVisible(true);
+			Button closeButton = new Button("Close", e -> dialog.close());
+			
+			ButtonUtil.applyCloseStyle(closeButton);
+			
+			List<Installment> installments = service.getInstallments(work);
+			installmentGrid.setItems(installments);
+			installmentGrid.setAllRowsVisible(true);
 
-	   
+   
 
-	    dialog.setModal(true);
-	    dialog.setCloseOnOutsideClick(false);
-	    dialog.setCloseOnEsc(false);
+			dialog.setModal(true);
+			dialog.setCloseOnOutsideClick(false);
+			dialog.setCloseOnEsc(false);
 
-	    dialog.add(installmentGrid);
-	    dialog.getFooter().add( closeButton);
-	    dialog.open();
+			dialog.add(installmentGrid);
+			dialog.getFooter().add( closeButton);
+			dialog.open();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void showHistoryDialog(Work work) {
@@ -529,7 +523,7 @@ public class WorkView extends VerticalLayout {
 
 
 	public void configureForm() {
-		workform = new WorkForm(service, audit, fileStorageService);
+		workform = new WorkForm(service, fileStorageService);
 		workform.setWidth("40%");
 		workform.addListener(WorkForm.SaveEvent.class, this::saveWork);
 		workform.addListener(WorkForm.DeleteEvent.class, this::deleteWork);
@@ -538,45 +532,10 @@ public class WorkView extends VerticalLayout {
 	        updateGrid();
 	    });
 	}
-
-	public void saveWork(WorkForm.SaveEvent event) {
-		long a = event.getWork().getWorkCode();
-		service.saveWork(event.getWork());
-
-		updateGrid();
-		// updateList();
-		long b = service.getWorkCode();
-
-		// closeEditor();
-		if (a == b) {
-			addWorkAgain(event.getWork());
-		} else {
-			closeEditor();
-		}
-	}
-
-	private void addWorkAgain(Work work) {
-		// workform.save.setEnabled(true);
-		grid.asSingleSelect().clear();
-		closeAllAccordions();
-		Work newWork = new Work();
-		newWork.setBlock(work.getBlock());
-		newWork.setConstituency(work.getConstituency());
-		newWork.setSanctionDate(work.getSanctionDate());
-		newWork.setScheme(work.getScheme());
-		newWork.setYear(work.getYear());
-		newWork.setSanctionDate(work.getSanctionDate());
-		newWork.setSanctionNo(work.getSanctionNo());
-
-		editWork(newWork);
-
-	}
-
 	public void deleteWork(WorkForm.DeleteEvent event) {
 		Work work = event.getWork();
-		audit.saveAudit(work, "Delete Work", "Delete");
+		work.setIsDeleted(true);
 		service.deleteWork(work);
-		// updateList();
 		updateGrid();
 		closeEditor();
 
@@ -598,6 +557,38 @@ public class WorkView extends VerticalLayout {
 		editWork(new Work());
 
 	}
+	public void saveWork(WorkForm.SaveEvent event) {
+
+	    Work work = event.getWork();
+
+	    boolean isNew = (work.getWorkId() == 0L);  // Or work.getWorkCode() == 0
+
+	    service.saveWork(work);
+
+	    updateGrid();
+
+	    if (isNew) {
+	    	addWorkAgain(work);
+	    } else {
+	    	closeEditor();
+	    }
+	}
+	private void addWorkAgain(Work work) {
+		// workform.save.setEnabled(true);
+		grid.asSingleSelect().clear();
+		closeAllAccordions();
+		Work newWork = new Work();
+		newWork.setBlock(work.getBlock());
+		newWork.setConstituency(work.getConstituency());
+		newWork.setSanctionDate(work.getSanctionDate());
+		newWork.setScheme(work.getScheme());
+		newWork.setYear(work.getYear());
+		newWork.setSanctionDate(work.getSanctionDate());
+		newWork.setSanctionNo(work.getSanctionNo());
+		editWork(newWork);
+	}
+
+	
 
 	private void editWork(Work work) {
 	    try {

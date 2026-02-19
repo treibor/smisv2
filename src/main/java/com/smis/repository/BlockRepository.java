@@ -22,15 +22,14 @@ public interface BlockRepository extends JpaRepository<Block, Long>{
 	@Query("""
 			SELECT b
 			FROM Block b
-			WHERE b.inUse = :inUse
-			  AND b IN (
+			WHERE  b IN (
 			      SELECT bu.block
 			      FROM BlockUser bu
 			      WHERE bu.user = :user
 			  )
 			""")
-			List<Block> findBlocksByUserAndStatus(@Param("user") Users user,
-			                                      @Param("inUse") boolean inUse);
+			List<Block> findBlocksByUser(@Param("user") Users user
+			                                      );
 	@Query("SELECT b FROM Block b " +
 		       "WHERE b.inUse = :inUse " +
 		       "AND b IN (SELECT bu.block FROM BlockUser bu WHERE bu.user = :user)")

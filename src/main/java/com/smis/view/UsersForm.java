@@ -100,11 +100,11 @@ public class UsersForm extends FormLayout {
 
 	    processflow.setItems(service.getAllProcessFlow());
 	    processflow.setItemLabelGenerator(ProcessFlow::getStepName);
-	    blockc.setItems(service.getAllBlocks(false));
+	    blockc.setItems(service.getAllBlocksAndInUse());
 	    blockc.setItemLabelGenerator(Block::getBlockLabel);
-	    scheme.setItems(service.getAllSchemesWIthNotInUse());
+	    scheme.setItems(service.getAllSchemesAndInUse());
 	    scheme.setItemLabelGenerator(Scheme::getSchemeLabel);
-	    consti.setItems(service.getAllConstituenciesWIthNotInUse());
+	    consti.setItems(service.getAllConstituenciesAndInUse());
 	    consti.setItemLabelGenerator(consti-> consti.getConstituencyLabel()+"-"+consti.getConstituencyMLA());
 	    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 	    save.addClickShortcut(Key.ENTER);
@@ -296,7 +296,7 @@ public class UsersForm extends FormLayout {
 		refreshblockgrid(user);
 	}
 	private void addAllBlocks() {
-	    List<Block> allBlocks = service.getAllBlocks(false); // Fetch all Block entries from DB
+	    List<Block> allBlocks = service.getAllBlocksAndInUse(); // Fetch all Block entries from DB
 
 	    if (allBlocks.isEmpty()) {
 	        Notification.show("No blocks found").addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -375,7 +375,7 @@ public class UsersForm extends FormLayout {
 		refreshschemegrid(user);
 	}
 	private void addAllSchemes() {
-	    List<Scheme> allSchemes = service.getAllSchemes(); // Fetch all Scheme entries from DB
+	    List<Scheme> allSchemes = service.getAllSchemesAndInUse(); // Fetch all Scheme entries from DB
 
 	    if (allSchemes.isEmpty()) {
 	        Notification.show("No schemes found").addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -462,7 +462,7 @@ public class UsersForm extends FormLayout {
 	private void addAllConstituencies() {
 
 		try {
-			List<Constituency> allConsti = service.getAllConstituencies(); // Fetch all Block entries from DB
+			List<Constituency> allConsti = service.getAllConstituenciesAndInUse(); // Fetch all Block entries from DB
 			if (allConsti.isEmpty()) {
 			    Notification.show("No Constituency found").addThemeVariants(NotificationVariant.LUMO_ERROR);
 			    return;

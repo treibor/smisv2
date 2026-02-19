@@ -1,7 +1,6 @@
 package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.Impldistrict;
 import com.smis.entity.Users;
 import com.smis.entity.master.District;
 import com.smis.entity.master.State;
@@ -24,7 +23,6 @@ public class SuperMasterView extends VerticalLayout {
 	
 	Dbservice service;
 	Grid<District> dgrid=new Grid<>(District.class);
-	Grid<Impldistrict> idgrid=new Grid<>(Impldistrict.class);
 	Grid<State> sgrid=new Grid<>(State.class);
 	Grid<Users> ugrid=new Grid<>(Users.class);
 	StateForm stateform;
@@ -72,8 +70,6 @@ public class SuperMasterView extends VerticalLayout {
 		sgrid.setSizeFull();
 		ugrid.setSizeFull();
 		sgrid.setColumns("stateId", "stateName","stateHq", "stateLabel");
-		idgrid.setSizeFull();
-		idgrid.setColumns("districtCode", "districtName","districtHq","deputyCommissioner","deputyCommissionerName");
 		dgrid.getColumns().forEach(col-> col.setAutoWidth(true));
 		dgrid.setSizeFull();
 		dgrid.setColumns("districtCode", "districtName","districtHq","deputyCommissioner","deputyCommissionerName","districtAddress","districtEmail", "districtFax","districtPhone", "districtPin", "districtLabel");
@@ -82,17 +78,16 @@ public class SuperMasterView extends VerticalLayout {
 		ugrid.addColumn(users->users.getDistrict().getDistrictName()).setHeader("District");
 		ugrid.addColumn(users->users.getDistrict().getState().getStateName()).setHeader("State");
 		dgrid.getColumns().forEach(col-> col.setAutoWidth(true));
-		idgrid.getColumns().forEach(col-> col.setAutoWidth(true));
 		sgrid.getColumns().forEach(col-> col.setAutoWidth(true));
 		sgrid.asSingleSelect().addValueChangeListener(e-> editState(e.getValue()));
 		dgrid.asSingleSelect().addValueChangeListener(e-> editDistrict(e.getValue()));
-		idgrid.asSingleSelect().addValueChangeListener(e-> editImplDistrict(e.getValue()));
+		
 	}
 	
 	private Component getContent() {
 		VerticalLayout vlayout=new VerticalLayout(sgrid, ugrid);
 		vlayout.setSizeFull();
-		HorizontalLayout content=new HorizontalLayout(vlayout, dgrid, idgrid, stateform, distform);
+		HorizontalLayout content=new HorizontalLayout(vlayout, dgrid, stateform, distform);
 		content.setFlexGrow(1, vlayout);
 		content.setFlexGrow(1, dgrid);
 		content.setFlexGrow(1, distform);
@@ -187,20 +182,8 @@ public class SuperMasterView extends VerticalLayout {
 	
 	
 
-	private void addImplDistrict() {
-		idgrid.asSingleSelect().clear();
-		editImplDistrict(new Impldistrict());
-	}
+	
 
-	private void editImplDistrict(Impldistrict district) {
-		// TODO Auto-generated method stub
-		stateform.setVisible(false);
-		distform.setVisible(false);
-		if (district == null) {
-			closeImplDistrictEditor();
-		} else {
-				//constiform.setVisible(false);
-		}
-	}
+	
 
 }

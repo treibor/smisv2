@@ -1,6 +1,7 @@
 package com.smis.entity;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import com.smis.entity.master.District;
 import com.smis.entity.master.MasterConstituency;
@@ -36,6 +37,24 @@ public class Constituency implements Serializable{
 	@JoinColumn(name="districtId")
 	@NotNull
 	private District district;
+	private Users updatedBy;
+	private LocalDateTime updatedOn;
+	public Users getUpdatedBy() {
+		return updatedBy;
+	}
+
+	public void setUpdatedBy(Users updatedBy) {
+		this.updatedBy = updatedBy;
+	}
+
+	public LocalDateTime getUpdatedOn() {
+		return updatedOn;
+	}
+
+	public void setUpdatedOn(LocalDateTime updatedOn) {
+		this.updatedOn = updatedOn;
+	}
+
 	public Constituency() {
 		super();
 		// TODO Auto-generated constructor stub

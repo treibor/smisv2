@@ -1,7 +1,6 @@
 package com.smis.view;
 
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.Impldistrict;
 import com.smis.entity.master.District;
 import com.smis.entity.master.State;
 import com.smis.util.NotificationUtil;
@@ -15,7 +14,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -47,7 +45,7 @@ public class DistrictForm extends FormLayout {
 	Button delete= new Button("Delete");
 	Notification notify=new Notification();
 	private District district;
-	private Impldistrict impldist;
+	//private Impldistrict impldist;
 	public DistrictForm(Dbservice service) {
 		this.service=service;
 		state.setItems(service.getAllStates());

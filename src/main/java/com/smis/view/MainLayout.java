@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +15,6 @@ import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
 import com.smis.entity.master.District;
 import com.smis.entity.master.State;
-import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
@@ -61,8 +59,6 @@ public class MainLayout extends AppLayout {
 	private static final long serialVersionUID = 1L;
 	Anchor anchor = new Anchor("", "MLALADS 1.0");
 	Dbservice service;
-	@Autowired
-	SecurityService securityService;
 	Dialog dialog;
 	Dialog userdialog;
 	Dialog aboutdialog;
@@ -268,7 +264,7 @@ public class MainLayout extends AppLayout {
 
 		//	subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> securityService.logout());
 		subMenu.addItem(menuItem(VaadinIcon.SIGN_OUT, "Logout"), e -> {
-		        securityService.logout();
+		        logout();
 		});
 		H3 logo = new H3("MLALADS  || " +
 		// service.getDistrict().getDistrictName().toUpperCase());
@@ -282,7 +278,9 @@ public class MainLayout extends AppLayout {
 
 		addToNavbar(header);
 	}
-
+	public void logout() {
+		UI.getCurrent().getPage().setLocation("/logout");
+	}
 	private void openAboutDialog() {
 		if (aboutdialog != null) {
 			aboutdialog = null;
@@ -345,7 +343,7 @@ public class MainLayout extends AppLayout {
 		confirmpwd.setRevealButtonVisible(false);
 		// oldpwd.setValue("");
 		// cancelButton.setText(//userType);
-		cancelButton.addClickListener(e -> securityService.logout());
+		cancelButton.addClickListener(e -> logout());
 		Button saveButton = new Button("Save", e ->
         changePassword(oldpwd, newpwd, confirmpwd, dialog));
 		VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
@@ -458,13 +456,13 @@ public class MainLayout extends AppLayout {
 
 		dialog.setConfirmText("OK");
 		dialog.addConfirmListener(event -> {
-			securityService.logout(); // Call the logout method
+			logout(); // Call the logout method
 			// getUI().ifPresent(ui -> ui.navigate("login")); // Redirect to the login page
 		});
 
 		dialog.open(); // Open the dialog
 	}
-
+	
 	private void createUser() {
 		// TODO Auto-generated method stub
 
@@ -583,7 +581,7 @@ public class MainLayout extends AppLayout {
 			return;
 		}
 		try {
-			if (service.findUser(userName.getValue()) == null) {
+			if (service.findByUserName(userName.getValue()) == null) {
 				Users users = new Users();
 				UsersRoles role = new UsersRoles();
 				users.setDistrict(district.getValue());

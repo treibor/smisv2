@@ -1,11 +1,16 @@
 package com.smis.view;
 
-import com.smis.audit.Audit;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import com.smis.dbservice.AuditService;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Scheme;
+import com.smis.entity.Users;
 import com.smis.entity.Year;
+import com.smis.util.StatusBadgeUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -41,11 +46,12 @@ public class MasterView extends VerticalLayout{
 	Button addYear=new  Button("Financial Year");
 	Button addScheme=new  Button("Scheme");
 	Button addBlock=new  Button("Block");
-	Audit audit;
-	public MasterView(Dbservice services, Audit audit) {
+	Users loggeduser;
+	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+	public MasterView(Dbservice services) {
 		this.service=services;
 		isSuperAdmin=services.isSuperAdmin();
-		this.audit=audit;
+		this.loggeduser=service.getLoggedUser();
 		setSizeFull();
 		configureGrids();
 		configureForms();
@@ -124,24 +130,51 @@ public class MasterView extends VerticalLayout{
 		blockgrid.removeAllColumns();
 		yeargrid.setSizeFull();
 		schemegrid.setSizeFull();
-		constigrid.setColumns("constituencyLabel", "constituencyMLA", "inUse");
-		constigrid.addColumn(constituency->constituency.getMasterConstituency().getConstituencyName()).setHeader("Constituency").setSortable(true);
+		constigrid.removeAllColumns();
+		
+		yeargrid.removeAllColumns();
 		constigrid.addColumn(constituency->constituency.getDistrict().getDistrictName()).setSortable(true).setVisible(isSuperAdmin);
 		constigrid.addColumn(constituency->constituency.getDistrict().getState().getStateName()).setSortable(true).setVisible(isSuperAdmin);
-		schemegrid.setColumns( "schemeDuration",  "schemeDept", "schemeLabel");
-		schemegrid.addColumn(scheme->scheme.getSchemeReport()).setHeader("Report Type");
-		schemegrid.addColumn(scheme->scheme.isInUse()).setHeader("In Use");
-		schemegrid.addColumn(scheme->scheme.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		constigrid.addColumn(constituency->constituency.getMasterConstituency().getConstituencyNo()+"-"+constituency.getMasterConstituency().getConstituencyName()).setHeader("Constituency").setSortable(true);
+		constigrid.addColumn(constituency->constituency.getConstituencyLabel()).setHeader("Label").setSortable(true);
+		constigrid.addColumn(constituency->constituency.getConstituencyMLA()).setHeader("Label").setSortable(true);
+		constigrid.addComponentColumn(constituency -> StatusBadgeUtil.yesNo(constituency.isInUse())).setHeader("In Use") .setAutoWidth(true).setComparator(constituency -> constituency.isInUse());
+		constigrid.addColumn(constituency->constituency.getUpdatedBy()!=null ? constituency.getUpdatedBy().getProfileName():"").setHeader("Updated By").setSortable(true);
+		constigrid.addColumn(constituency->constituency.getUpdatedOn()!=null ? constituency.getUpdatedOn().format(timeFormatter):"").setHeader("Updated On").setSortable(true);
+		//scheme Grid
+		schemegrid.removeAllColumns();
 		schemegrid.addColumn(scheme->scheme.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
+		schemegrid.addColumn(scheme->scheme.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		//schemegrid.setColumns( "schemeDuration",  "schemeDept", "schemeLabel");
+		schemegrid.addColumn(scheme->scheme.getMasterScheme().getSchemeName()).setHeader("Scheme");
+		schemegrid.addColumn(scheme->scheme.getSchemeLabel()).setHeader("Label");
+		schemegrid.addColumn(scheme->scheme.getSchemeDuration()).setHeader("Duration");
+		schemegrid.addColumn(scheme->scheme.getSchemeReport()).setHeader("Report Type");
+		schemegrid.addColumn(scheme->scheme.getSchemeDept()).setHeader("Department");
+		//schemegrid.addColumn(scheme->scheme.isInUse()).setHeader("In Use");
+		schemegrid.addComponentColumn(scheme -> StatusBadgeUtil.yesNo(scheme.isInUse())).setHeader("In Use") .setAutoWidth(true).setComparator(scheme -> scheme.isInUse());
+		schemegrid.addColumn(scheme->scheme.getUpdatedBy() !=null ? scheme.getUpdatedBy().getProfileName():"").setHeader("Updated By");
+		schemegrid.addColumn(scheme->scheme.getUpdatedOn()!=null ? scheme.getUpdatedOn().format(timeFormatter):"").setHeader("Updated On");
+		
+		blockgrid.addColumn(block ->block.getMasterBlock().getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		blockgrid.addColumn(block ->block.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
 		blockgrid.addColumn(block ->block.getMasterBlock().getBlockName()).setHeader("Block").setSortable(true);
-		blockgrid.addColumn(block ->block.getBdoName()).setHeader("Office Head");
 		blockgrid.addColumn(block ->block.getBlockLabel()).setHeader("Label").setSortable(true);
-		blockgrid.addColumn(block ->block.isInUse()).setHeader("In Use");
-		//blockgrid.addColumn(block ->block.getMasterBlock().getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
-		//blockgrid.addColumn(block ->block.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
-		yeargrid.setColumns("yearLabel", "inUse");
-		yeargrid.addColumn( year -> year.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		blockgrid.addColumn(block ->block.getBdoName()).setHeader("Office Head");
+		//blockgrid.addColumn(block ->block.isInUse()).setHeader("In Use");
+		blockgrid.addComponentColumn(block -> StatusBadgeUtil.yesNo(block.isInUse())).setHeader("In Use") .setAutoWidth(true).setComparator(block -> block.isInUse());
+		blockgrid.addColumn(block ->block.getUpdatedBy()!=null ? block.getUpdatedBy().getProfileName():"").setHeader("Updated By");
+		blockgrid.addColumn(block ->block.getUpdatedOn() !=null ? block.getUpdatedOn().format(timeFormatter):"").setHeader("Updated On");
+		
+		yeargrid.removeAllColumns();
 		yeargrid.addColumn( year -> year.getDistrict().getState().getStateName()).setHeader("State").setSortable(true).setVisible(isSuperAdmin);
+		yeargrid.addColumn( year -> year.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setVisible(isSuperAdmin);
+		yeargrid.addColumn( year -> year.getMasterYear().getYearName()).setHeader("Year").setSortable(true);
+		yeargrid.addColumn( year -> year.getYearLabel()).setHeader("Label").setSortable(true);
+		yeargrid.addComponentColumn(year -> StatusBadgeUtil.yesNo(year.isInUse())).setHeader("In Use") .setAutoWidth(true).setComparator(year -> year.isInUse());
+		yeargrid.addColumn( year -> year.getUpdatedBy()!=null ? year.getUpdatedBy().getProfileName():"").setHeader("Updated By").setSortable(true);
+		yeargrid.addColumn( year -> year.getUpdatedOn()!=null ? year.getUpdatedOn().format(timeFormatter):"").setHeader("Updated On").setSortable(true);
+		
 		constigrid.getColumns().forEach(col-> col.setAutoWidth(true));
 		schemegrid.getColumns().forEach(col-> col.setAutoWidth(true));
 		blockgrid.getColumns().forEach(col-> col.setAutoWidth(true));
@@ -179,10 +212,10 @@ public class MasterView extends VerticalLayout{
 		//return toolbar;
 	}
 	public void updateGrids() {
-		constigrid.setItems(service.getAllConstituenciesWIthNotInUse());
-		schemegrid.setItems(service.getAllSchemesWIthNotInUse());
-		blockgrid.setItems(service.getAllBlocks(false));
-		yeargrid.setItems(service.getAllYearsWIthNotInUse());
+		constigrid.setItems(service.getAllConstituencies());
+		schemegrid.setItems(service.getAllSchemes());
+		blockgrid.setItems(service.getAllBlocks());
+		yeargrid.setItems(service.getAllYearsForAdmin());
 	}
 	
 	private void closeConstiEditor() {
@@ -195,7 +228,8 @@ public class MasterView extends VerticalLayout{
 
 	public void saveConstituency(ConstiForm.SaveEvent event) {
 		Constituency consti=event.getConstituency();
-		audit.saveLoginAudit("Save", "Save Constituency", consti.getConstituencyLabel(), consti.getConstituencyMLA());
+		consti.setUpdatedOn(LocalDateTime.now());
+		consti.setUpdatedBy(loggeduser);
 		service.saveConstituency(consti);
 		updateGrids();
 		closeConstiEditor();
@@ -203,7 +237,6 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteConstituency(ConstiForm.DeleteEvent event) {
 		Constituency consti=event.getConstituency();
-		audit.saveLoginAudit("Delete", "Delete Constituency", consti.getConstituencyLabel(), consti.getConstituencyMLA());
 		service.deleteConstituency(consti);
 		updateGrids();
 		closeConstiEditor();
@@ -235,7 +268,8 @@ public class MasterView extends VerticalLayout{
 		
 		try {
 			Year year=event.getYear();
-			audit.saveLoginAudit("Save", "Save Year", year.getYearLabel(), "");
+			year.setUpdatedOn(LocalDateTime.now());
+			year.setUpdatedBy(loggeduser);
 			service.saveYear(year);
 			updateGrids();
 			closeYearEditor();
@@ -247,7 +281,6 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteYear(YearForm.DeleteEvent event) {
 		Year year=event.getYear();
-		audit.saveLoginAudit("Delete", "Delete Year", year.getId()+"-"+year.getYearLabel(), "");
 		service.deleteYear(year);
 		updateGrids();
 		closeYearEditor();
@@ -276,7 +309,8 @@ public class MasterView extends VerticalLayout{
 
 	public void saveScheme(SchemeForm.SaveEvent event) {
 		Scheme scheme=event.getScheme();
-		audit.saveLoginAudit("Save", "Save Scheme", scheme.getSchemeLabel(), scheme.getSchemeNameLong());
+		scheme.setUpdatedOn(LocalDateTime.now());
+		scheme.setUpdatedBy(loggeduser);
 		service.saveScheme(scheme);
 		updateGrids();
 		closeSchemeEditor();
@@ -284,14 +318,12 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteScheme(SchemeForm.DeleteEvent event) {
 		Scheme scheme=event.getScheme();
-		audit.saveLoginAudit("Delete", "Delete Scheme", scheme.getId()+"-"+scheme.getSchemeLabel(), scheme.getSchemeNameLong());
 		service.deleteScheme(event.getScheme());
 		updateGrids();
 		closeSchemeEditor();
 	}
 
 	private void addScheme() {
-		schemegrid.asSingleSelect().clear();
 		editScheme(new Scheme());
 	}
 
@@ -316,7 +348,8 @@ public class MasterView extends VerticalLayout{
 
 	public void saveBlock(BlockForm.SaveEvent event) {
 		Block block=event.getBlock();
-		audit.saveLoginAudit("Save", "Save Block", block.getId()+"-"+block.getBlockLabel(), block.getBlockLabel());
+		block.setUpdatedOn(LocalDateTime.now());
+		block.setUpdatedBy(loggeduser);
 		service.saveBlock(block);
 		updateGrids();
 		closeBlockEditor();
@@ -324,7 +357,6 @@ public class MasterView extends VerticalLayout{
 
 	public void deleteBlock(BlockForm.DeleteEvent event) {
 		Block block=event.getBlock();
-		audit.saveLoginAudit("Delete", "Delete Block", block.getId()+"-"+block.getBlockLabel(), block.getBlockLabel());
 		service.deleteBlock(block);
 		updateGrids();
 		closeBlockEditor();

@@ -120,7 +120,7 @@ public class StatsView extends VerticalLayout {
         int i=service.getAllSchemes().size();
         for(int index=0; index<i; index++) {
         	
-        	labels.add(service.getAllSchemesWIthNotInUse().get(index).getSchemeLabel());
+        	labels.add(service.getAllSchemes().get(index).getSchemeLabel());
         	//service.getWorkCount(null)
         	data.add(service.getWorkCountByScheme(service.getAllSchemes().get(index)));
         }

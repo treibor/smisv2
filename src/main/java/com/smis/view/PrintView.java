@@ -76,10 +76,14 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-@PageTitle("MLA Release Order")
+@PageTitle("ReleaseOrder")
 @Route(value = "releaseorder", layout = MainLayout.class)
 @RolesAllowed({ "USER", "SUPER", "ADMIN" })
 public class PrintView extends HorizontalLayout {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	// Binder <Work> binder=new BeanValidationBinder<>(Work.class);
 	Dbservice service;
 	@Autowired
@@ -532,11 +536,11 @@ public class PrintView extends HorizontalLayout {
 	private void populateAllFields() {
 		year.setItems(service.getAllYears());
 		year.setItemLabelGenerator(year -> year.getYearLabel());
-		scheme.setItems(service.getAllSchemes());
+		scheme.setItems(service.getSchemesByUser());
 		scheme.setItemLabelGenerator(scheme -> scheme.getSchemeLabel());
-		block.setItems(service.getAllBlocks(true));
+		block.setItems(service.getBlocksByUser());
 		block.setItemLabelGenerator(block -> block.getBlockLabel());
-		constituency.setItems(service.getAllConstituencies());
+		constituency.setItems(service.getConstituenciesByUser());
 		// constituency.setItemLabelGenerator(constituency->constituency.getConstituencyNo()+"
 		// - "+constituency.getConstituencyName()+" -
 		// "+constituency.getConstituencyMLA());

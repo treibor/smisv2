@@ -1,6 +1,7 @@
 package com.smis.entity;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import com.smis.entity.master.District;
 import com.smis.entity.master.MasterBlock;
@@ -39,7 +40,8 @@ public class Block implements Serializable{
 	@JoinColumn(name="districtId")
 	@NotNull
 	private District district;
-	
+	private Users updatedBy;
+	private LocalDateTime updatedOn;
 	public long getId() {
 		return id;
 	}
@@ -79,6 +81,18 @@ public class Block implements Serializable{
 	}
 	public void setDistrict(District district) {
 		this.district = district;
+	}
+	public Users getUpdatedBy() {
+		return updatedBy;
+	}
+	public void setUpdatedBy(Users updatedBy) {
+		this.updatedBy = updatedBy;
+	}
+	public LocalDateTime getUpdatedOn() {
+		return updatedOn;
+	}
+	public void setUpdatedOn(LocalDateTime updatedOn) {
+		this.updatedOn = updatedOn;
 	}
 	
 	

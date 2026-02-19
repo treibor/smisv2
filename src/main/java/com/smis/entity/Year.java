@@ -1,6 +1,7 @@
 package com.smis.entity;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import com.smis.entity.master.District;
 import com.smis.entity.master.MasterYear;
@@ -33,6 +34,8 @@ public class Year implements Serializable{
 	@JoinColumn(name="year_master_id")
 	@NotNull
 	private MasterYear masterYear;
+	private Users updatedBy;
+	private LocalDateTime updatedOn;
 	public long getId() {
 		return id;
 	}
@@ -65,6 +68,18 @@ public class Year implements Serializable{
 	}
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+	public Users getUpdatedBy() {
+		return updatedBy;
+	}
+	public void setUpdatedBy(Users updatedBy) {
+		this.updatedBy = updatedBy;
+	}
+	public LocalDateTime getUpdatedOn() {
+		return updatedOn;
+	}
+	public void setUpdatedOn(LocalDateTime updatedOn) {
+		this.updatedOn = updatedOn;
 	}
 	
 	

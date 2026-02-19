@@ -2,6 +2,7 @@ package com.smis.view;
 
 import java.time.format.DateTimeFormatter;
 
+import com.smis.dbservice.AuditService;
 import com.smis.dbservice.Dbservice;
 import com.smis.entity.AuditTrail;
 import com.vaadin.flow.component.Component;
@@ -17,10 +18,10 @@ import jakarta.annotation.security.RolesAllowed;
 @Route(value = "audittrail", layout = MainLayout.class)
 public class AuditView extends HorizontalLayout {
 	Grid<AuditTrail> auditgrid=new Grid<>(AuditTrail.class);
-	Dbservice service;
+	AuditService service;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-	public AuditView(Dbservice service) {
+	public AuditView(AuditService service) {
 		this.service=service;
 		// TODO Auto-generated constructor stub
 		setSizeFull();
@@ -41,7 +42,7 @@ public class AuditView extends HorizontalLayout {
 		auditgrid.addColumn(audittrail -> audittrail.getOtherDetails()).setHeader("Other Details").setSortable(true)
 		.setResizable(true);
 
-		auditgrid.addColumn(audittrail -> audittrail.getActionBy().getUserName()).setHeader("Performed By").setSortable(true)
+		auditgrid.addColumn(audittrail -> audittrail.getActionBy()!=null? audittrail.getActionBy().getUserName():"").setHeader("Performed By").setSortable(true)
 				.setResizable(true);
 		auditgrid.addColumn(audittrail -> audittrail.getActionOn().format(timeFormatter)).setHeader("Date /Time").setSortable(true)
 				.setResizable(true);
