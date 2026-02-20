@@ -559,7 +559,9 @@ public class WorkForm extends VerticalLayout {
 
 	        Users user = service.getLoggedUser();
 	        LocalDateTime now = LocalDateTime.now();
-	        
+	        work.setIsDeleted(false);
+	        work.setIsRecasted(false);
+	        work.setIsOldWork(false);
 	        work.setDistrict(service.getDistrict());
 	        work.setUpdatedBy(user);
 	        work.setUpdatedOn(now);
@@ -764,6 +766,76 @@ public class WorkForm extends VerticalLayout {
 	    }
 
 	    try {
+	    	 // 1) If we are reversing from RELEASE_INSTALLMENT,
+	        //    delete the latest installment first (so prev-step logic sees correct state)
+	    	ProcessFlow returnTo = service.getPrevStepFromHistory(work);
+	    	
+
+	        // 2) Now compute where to return
+	        
+	        if (returnTo == null) {
+	            NotificationUtil.showError("Unable to determine previous step.");
+	            return;
+	        }
+	        if ("RELEASE_INSTALLMENT".equals(returnTo.getStepCode())) {
+	    	    service.markLatestInstallmentDeletedIfExists(work);
+	    	}
+	        // 3) Log reverse history
+	        ProcessHistory ph = new ProcessHistory();
+	        ph.setWork(work);
+	        ph.setUser(loggedUser);
+	        ph.setFromStep(current);
+	        ph.setToStep(returnTo);
+	        ph.setProcessName("Returned To : " + returnTo.getStepName());
+	        ph.setReversed(true);
+	        ph.setRemarks(remarks.getValue());
+	        ph.setEnteredOn(LocalDateTime.now());
+
+	        service.saveProcessHistory(ph);
+
+	        // 4) Update work to the returned step
+	        updateWork(returnTo);
+
+	        Notification.show("Returned Successfully to " + returnTo.getStepName(), 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+	        clearFields();
+
+	    } catch (Exception e) {
+	        Notification.show("Something Went Wrong: " + e.getMessage(), 7000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        e.printStackTrace();
+	    }
+	}
+	
+public void reverseFlow_ReverseProblem(TextField remarks) {
+		
+	    if (remarks.getValue() == null || remarks.getValue().trim().isEmpty()) {
+	        Notification.show("Please Enter Remarks", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    work = service.getWorkById(work.getWorkId());
+	    if (work == null) {
+	        NotificationUtil.showError("Unable to reload Work. Please try again.");
+	        return;
+	    }
+
+	    ProcessFlow current = work.getProcessflow();
+	    if (current == null) {
+	        NotificationUtil.showError("Work step not found.");
+	        return;
+	    }
+
+	    // Don't allow reverse from entry step
+	    if ("WORK_ENTRY".equals(current.getStepCode())) {
+	        Notification.show("Cannot return from Work Entry.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    try {
 	        ProcessFlow returnTo = service.getPrevStepFromHistory(work);
 	        if ("RELEASE_INSTALLMENT".equals(returnTo.getStepCode())) {
 	            service.markLatestInstallmentDeletedIfExists(work);
@@ -791,7 +863,6 @@ public class WorkForm extends VerticalLayout {
 	        e.printStackTrace();
 	    }
 	}
-	
 	
 
 	public void uploadUc() {

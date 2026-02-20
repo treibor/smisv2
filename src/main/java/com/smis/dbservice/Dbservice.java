@@ -312,13 +312,14 @@ public class Dbservice implements Serializable {
 
 				return;
 			}
+			crepo.save(consti);
 			String action = "Save | Update";
 			String process = "Constituency";
 			String details = "Id:" + consti.getId() + " | Label:" + consti.getConstituencyLabel() + " | MLA:"
 					+ consti.getConstituencyMLA();
 			String odetails = "Master Id:" + consti.getMasterConstituency().getConstituencymasterId() + " | Name:"
 					+ consti.getMasterConstituency().getConstituencyName();
-			crepo.save(consti);
+			
 			auditservice.saveAudit(action, process, details, odetails);
 
 		} catch (Exception e) {
@@ -380,13 +381,14 @@ public class Dbservice implements Serializable {
 
 				return;
 			}
+			brepo.save(block);
 			String action = "Save | Update";
 			String process = "Block";
 			String details = "Id:" + block.getId() + " | Label:" + block.getBlockLabel() + " | Office Head:"
 					+ block.getBdoName();
 			String odetails = "Master Id:" + block.getMasterBlock().getBlockMasterId() + " | Name:"
 					+ block.getMasterBlock().getBlockName();
-			brepo.save(block);
+		
 			auditservice.saveAudit(action, process, details, odetails);
 
 		} catch (DataIntegrityViolationException e) {
@@ -451,13 +453,14 @@ public class Dbservice implements Serializable {
 			if (scheme == null) {
 				return;
 			}
+			srepo.save(scheme);
 			String action = "Save | Update";
 			String process = "Scheme";
 			String details = "Id:" + scheme.getId() + " | Label:" + scheme.getSchemeLabel() + " | Dept:"
 					+ scheme.getSchemeDept() + " | Duration" + scheme.getSchemeDuration();
 			String odetails = "Master Id:" + scheme.getMasterScheme().getSchemeMasterId() + " | Name:"
 					+ scheme.getMasterScheme().getSchemeName();
-			srepo.save(scheme);
+			
 			auditservice.saveAudit(action, process, details, odetails);
 
 		} catch (Exception e) {
@@ -523,12 +526,13 @@ public class Dbservice implements Serializable {
 		if (year == null) {
 			return;
 		}
+		yrepo.save(year);
 		String action = "Save | Update";
 		String process = "Year";
 		String details = "Id:" + year.getId() + " | Label:" + year.getYearLabel();
 		String odetails = "Master Id:" + year.getMasterYear().getYearId() + " | Name:"
 				+ year.getMasterYear().getYearName();
-		yrepo.save(year);
+		
 		auditservice.saveAudit(action, process, details, odetails);
 
 	}
@@ -550,7 +554,8 @@ public class Dbservice implements Serializable {
 
 	// ________________________________________________________________________________________
 	public List<Village> getVillage(Block block) {
-		return vtrepo.findByBlock(block);
+		return vtrepo.findByMasterBlock(block.getMasterBlock());
+		
 	}
 
 	public District getDistrict() {
@@ -604,6 +609,7 @@ public class Dbservice implements Serializable {
 			if (install == null) {
 				return;
 			}
+			irepo.save(install);
 			long id=install.getInstallmentId();
 			String action = "Save | Update";
 			String process = "Installment";
@@ -611,7 +617,7 @@ public class Dbservice implements Serializable {
 					+ " | Work Code:" + install.getWork().getWorkCode();
 			String odetails = "Amount:" + install.getInstallmentAmount() + " | Letter:"
 					+ install.getInstallmentLetter();
-			irepo.save(install);
+			
 			auditservice.saveAudit(action, process, details, odetails);
 		} catch (Exception e) {
 			Notification.show("Unable to Save Installment. Error:" + e, 5000, Position.TOP_CENTER);
@@ -624,7 +630,9 @@ public class Dbservice implements Serializable {
 		if (optionalInstallment.isEmpty()) {
 			return; // Nothing to delete
 		}
+		
 		Installment last = optionalInstallment.get();
+		irepo.save(last);
 		long id=last.getInstallmentId();
 		String action = "Soft Delete";
 		String process = "Installment";
@@ -632,7 +640,7 @@ public class Dbservice implements Serializable {
 				+ last.getWork().getWorkCode();
 		String odetails = "Amount:" + last.getInstallmentAmount() + " | Letter:" + last.getInstallmentLetter();
 		last.setDeleted(true);
-		irepo.save(last);
+		
 		auditservice.saveAudit(action, process, details, odetails);
 	}
 	
@@ -826,24 +834,55 @@ public class Dbservice implements Serializable {
 				.orElseThrow(() -> new IllegalStateException("No previous forward step found from history."));
 	}
 
-	public ProcessFlow getPrevStepFromHistory(Work work) {
+	public ProcessFlow getPrevStepFromHistoryX(Work work) {
 		ProcessFlow current = work.getProcessflow();
 
 		return phistoryrrepo.findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
 				.map(ProcessHistory::getFromStep).orElseThrow(
 						() -> new IllegalStateException("No history found for move into " + current.getStepName()));
 	}
+	public ProcessFlow getPrevStepFromHistory(Work work) {
+	    ProcessFlow current = work.getProcessflow();
+	    if (current == null) {
+	        throw new IllegalStateException("Work has no current process flow.");
+	    }
+
+	    if ("RELEASE_INSTALLMENT".equals(current.getStepCode())) {
+
+	        boolean hasActiveInstallments = irepo.existsByWorkAndIsDeletedFalse(work);
+
+	        if (!hasActiveInstallments) {
+	            return pflowrepo.findByStepCode("WORK_ENTRY")
+	                    .orElseThrow(() -> new IllegalStateException("ProcessFlow WORK_ENTRY not found"));
+	        }
+
+	        // ✅ for installment 2+ return the real previous step from history (e.g., UPLOAD_UC)
+	        return phistoryrrepo
+	                .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+	                .map(ProcessHistory::getFromStep)
+	                .orElseThrow(() ->
+	                        new IllegalStateException("No history found for move into " + current.getStepName()));
+	    }
+
+	    return phistoryrrepo
+	            .findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(work, current)
+	            .map(ProcessHistory::getFromStep)
+	            .orElseThrow(() ->
+	                    new IllegalStateException("No history found for move into " + current.getStepName()));
+	}
 	public void saveProcessHistory(ProcessHistory pfh) {
 		if(pfh==null) {
 			return;
 		}
-		//long id=pfh.getId();
+		
 		try {
+			phistoryrrepo.save(pfh);
+			long id=pfh.getId();
 			String action = "Save | Update";
 			String process = "Process History";
-			String details = "Id:" + pfh.getId() + " | Process:" + pfh.getProcessName();
+			String details = "Id:" + id +" | Process:" + pfh.getProcessName();
 			String odetails = "From:"+pfh.getFromStep().getStepName()+" | To:"+pfh.getToStep().getStepName();
-			phistoryrrepo.save(pfh);
+			
 			auditservice.saveAudit(action, process, details, odetails);
 			
 		} catch (Exception e) {
@@ -871,12 +910,13 @@ public class Dbservice implements Serializable {
 		}
 		
 		try {
+			pflowuserrepo.save(pfu);
 			long id=pfu.getId();
 			String action = "Save | Update";
 			String process = "ProcessFlow User";
 			String details = "Id:" + id + " | Process: " + pfu.getProcessFlow().getStepName();
 			String odetails = "";
-			pflowuserrepo.save(pfu);
+			
 			auditservice.saveAudit(action, process, details, odetails);
 			
 		} catch (Exception e) {
@@ -884,15 +924,6 @@ public class Dbservice implements Serializable {
 			e.printStackTrace();
 		}
 	}
-
-	public ProcessFlowUser getProcessFlowUser(Users user, ProcessFlow pfu) {
-		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
-	}
-
-	public boolean hasAuthorityForStepR(Users user, int stepOrder) {
-		return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
-	}
-
 	public void deleteProcessFlowUser(ProcessFlowUser pfu) {
 		if(pfu==null) {
 			return;
@@ -913,6 +944,16 @@ public class Dbservice implements Serializable {
 		}
 		
 	}
+
+	public ProcessFlowUser getProcessFlowUser(Users user, ProcessFlow pfu) {
+		return pflowuserrepo.findByUserAndProcessFlow(user, pfu);
+	}
+
+	public boolean hasAuthorityForStepR(Users user, int stepOrder) {
+		return pflowuserrepo.existsByUserAndProcessFlow_StepOrder(user, stepOrder);
+	}
+
+	
 	public ProcessFlow findReturnTarget(Work work) {
 		ProcessHistory lastForward = phistoryrrepo.findTop1ByWorkAndReversedFalseOrderByEnteredOnDesc(work)
 				.orElseThrow(() -> new IllegalStateException("No forward history found"));

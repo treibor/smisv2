@@ -18,8 +18,8 @@ public class SchemeUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "suser_generator")
-    @SequenceGenerator(name = "suser_generator", allocationSize = 1, sequenceName = "suser_seq", initialValue = 1)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "schemeuser_generator")
+    @SequenceGenerator(name = "schemeuser_generator", allocationSize = 1, sequenceName = "schemeuser_seq", initialValue = 1)
     private long Id;
    
     @ManyToOne

@@ -1,4 +1,4 @@
-package com.smis.security;
+package com.smis.security.captcha;
 
 import org.springframework.stereotype.Service;
 

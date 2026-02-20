@@ -18,8 +18,8 @@ public class BlockUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "buser_generator")
-    @SequenceGenerator(name = "buser_generator", allocationSize = 1, sequenceName = "buser_seq", initialValue = 1)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "blockuser_generator")
+    @SequenceGenerator(name = "blockuser_generator", allocationSize = 1, sequenceName = "blockuser_seq", initialValue = 1)
     private long Id;
     
     @ManyToOne

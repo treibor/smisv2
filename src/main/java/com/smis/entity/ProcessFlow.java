@@ -21,8 +21,8 @@ public class ProcessFlow implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "process_generator")
-    @SequenceGenerator(name = "process_generator", allocationSize = 1, sequenceName = "process_seq", initialValue = 1)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "p_flow_generator")
+    @SequenceGenerator(name = "p_flow_generator", allocationSize = 1, sequenceName = "p_flow_seq", initialValue = 1)
     private long id;
 
     private String stepName;

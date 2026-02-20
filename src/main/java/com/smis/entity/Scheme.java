@@ -50,6 +50,8 @@ public class Scheme implements Serializable{
 	@JoinColumn(name="scheme_master_id")
 	@NotNull(message = "Please Select The Scheme")
 	private MasterScheme masterScheme;
+	@ManyToOne
+	@JoinColumn(name = "updated_by")
 	private Users updatedBy;
 	private LocalDateTime updatedOn;
 	

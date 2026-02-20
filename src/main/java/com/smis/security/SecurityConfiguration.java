@@ -21,6 +21,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 import com.smis.dbservice.AuditService;
+import com.smis.security.captcha.LoginCaptchaFilter;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 
 import jakarta.servlet.http.HttpServletRequest;

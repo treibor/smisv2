@@ -153,7 +153,7 @@ public class MainLayout extends AppLayout {
 		SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
 				LineAwesomeIcon.HISTORY_SOLID.create());
 
-		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Release Order", "", PrintView.class,
+		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("ReleaseOrder", "", PrintView.class,
 				LineAwesomeIcon.DONATE_SOLID.create());
 
 		SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,

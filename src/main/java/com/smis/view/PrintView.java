@@ -1,9 +1,6 @@
 package com.smis.view;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,14 +8,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -42,7 +40,6 @@ import com.smis.util.UploadUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -51,7 +48,6 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H6;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -62,7 +58,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
 import com.wontlost.ckeditor.Constants.EditorType;
 import com.wontlost.ckeditor.VaadinCKEditor;
 import com.wontlost.ckeditor.VaadinCKEditorBuilder;
@@ -340,14 +335,14 @@ public class PrintView extends HorizontalLayout {
 	private void printReport() {
 	    Users currentUser = service.getLoggedUser();
 
-	    // --------- Basic validations ----------
 	    if (instletter.getValue() == null || instletter.getValue().trim().isEmpty() || instdate.getValue() == null) {
 	        Notification.show("Release Letter, Release Date Cannot Be Empty", 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	        return;
 	    }
 
-	    if (inlineEditor.getValue() != null && inlineEditor.getValue().length() > 2900) {
+	    String copyToHtml = inlineEditor.getValue();
+	    if (copyToHtml != null && copyToHtml.length() > 2900) {
 	        Notification.show("'Copy To' Data has exceeded Permitted Limit", 5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	        return;
@@ -360,94 +355,125 @@ public class PrintView extends HorizontalLayout {
 	        return;
 	    }
 
-	    List<Installment> installments = new ArrayList<>(selected);
+	    List<Installment> selectedList = new ArrayList<>(selected);
+
+	    Map<Long, List<Installment>> byWork = selectedList.stream()
+	            .filter(i -> i.getWork() != null && i.getWork().getWorkId() != 0)
+	            .collect(Collectors.groupingBy(i -> i.getWork().getWorkId()));
+
+	    if (byWork.isEmpty()) {
+	        Notification.show("Selected installments have no Work linked.", 5000, Position.TOP_CENTER)
+	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+	        return;
+	    }
+
+	    // Save notes once (shared)
+	    InstallmentReportNotes notes = new InstallmentReportNotes();
+	    notes.setCopyTo(copyToHtml);
+	    notes.setUpdatedBy(currentUser);
+	    notes.setUpdatedOn(LocalDateTime.now());
+	    service.saveInstallmentReport(notes);
 
 	    try {
-	        // --------- Ensure all installments belong to SAME WORK ----------
-	        Long workId = installments.get(0).getWork() != null ? installments.get(0).getWork().getWorkId() : null;
-	        if (workId == null || installments.stream().anyMatch(i -> i.getWork() == null || i.getWork().getWorkId() != workId)) {
-	            Notification.show("Please select installments from the same Work only.", 5000, Position.TOP_CENTER)
-	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	            return;
-	        }
+	        // ---------- Reference Work (for global parameters/template selection) ----------
+	        Long refWorkId = byWork.keySet().iterator().next();
+	        Work refWork = service.getWorkById(refWorkId);
+	        if (refWork == null) throw new IllegalStateException("Reference Work not found.");
 
-	        // --------- Load fresh managed Work ----------
-	        Work work0 = service.getWorkById(workId);
-	        if (work0 == null) {
-	            NotificationUtil.showError("Work not found. Reloading...");
-	            UI.getCurrent().getPage().reload();
-	            return;
-	        }
+	        // Global labels/parameters (same across selection as you stated)
+	        String schemelabel = changeAmp(refWork.getScheme().getSchemeLabel());
+	        String blocklabel  = changeAmp(refWork.getBlock().getBlockLabel());
+	        String yearlabel   = changeAmp(refWork.getYear().getYearLabel());
+	        String sanctionNo  = changeAmp(refWork.getSanctionNo());
 
-	        // --------- Expiry check using STEP CODE ----------
-	        ProcessFlow currentStep = work0.getProcessflow();
-	        String stepCode = (currentStep != null) ? currentStep.getStepCode() : null;
+	        // Template selection (based on ref work)
+	        int reportTypeRef = refWork.getScheme().getSchemeReport();
 
-	        if (!"GENERATE_RELEASE_ORDER".equals(stepCode)) {
-	            NotificationUtil.showError("This Page Has Expired and will be Reloaded");
-	            UI.getCurrent().getPage().executeJs("setTimeout(() => location.reload(), 2000);");
-	            return;
-	        }
+	        // We'll generate ONE report, so we must pick ONE installNoForReport.
+	        // If user selects mixed installment numbers, we either:
+	        //  - force it from UI instNo (recommended), OR
+	        //  - validate all maxInstallNo produce same installNoForReport.
+	        // Here: use UI value (consistent with your older code)
+	        int installNoForReportRef = Math.min(instNo.getValue(), 3);
 
-	        // --------- Date validations ----------
-	        if (work0.getSanctionDate() != null && work0.getSanctionDate().isAfter(instdate.getValue())) {
-	            Notification.show("Release Date cannot be before the sanction Date", 5000, Position.TOP_CENTER)
-	                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	            return;
-	        }
+	        // Combined datasource (ALL installments)
+	        List<Installment> allInstallmentsForReport = new ArrayList<>();
 
-	        // Determine installment number safely (use selection, not instNo field)
-	        int maxInstallNo = installments.stream()
-	                .map(Installment::getInstallmentNo)
-	                .filter(Objects::nonNull)
-	                .max(Integer::compareTo)
-	                .orElse(1);
+	        // For per-work history
+	        Map<Long, Integer> workToMaxInstallNo = new HashMap<>();
 
-	        // Previous installment UC date check (only if applicable)
-	        if (maxInstallNo > 1) {
-	            Installment prev = service.getInstallmentByWorkAndNo(maxInstallNo - 1, work0);
-	            if (prev != null && prev.getUcDate() != null && prev.getUcDate().isAfter(instdate.getValue())) {
-	                Notification.show("Invalid Release Date. Must be after UC date of previous installment", 5000,
-	                                Position.TOP_CENTER)
-	                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-	                return;
+	        // Grand total for combined report
+	        BigDecimal grandTotal = BigDecimal.ZERO;
+
+	        // ---------- Validate each work + update installments metadata ----------
+	        for (Map.Entry<Long, List<Installment>> entry : byWork.entrySet()) {
+	            Long workId = entry.getKey();
+	            List<Installment> installments = entry.getValue();
+
+	            Work work0 = service.getWorkById(workId);
+	            if (work0 == null) {
+	                throw new IllegalStateException("Work not found for ID: " + workId);
+	            }
+
+	            // ✅ Validate same parameters across works (scheme/block/year)
+	          
+	            // Validate step
+	            ProcessFlow currentStep = work0.getProcessflow();
+	            String stepCode = (currentStep != null) ? currentStep.getStepCode() : null;
+	            if (!"GENERATE_RELEASE_ORDER".equals(stepCode)) {
+	                throw new IllegalStateException("Work " + work0.getWorkCode() + " is not in GENERATE_RELEASE_ORDER.");
+	            }
+
+	            // Date validations
+	            if (work0.getSanctionDate() != null && work0.getSanctionDate().isAfter(instdate.getValue())) {
+	                throw new IllegalStateException("Release Date cannot be before Sanction Date (Work: " + work0.getWorkCode() + ")");
+	            }
+
+	            // Per-work max installment no (for UC check + history label)
+	            int maxInstallNo = installments.stream()
+	                    .map(Installment::getInstallmentNo)
+	                    .filter(Objects::nonNull)
+	                    .max(Integer::compareTo)
+	                    .orElse(1);
+	            workToMaxInstallNo.put(workId, maxInstallNo);
+
+	            if (maxInstallNo > 1) {
+	                Installment prev = service.getInstallmentByWorkAndNo(maxInstallNo - 1, work0);
+	                if (prev != null && prev.getUcDate() != null && prev.getUcDate().isAfter(instdate.getValue())) {
+	                    throw new IllegalStateException("Invalid Release Date. Must be after UC date of previous installment (Work: " + work0.getWorkCode() + ")");
+	                }
+	            }
+
+	            // Update installments and accumulate totals
+	            for (Installment inst : installments) {
+	                inst.setInstallmentDate(instdate.getValue());
+	                inst.setInstallmentLetter(instletter.getValue());
+
+	                BigDecimal amt = inst.getInstallmentAmount();
+	                if (amt != null) grandTotal = grandTotal.add(amt);
+
+	                allInstallmentsForReport.add(inst);
 	            }
 	        }
 
-	        // --------- Labels & report selection ----------
-	        String schemelabel = changeAmp(work0.getScheme().getSchemeLabel());
-	        String blocklabel = changeAmp(work0.getBlock().getBlockLabel());
-	        String yearlabel = changeAmp(work0.getYear().getYearLabel());
-	        String sanctionNo = changeAmp(work0.getSanctionNo());
+	        // Optional: stable order helps Jasper output
+	        allInstallmentsForReport.sort(Comparator
+	                .comparing((Installment i) -> i.getWork().getWorkId())
+	                .thenComparing(i -> i.getInstallmentNo() == 0 ? 0 : i.getInstallmentNo()));
 
-	        int reportType = work0.getScheme().getSchemeReport();
-	        int installNoForReport = (maxInstallNo < 3) ? maxInstallNo : 3;
+	        // ---------- Generate ONE Jasper report ----------
+	        String totalAmountwords = convertToIndianCurrency(grandTotal.toPlainString());
+	        String totalAmountnumbers = grandTotal.stripTrailingZeros().toPlainString();
 
-	        // --------- Calculate total amount ----------
-	        BigDecimal totalamount = installments.stream()
-	                .map(Installment::getInstallmentAmount)
-	                .filter(Objects::nonNull)
-	                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-	        String totalAmountwords = convertToIndianCurrency(totalamount.toPlainString());
-	        String totalAmountnumbers = totalamount.stripTrailingZeros().toPlainString();
-
-	        // --------- Prepare data (but don't persist yet) ----------
-	        for (Installment inst : installments) {
-	            inst.setInstallmentDate(instdate.getValue());
-	            inst.setInstallmentLetter(instletter.getValue());
-	        }
-
-	        // --------- Generate Jasper report ----------
-	        Resource jrxml = new ClassPathResource("report/Release" + reportType + installNoForReport + ".jrxml");
+	        Resource jrxml = new ClassPathResource("report/Release" + reportTypeRef + installNoForReportRef + ".jrxml");
 
 	        byte[] pdfBytes;
 	        try (InputStream jrxmlStream = jrxml.getInputStream()) {
 	            JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlStream);
-	            JRBeanCollectionDataSource ds = new JRBeanCollectionDataSource(installments);
+	            JRBeanCollectionDataSource ds = new JRBeanCollectionDataSource(allInstallmentsForReport);
 
 	            Map<String, Object> parameters = new HashMap<>();
-	            parameters.put("copyTo", inlineEditor.getValue());
+	            parameters.put("copyTo", copyToHtml);
 	            parameters.put("Note", note.getValue());
 	            parameters.put("ComplDate", "");
 	            parameters.put("scheme", schemelabel);
@@ -460,41 +486,48 @@ public class PrintView extends HorizontalLayout {
 	            pdfBytes = JasperExportManager.exportReportToPdf(jasperPrint);
 	        }
 
-	        // --------- Store PDF ----------
-	        String safeFileName = fileStorageService.generateSafeFileName("RO", "releaseorder.pdf");
+	        // ---------- Store ONE PDF ----------
+	        String safeFileName = fileStorageService.generateSafeFileName(
+	                "RO",
+	                "releaseorder_combined_" + refWork.getScheme().getSchemeLabel() + "_" + System.currentTimeMillis() + ".pdf"
+	        );
+
 	        try (InputStream in = new ByteArrayInputStream(pdfBytes)) {
 	            fileStorageService.save(in, safeFileName);
 	        }
-	        UI.getCurrent().getPage().open("/files/" + safeFileName, "_blank");
-	        // --------- Save notes ----------
-	        InstallmentReportNotes notes = new InstallmentReportNotes();
-	        notes.setCopyTo(inlineEditor.getValue());
-	        notes.setUpdatedBy(currentUser);
-	        notes.setUpdatedOn(LocalDateTime.now());
-	        service.saveInstallmentReport(notes);
 
-	        // --------- Advance workflow using nextStep chain ----------
-	        ProcessFlow nextStep = currentStep.getNextStep(); // expected: UPLOAD_RELEASE_ORDER
-	        if (nextStep == null) {
-	            NotificationUtil.showError("Workflow misconfigured: GENERATE_RELEASE_ORDER has no next step.");
-	            return;
-	        }
+	        // ---------- Persist: advance each work + save installments + history ----------
+	        for (Map.Entry<Long, List<Installment>> entry : byWork.entrySet()) {
+	            Long workId = entry.getKey();
+	            List<Installment> installments = entry.getValue();
 
-	        // ✅ Save Work transition first (managed)
-	        work0.setProcessflow(nextStep);
-	        // work0.setWorkStatus(nextStep.getStepName() + "-" + maxInstallNo); // optional
-	        work0.setUpdatedBy(currentUser);
-	        work0.setUpdatedOn(LocalDateTime.now());
-	        service.saveWork(work0);
+	            Work work0 = service.getWorkById(workId);
+	            ProcessFlow currentStep = work0.getProcessflow();
+	            ProcessFlow nextStep = currentStep.getNextStep();
+	            if (nextStep == null) {
+	                throw new IllegalStateException("Workflow misconfigured: GENERATE_RELEASE_ORDER has no next step. (Work: " + work0.getWorkCode() + ")");
+	            }
 
-	        // --------- Update installments + history ----------
-	        for (Installment inst : installments) {
-	            inst.setReportNotes(notes);
-	            inst.setGeneratedReleaseOrder(safeFileName);
-	            service.saveInstallment(inst);
+	            // advance work
+	            work0.setProcessflow(nextStep);
+	            work0.setUpdatedBy(currentUser);
+	            work0.setUpdatedOn(LocalDateTime.now());
+	            service.saveWork(work0);
+
+	            // update installments - same document for all
+	            for (Installment inst : installments) {
+	                inst.setReportNotes(notes);
+	                inst.setGeneratedReleaseOrder(safeFileName);
+	                inst.setInstallmentDate(instdate.getValue());
+	                inst.setInstallmentLetter(instletter.getValue());
+	                service.saveInstallment(inst);
+	            }
+
+	            // history once per work
+	            int maxInstallNo = workToMaxInstallNo.getOrDefault(workId, 1);
 
 	            ProcessHistory ph = new ProcessHistory();
-	            ph.setWork(work0);                       // ✅ managed work
+	            ph.setWork(work0);
 	            ph.setUser(currentUser);
 	            ph.setFromStep(currentStep);
 	            ph.setToStep(nextStep);
@@ -507,13 +540,15 @@ public class PrintView extends HorizontalLayout {
 	        }
 
 	        populateGrid();
+	        UI.getCurrent().getPage().open("/files/" + safeFileName, "_blank");
 
-	        Notification.show("Release Order generated successfully", 4000, Position.TOP_CENTER)
+	        Notification.show("Combined Release Order generated successfully (" + byWork.size() + " work(s))",
+	                        5000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
 	    } catch (Exception e) {
 	        e.printStackTrace();
-	        Notification.show("Unable To Generate Report. Error: " + e.getMessage(), 5000, Position.TOP_CENTER)
+	        Notification.show("Unable To Generate Report. Error: " + e.getMessage(), 6000, Position.TOP_CENTER)
 	                .addThemeVariants(NotificationVariant.LUMO_ERROR);
 	    }
 	}

@@ -21,7 +21,7 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
 	int countByWorkAndIsDeletedFalse(Work work);
 	int countByIsDeletedFalse();
 	Optional<Installment> findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(Work work);
-
+	boolean existsByWorkAndIsDeletedFalse(Work work);
 	@Query("""
 		    SELECT i
 		    FROM Installment i

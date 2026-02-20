@@ -23,8 +23,6 @@ public class MasterBlock implements Serializable{
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "blockmaster_generator")
 	@SequenceGenerator(name="blockmaster_generator", sequenceName = "blockmaster_seq", allocationSize=1)
 	private long blockMasterId;
-	@Min(value = 1, message = "Block Code must be at least 1")
-	private int blockCode;
 	@NotEmpty
 	private String blockName;
 	@ManyToOne
@@ -39,12 +37,7 @@ public class MasterBlock implements Serializable{
 	public void setBlockMasterId(long blockMasterId) {
 		this.blockMasterId = blockMasterId;
 	}
-	public int getBlockCode() {
-		return blockCode;
-	}
-	public void setBlockCode(int blockCode) {
-		this.blockCode = blockCode;
-	}
+	
 	public String getBlockName() {
 		return blockName;
 	}

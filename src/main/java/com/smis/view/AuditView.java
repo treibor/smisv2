@@ -49,7 +49,7 @@ public class AuditView extends HorizontalLayout {
 		auditgrid.addColumn(audittrail -> audittrail.getIpAddress()).setHeader("IP Address").setSortable(true)
 		.setResizable(true);
 
-		auditgrid.setItems(service.getAuditTrail());
+		auditgrid.setItems(service.getAuditTrail(service.getLoggedUser().getDistrict()));
 		auditgrid.setSizeFull();
 		return auditgrid;
 	}

@@ -15,6 +15,7 @@ import com.smis.entity.AuditTrail;
 import com.smis.entity.Installment;
 import com.smis.entity.Users;
 import com.smis.entity.Work;
+import com.smis.entity.master.District;
 import com.smis.repository.AuditRepository;
 import com.smis.repository.UserRepository;
 import com.vaadin.flow.server.VaadinRequest;
@@ -39,8 +40,8 @@ public class AuditService {
 		aRepo.save(entity);
 	}
 
-	public List<AuditTrail> getAuditTrail() {
-		return aRepo.findAllByOrderByIdDesc();
+	public List<AuditTrail> getAuditTrail(District district) {
+		return aRepo.findByDistrictOrderByIdDesc(district);
 	}
 
 	public String getRealClientIp() {
@@ -98,8 +99,8 @@ public class AuditService {
 		}
 		String details = "Id:" + work.getWorkId() + " | WorkCode:" + work.getWorkCode() + " | WorkName:" + workName;
 		audit.setDetails(details);
-		audit.setOtherDetails("Sanction No:" + work.getSanctionNo() + " | Sanction Date:"
-				+ work.getSanctionDate().format(dateFormatter) + " | Amount:" + work.getWorkAmount() + " |Installments"
+		audit.setOtherDetails("Process:"+work.getProcessflow().getStepName()+" | Sanction No:" + work.getSanctionNo() + " | Sanction Date:"
+				+ work.getSanctionDate().format(dateFormatter) + " | Amount:" + work.getWorkAmount() + " | Installments"
 				+ work.getNoOfInstallments() + " | " + work.getConstituency().getConstituencyLabel() + " | "
 				+ work.getScheme().getSchemeLabel() + " | " + work.getYear().getYearLabel());
 		updateAudit(audit);

@@ -23,7 +23,7 @@ public class ProcessHistory implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "ph_generator")
 	@SequenceGenerator(name = "ph_generator", allocationSize = 1, sequenceName = "ph_seq", initialValue = 1)
-	private Long id;
+	private long id;
 
 	@ManyToOne
 	@JoinColumn(name = "work_id", nullable = false)

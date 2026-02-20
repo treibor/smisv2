@@ -1,4 +1,4 @@
-package com.smis.security;
+package com.smis.security.captcha;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.CacheControl;

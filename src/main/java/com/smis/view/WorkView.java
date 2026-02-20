@@ -653,8 +653,8 @@ public class WorkView extends VerticalLayout {
 	        }else if ("RELEASE_INSTALLMENT".equals(stepCode)) {
 
 	            // ✅ return-to from HISTORY (must ignore reversed rows in query)
-	            ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
-
+	            //ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+	        	ProcessFlow returnTo = service.getPrevStepFromHistory(work);
 	            workform.instAction.setItems("Forward", "Return to " + returnTo.getStepName());
 	            workform.instAction.setValue("Forward");
 

@@ -88,7 +88,7 @@ public class Work implements Serializable{
 	private ProcessFlow processflow;
 	
 	@ManyToOne
-	@JoinColumn(name="userId")
+	@JoinColumn(name="updatedBy")
 	@NotNull
 	private Users updatedBy;
 	private LocalDateTime updatedOn;

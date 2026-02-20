@@ -64,7 +64,7 @@ public class ReportView extends VerticalLayout {
 	DatePicker toDate = new DatePicker();
 	Notification notify = new Notification();
 	private Dbservice service;
-	
+	boolean isAdmin;
 	HorizontalLayout hl4 = new HorizontalLayout();
 	DatePicker fromDatep = new DatePicker("Print By Dates");
 	DatePicker toDatep = new DatePicker();
@@ -76,7 +76,7 @@ public class ReportView extends VerticalLayout {
 		
 		this.service = service;
 		initializeMlaItems();
-		
+		this.isAdmin=service.hasRole("ADMIN");
 		reportTypemla.setItems("General Report", "Detailed Report");
 		reportTypemp.setItems("General Report", "Detailed Report");
 		// candi.addValueChangeListener(e-> removePdfViewer());
@@ -139,11 +139,15 @@ public class ReportView extends VerticalLayout {
 
 	
 	private void printReport() {
-
+		if((scheme.getValue()==null || consti.getValue()==null||block.getValue()==null||year.getValue()==null)&& !isAdmin) {
+			NotificationUtil.showError("Please Select The Parameters");
+			return;
+		}
 		if (reportTypemla.getValue() == null || reportTypemla.getValue() == "") {
 			//notify.show("Please Select The Type of Report", 5000, Position.TOP_CENTER);
 			NotificationUtil.showError("Please Select The Type of Report");
-		} else {
+			return;
+		} 
 			removePdfViewer();
 			try {
 				//String reportPath = "D:";
@@ -199,7 +203,7 @@ public class ReportView extends VerticalLayout {
 				NotificationUtil.showError("Please Select The Type of Report. Error: "+e);
 				
 			}
-		}
+		
 	}
 
 	private InputStream createResource(File path) {// get generated pdf file and create Resource

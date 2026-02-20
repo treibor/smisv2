@@ -21,7 +21,7 @@ public class Year implements Serializable{
 	 private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "year_generator")
-	@SequenceGenerator(name="year_master_generator", initialValue = 1, sequenceName = "yearmaster_sequence", allocationSize = 1)
+	@SequenceGenerator(name="year__generator", initialValue = 1, sequenceName = "year_sequence", allocationSize = 1)
 	private long id;
 	@NotEmpty(message = "Year Label is required")
 	private String yearLabel;
@@ -34,6 +34,8 @@ public class Year implements Serializable{
 	@JoinColumn(name="year_master_id")
 	@NotNull
 	private MasterYear masterYear;
+	@ManyToOne
+	@JoinColumn(name = "updated_by")
 	private Users updatedBy;
 	private LocalDateTime updatedOn;
 	public long getId() {

@@ -40,6 +40,8 @@ public class Block implements Serializable{
 	@JoinColumn(name="districtId")
 	@NotNull
 	private District district;
+	@ManyToOne
+	@JoinColumn(name = "updated_by")
 	private Users updatedBy;
 	private LocalDateTime updatedOn;
 	public long getId() {

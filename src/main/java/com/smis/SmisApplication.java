@@ -34,6 +34,6 @@ public class SmisApplication extends SpringBootServletInitializer implements App
 	public void configurePage(AppShellSettings settings) {
 		settings.addFavIcon("icon", "/images/plant.png", "192x192");
 		settings.addLink("shortcut icon", "/images/plant.png");
-		settings.setPageTitle("MLALADS");
+		//settings.setPageTitle("MLALADS");
 	}
 }
