@@ -6,11 +6,9 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.smis.dbservice.AuditService;
 //import com.identity.views.CheckBox;
 import com.smis.dbservice.Dbservice;
 import com.smis.dbservice.FileStorageService;
@@ -18,7 +16,6 @@ import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
 import com.smis.entity.ProcessFlow;
-import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
@@ -26,11 +23,13 @@ import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.util.ButtonUtil;
 import com.smis.util.NotificationUtil;
+import com.smis.view.WorkForm.DeleteEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -40,6 +39,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -176,23 +176,52 @@ public class WorkView extends VerticalLayout {
 		});
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(grid);
 
-		// Add a menu item for viewing installments
-		contextMenu.addItem("View Details", event -> {
-			Optional<Work> selectedWork = event.getItem();
-			selectedWork.ifPresent(work -> {
-				// Show a dialog or a new component with installments
-				showInstallmentsDialog(work);
-			});
-		});
-		contextMenu.addItem("View History", event -> {
-			Optional<Work> selectedWork = event.getItem();
-			selectedWork.ifPresent(work -> {
-				// Show a dialog or a new component with installments
-				showHistoryDialog(work);
-			});
-		});
-	}
+		contextMenu.addItem(menuItem(VaadinIcon.EYE, "View Details"), event ->
+		    event.getItem().ifPresent(this::showInstallmentsDialog)
+		);
 
+		contextMenu.addItem(menuItem(VaadinIcon.TIME_BACKWARD, "View History"), event ->
+		    event.getItem().ifPresent(this::showHistoryDialog)
+		);
+		if (isAdmin) {
+		    contextMenu.addItem(menuItem(VaadinIcon.TRASH, "Delete"), event ->
+		        event.getItem().ifPresent(this::confirmDelete)
+		    ).addClassName("danger-item");
+		}
+	}
+	public void confirmDelete(Work work) {
+		ConfirmDialog dialog = new ConfirmDialog();
+		if (work == null) {
+
+		} else {
+			dialog.setHeader("Delete??");
+			dialog.setText("Are You sure you want to delete this item.You will lose all details and you will not be able to undo this Action");
+			dialog.setCancelable(true);
+			dialog.add(new TextField("Remarks"));
+			dialog.addCancelListener(event -> dialog.close());
+			dialog.setRejectable(true);
+			dialog.setRejectText("Discard");
+			dialog.addRejectListener(event -> dialog.close());
+			dialog.setConfirmText("Delete");
+			//dialog.addConfirmListener(event -> deleteWork(work));
+			dialog.open();
+
+		}
+	}
+	private Component menuItem(VaadinIcon icon, String text) {
+	    Icon i = icon.create();
+	    i.setSize("16px");
+
+	    Span label = new Span(text);
+
+	    HorizontalLayout hl = new HorizontalLayout(i, label);
+	    hl.setSpacing(true);
+	    hl.setPadding(false);
+	    hl.setMargin(false);
+	    hl.setAlignItems(FlexComponent.Alignment.CENTER);
+
+	    return hl;
+	}
 	private void showInstallmentsDialog(Work work) {
 	    try {
 			Dialog dialog = new Dialog();

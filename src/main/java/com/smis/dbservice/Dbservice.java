@@ -601,7 +601,8 @@ public class Dbservice implements Serializable {
 	}
 
 	public List<Installment> getInstallmentForReport(Scheme scheme, Year year, Constituency consti, Block block) {
-		return irepo.getReportData(scheme, getDistrict(), year, consti, block);
+		//return irepo.getReportData(scheme, getDistrict(), year, consti, block);
+		return irepo.getReportDataByUser(getLoggedUser(),scheme, getDistrict(), year, consti, block);
 	}
 
 	public void saveInstallment(Installment install) {
@@ -657,9 +658,15 @@ public class Dbservice implements Serializable {
 			e.printStackTrace();
 		}
 	}
-
-	// Works
-	// Queries___________________________________________________________________________________________________
+	
+	  //old Installments
+	public List<Installment> getFilteredInstallments(Scheme scheme, Constituency consti, Block block, Year year,
+			int installment) {
+		return irepo.getFilteredInstallment(scheme, consti, block, getDistrict(), year, installment);
+	}
+	
+	
+	// Works Queries___________________________________________________________________________________________________
 	public List<Work> getWorks() {
 		if (isSuperAdmin()) {
 			return wrepo.findAll();
@@ -711,9 +718,9 @@ public class Dbservice implements Serializable {
 
 	public List<Work> getReportWorks(Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
-			return wrepo.getReportWorks(scheme, getDistrict(), year, consti, block);
+			return wrepo.getReportWorksByUser(getLoggedUser(),scheme, getDistrict(), year, consti, block);
 		} catch (Exception e) {
-
+			e.printStackTrace();
 			return Collections.emptyList();
 
 		}
@@ -759,7 +766,23 @@ public class Dbservice implements Serializable {
 			Notification.show("Unable to Delete Work. Error:" + e, 5000, Position.TOP_CENTER);
 		}
 	}
+	//Old Works
+	public List<Work> getFilteredWorks(Scheme scheme, Constituency consti, Block block, Year year) {
+		try {
+			return wrepo.getFilteredWorks(scheme, getDistrict(), year, consti, block);
+		} catch (Exception e) {
 
+			return Collections.emptyList();
+
+		}
+	}
+	public List<Work> getFilteredWorks(String searchTerm) {
+		try {
+			return wrepo.searchAll(searchTerm, getDistrict());
+		} catch (Exception e) {
+			return Collections.emptyList();
+		}
+	}
 //____________________________________________________________________________________________
 	
 	// save & Delete state

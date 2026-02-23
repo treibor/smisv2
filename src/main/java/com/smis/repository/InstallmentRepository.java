@@ -12,6 +12,7 @@ import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
 import com.smis.entity.ProcessFlow;
 import com.smis.entity.Scheme;
+import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.entity.master.District;
@@ -55,10 +56,64 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
 	@Query("select  c, d, e, g, h  from Installment c join c.work d join d.year e  join d.constituency g join d.district h  where  c.installmentNo=:installment and c.work=:work and c.isDeleted=false")
 	Installment getInstallmentByNoAndWork(int installment, @Param("work") Work work);
 
+	//__________Reports
 	@Query("select  a, c, d, e, f, g from Installment a join a.work c join c.constituency d join c.scheme e join c.year f join c.block g  where  c.isDeleted=false and c.district=:district and (c.scheme=:scheme or :scheme is null ) and (c.year=:year or :year is null ) and (c.block=:block or :block is null ) and (c.constituency=:consti or :consti is null ) order by d.constituencyLabel, g.blockLabel, e.schemeLabel, f.yearLabel, c.workCode, a.installmentNo ASC")
 	List<Installment> getReportData(@Param("scheme") Scheme scheme, @Param("district") District district,
 			@Param("year") Year year, @Param("consti") Constituency consti, @Param("block") Block block);
 
+	@Query("""
+		    SELECT a
+		    FROM Installment a
+		    JOIN a.work w
+		    WHERE w.isDeleted = false
+		      AND w.isOldWork = false
+		      AND w.isRecasted = false
+		      AND w.district = :district
+		      AND w.block IS NOT NULL
 
+		      AND EXISTS (
+		          SELECT 1
+		          FROM BlockUser bu
+		          WHERE bu.user = :user
+		            AND bu.block = w.block
+		      )
+		      AND EXISTS (
+		          SELECT 1
+		          FROM SchemeUser su
+		          WHERE su.user = :user
+		            AND su.scheme = w.scheme
+		      )
+		      AND EXISTS (
+		          SELECT 1
+		          FROM ConstituencyUser cu
+		          WHERE cu.user = :user
+		            AND cu.constituency = w.constituency
+		      )
+
+		      AND (:scheme IS NULL OR w.scheme = :scheme)
+		      AND (:year   IS NULL OR w.year = :year)
+		      AND (:block  IS NULL OR w.block = :block)
+		      AND (:consti IS NULL OR w.constituency = :consti)
+
+		    ORDER BY w.constituency.constituencyLabel,
+		             w.block.blockLabel,
+		             w.scheme.schemeLabel,
+		             w.year.yearLabel,
+		             w.workCode,
+		             a.installmentNo ASC
+		""")
+		List<Installment> getReportDataByUser(
+		        @Param("user") Users user,
+		        @Param("scheme") Scheme scheme,
+		        @Param("district") District district,
+		        @Param("year") Year year,
+		        @Param("consti") Constituency consti,
+		        @Param("block") Block block
+		);
+	//_____________________________________________
+	//OldInstallments
+	
+	@Query("select  c, d, e,f,g, h, i  from Installment c join c.work d join d.year e  join d.scheme f join d.constituency g join d.district h join d.block i where d.block=:block and d.district=:district and d.scheme=:scheme  and d.constituency=:consti and d.scheme=:scheme and d.year=:year and c.installmentNo=:installment order by d.workCode ASC")
+	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,  @Param ("block") Block block ,  @Param ("district") District district, @Param ("year") Year year, @Param ("installment") int installment);
 	
 }

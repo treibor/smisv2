@@ -31,10 +31,52 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("SELECT Distinct(w.sanctionNo) FROM Work w")
 	List<String> findSanctionNos();
 
-	// Reports
+	// Reports______________________________________________
 	@Query("select  c, d, e, f, g, h from Work c join c.constituency d join c.block e join c.scheme f join c.year g join c.district h where  c.district=:district and c.isDeleted=false and c.isRecasted=false and (c.scheme=:scheme or :scheme is null) and (c.year=:year or :year is null) and (c.block=:block or :block is null ) and (c.constituency=:consti or :consti is null ) order by d.constituencyLabel, e.blockLabel, f.schemeLabel, g.yearLabel, c.workCode Desc")
-	List<Work> getReportWorks(@Param("scheme") Scheme scheme, @Param("district") District district,
+	List<Work> getReportWorkOld(@Param("scheme") Scheme scheme, @Param("district") District district,
 			@Param("year") Year year, @Param("consti") Constituency consti, @Param("block") Block block);
+	
+	@Query("""
+		    SELECT w
+		    FROM Work w
+		    WHERE w.isDeleted=false and w.isOldWork=false and w.isRecasted=false 
+		    AND w.district = :district
+		    AND w.block IS NOT NULL
+
+		    AND EXISTS (
+		        SELECT 1
+		        FROM BlockUser bu
+		        WHERE bu.user = :user
+		          AND bu.block = w.block
+		    )
+		    AND EXISTS (
+		        SELECT 1
+		        FROM SchemeUser su
+		        WHERE su.user = :user
+		          AND su.scheme = w.scheme
+		    )
+		    AND EXISTS (
+		        SELECT 1
+		        FROM ConstituencyUser cu
+		        WHERE cu.user = :user
+		          AND cu.constituency = w.constituency
+		    )
+
+		    AND (:scheme IS NULL OR w.scheme = :scheme)
+		    AND (:year   IS NULL OR w.year = :year)
+		    AND (:block  IS NULL OR w.block = :block)
+		    AND (:consti IS NULL OR w.constituency = :consti)
+
+		    ORDER BY w.workCode ASC
+		""")
+List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Scheme scheme,
+		@Param("district") District district, @Param("year") Year year, @Param("consti") Constituency consti,
+		@Param("block") Block block);
+	
+	//___________________________________________________________________________________________________________________________________________
+	
+	
+	
 
 	// Dashboard
 	@Query("select  count(*) from Work c  where  c.isDeleted=false and c.isRecasted=false and c.updatedOn between :sdate and :edate")
@@ -43,12 +85,13 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("select  count(*) from Work c where  c.isDeleted=false and c.isRecasted=false")
 	int getWorksCount();
 
-	// Find Works
+	// Find Works Inbox
 	@Query("""
 			    SELECT w
 			    FROM Work w
 			    WHERE w.isDeleted = false
 			      AND w.isRecasted = false
+			      AND w.isOldWork = false
 			      AND w.processflow IN (
 			            SELECT pfu.processFlow
 			            FROM ProcessFlowUser pfu
@@ -110,7 +153,7 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("""
 			    SELECT w
 			    FROM Work w
-			    WHERE w.isDeleted=false and w.isRecasted=false and w.processflow IN (
+			    WHERE w.isDeleted=false and w.isOldWork=false and w.isRecasted=false and w.processflow IN (
 			        SELECT pfu.processFlow
 			        FROM ProcessFlowUser pfu
 			        WHERE pfu.user = :user
@@ -151,4 +194,23 @@ public interface WorkRepository extends JpaRepository<Work, Long> {
 	@Query("SELECT DISTINCT ph.work FROM ProcessHistory ph " + "WHERE ph.user = :user "
 			+ "ORDER BY ph.work.workCode DESC")
 	List<Work> findWorksByUserFromHistory(@Param("user") Users user);
+	
+	
+	
+	//OldWorks
+	@Query("SELECT c FROM Work c WHERE c.isOldWork=true and c.district = :district " +
+		       "AND (:scheme IS NULL OR c.scheme = :scheme) " +
+		       "AND (:year IS NULL OR c.year = :year) " +
+		       "AND (:block IS NULL OR c.block = :block) " +
+		       "AND (:consti IS NULL OR c.constituency = :consti) " +
+		       "ORDER BY c.workCode DESC")
+		List<Work> getFilteredWorks(@Param("scheme") Scheme scheme, 
+		                            @Param("district") District district, 
+		                            @Param("year") Year year,
+		                            @Param("consti") Constituency consti, 
+		                            @Param("block") Block block);
+	
+	@Query("select c from Work c where c.isOldWork=true and c.district= :district and(str(c.workCode)=:searchTerm or lower(c.workName) like lower(concat('%', :searchTerm, '%'))or lower(c.sanctionNo) like lower(concat('%', :searchTerm, '%'))) order by c.workCode Desc")
+	List<Work> searchAll(@Param("searchTerm") String searchTerm, @Param("district") District district);
+	
 }

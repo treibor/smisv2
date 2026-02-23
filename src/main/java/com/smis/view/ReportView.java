@@ -139,10 +139,10 @@ public class ReportView extends VerticalLayout {
 
 	
 	private void printReport() {
-		if((scheme.getValue()==null || consti.getValue()==null||block.getValue()==null||year.getValue()==null)&& !isAdmin) {
+		/*if((scheme.getValue()==null || consti.getValue()==null||block.getValue()==null||year.getValue()==null)&& !isAdmin) {
 			NotificationUtil.showError("Please Select The Parameters");
 			return;
-		}
+		}*/
 		if (reportTypemla.getValue() == null || reportTypemla.getValue() == "") {
 			//notify.show("Please Select The Type of Report", 5000, Position.TOP_CENTER);
 			NotificationUtil.showError("Please Select The Type of Report");
@@ -158,8 +158,8 @@ public class ReportView extends VerticalLayout {
 				//System.out.println("A");
 				if (reportTypemla.getValue() == "Detailed Report") {
 					//System.out.println("Z");
-					List<Installment> installment = service.getInstallmentForReport(scheme.getValue(), year.getValue(),
-							consti.getValue(), block.getValue());
+					//List<Installment> installment = service.getInstallmentForReport(scheme.getValue(), year.getValue(),	consti.getValue(), block.getValue());
+					List<Installment> installment = service.getInstallmentForReport(scheme.getValue(), year.getValue(),	consti.getValue(), block.getValue());
 					Resource resource = new ClassPathResource("report/Detailsmla.jrxml");
 					InputStream employeeReportStream = resource.getInputStream();
 					JasperReport jasperReport = JasperCompileManager.compileReport(employeeReportStream);

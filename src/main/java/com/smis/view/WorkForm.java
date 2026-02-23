@@ -156,8 +156,10 @@ public class WorkForm extends VerticalLayout {
 	}
 
 	public void getVillages(Block block) {
+		if(block !=null) {
 		village.setItems(service.getVillage(block));
 		village.setItemLabelGenerator(village -> village.getVillageName());
+		}
 	}
 	private String stepTitle(String stepCode, String fallback) {
 	    ProcessFlow pf = service.getStepByCode(stepCode); // or injected service in form
@@ -284,6 +286,7 @@ public class WorkForm extends VerticalLayout {
 			dialog.setHeader("Delete??");
 			dialog.setText("Are You sure you want to delete this item.You will lose all details and you will not be able to undo this Action");
 			dialog.setCancelable(true);
+			dialog.add(new TextField("Remarks"));
 			dialog.addCancelListener(event -> dialog.close());
 			dialog.setRejectable(true);
 			dialog.setRejectText("Discard");
@@ -590,7 +593,7 @@ public class WorkForm extends VerticalLayout {
             }
 
             work.setProcessflow(nextStep);
-
+            work.setWorkStatus(nextStep.getStepName());
             ph = new ProcessHistory();
             ph.setWork(work);
             ph.setUser(user);
@@ -634,6 +637,7 @@ public class WorkForm extends VerticalLayout {
 	        }
 
 	        dbWork.setProcessflow(nextPf);
+	        dbWork.setWorkStatus(nextPf.getStepName());
 	        dbWork.setUpdatedBy(service.getLoggedUser());
 	        dbWork.setUpdatedOn(LocalDateTime.now());
 
@@ -952,6 +956,7 @@ public void reverseFlow_ReverseProblem(TextField remarks) {
 	        work.setUpdatedBy(user);
 	        work.setUpdatedOn(now);
 	        work.setWorkStatus(next.getStepName() + "-" + latestInstallment.getInstallmentNo()); // optional
+	        
 	        service.saveWork(work);
 
 	        fireEvent(new RefreshEvent(this, work));

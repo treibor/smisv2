@@ -153,8 +153,8 @@ public class MainLayout extends AppLayout {
 		SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
 				LineAwesomeIcon.HISTORY_SOLID.create());
 
-		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("ReleaseOrder", "", PrintView.class,
-				LineAwesomeIcon.DONATE_SOLID.create());
+		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Bulk Release Order", "", PrintView.class,
+				LineAwesomeIcon.WOLF_PACK_BATTALION.create());
 
 		SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,
 				LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
@@ -170,6 +170,10 @@ public class MainLayout extends AppLayout {
 
 		SideNavItemWithHelperText users = new SideNavItemWithHelperText("Users", "", UsersView.class,
 				LineAwesomeIcon.USER.create());
+		SideNavItemWithHelperText old_works = new SideNavItemWithHelperText("Old Works", "", com.smis.view.old.WorkView.class,
+				LineAwesomeIcon.OLD_REPUBLIC.create());
+		SideNavItemWithHelperText old_ro = new SideNavItemWithHelperText("Release Order", "", com.smis.view.old.PrintView.class,
+				LineAwesomeIcon.DONATE_SOLID.create());
 
 		master.setVisible(isAdmin);
 		distmaster.setVisible(isSuper);
@@ -182,7 +186,7 @@ public class MainLayout extends AppLayout {
 		audit.setVisible(isAdmin);
 		users.setVisible(isAdmin);
 
-		VerticalLayout navItems = new VerticalLayout(home, mla, history, releaseorder, master, distmaster, report,
+		VerticalLayout navItems = new VerticalLayout(home, mla, history, releaseorder, old_works,old_ro,master, distmaster, report,
 				audit, users);
 		navItems.setPadding(true);
 		navItems.setSpacing(true);

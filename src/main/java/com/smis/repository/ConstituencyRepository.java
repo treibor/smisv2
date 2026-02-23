@@ -22,15 +22,16 @@ public interface ConstituencyRepository extends JpaRepository<Constituency, Long
 	        District district, boolean inUse);
 	
 	@Query("""
-			SELECT b
-			FROM Constituency b
-			WHERE b IN (
-			      SELECT bu.constituency
-			      FROM ConstituencyUser bu
-			      WHERE bu.user = :user
-			  )
-			""")
-			List<Constituency> findConstituenciesByUser(@Param("user") Users user);
+	        SELECT b
+	        FROM Constituency b
+	        WHERE b IN (
+	              SELECT bu.constituency
+	              FROM ConstituencyUser bu
+	              WHERE bu.user = :user
+	        )
+	        ORDER BY b.constituencyLabel ASC
+	       """)
+	List<Constituency> findConstituenciesByUser(@Param("user") Users user);
 	
 	
 }
