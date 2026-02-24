@@ -39,7 +39,10 @@ html {
 }
 
 
-
+vaadin-grid::part(body-cell) {
+  font-size: var(--lumo-font-size-s);
+  /* or whatever you want: font-weight, color, etc */
+}
 .homeLayout{
 	padding: 10px 10px 20px 10px;
 }

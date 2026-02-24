@@ -493,18 +493,9 @@ public class WorkViewHistory extends VerticalLayout {
 	}
 
 	public void updateGrid() {
-		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),
+		gridhistory.setItems(service.getFilteredWorksForHistory(filterText.getValue(), scheme.getValue(),
 				consti.getValue(), block.getValue(), year.getValue()));
 	}
 
-	private void updateList() {
-		block.clear();
-		scheme.clear();
-		consti.clear();
-		year.clear();
-		gridhistory.setItems(service.getFilteredWorksAndSearch(filterText.getValue(), scheme.getValue(),
-				consti.getValue(), block.getValue(), year.getValue()));
-
-	}
-
+	
 }

@@ -38,6 +38,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.H6;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -266,7 +267,8 @@ public class WorkForm extends VerticalLayout {
 		close.addClickShortcut(Key.ESCAPE);
 		save.addClickListener(event -> saveNewWork());
 		// delete.addClickListener(event -> fireEvent(new DeleteEvent(this, work)));
-		delete.addClickListener(event -> confirmDelete(work));
+		delete.addClickListener(e -> fireEvent(new RequestDeleteEvent(this, work)));
+		//delete.addClickListener(event -> confirmDelete(work));
 		close.addClickListener(event -> fireEvent(new CloseEvent(this)));
 		HorizontalLayout hl1 = new HorizontalLayout(save, delete, close);
 		// return new HorizontalLayout(save, delete, close);
@@ -278,25 +280,7 @@ public class WorkForm extends VerticalLayout {
 
 	}
 
-	public void confirmDelete(Work work) {
-		ConfirmDialog dialog = new ConfirmDialog();
-		if (work == null) {
-
-		} else {
-			dialog.setHeader("Delete??");
-			dialog.setText("Are You sure you want to delete this item.You will lose all details and you will not be able to undo this Action");
-			dialog.setCancelable(true);
-			dialog.add(new TextField("Remarks"));
-			dialog.addCancelListener(event -> dialog.close());
-			dialog.setRejectable(true);
-			dialog.setRejectText("Discard");
-			dialog.addRejectListener(event -> dialog.close());
-			dialog.setConfirmText("Delete");
-			dialog.addConfirmListener(event -> fireEvent(new DeleteEvent(this, work)));
-			dialog.open();
-
-		}
-	}
+	
 
 	public Component releaseInstallmentForm() {
 		ValidationUtil.applyValidation(instRemarks);
@@ -1233,6 +1217,7 @@ public void reverseFlow_ReverseProblem(TextField remarks) {
 		public Work getWork() {
 			return work;
 		}
+		
 	}
 
 	public static class SaveEvent extends WorkFormEvent {
@@ -1247,17 +1232,27 @@ public void reverseFlow_ReverseProblem(TextField remarks) {
 	}
 
 	public static class DeleteEvent extends WorkFormEvent {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
 
-		DeleteEvent(WorkForm source, Work work) {
-			super(source, work);
-		}
+	    private static final long serialVersionUID = 1L;
 
+	    private final String remarks;
+
+	    DeleteEvent(WorkForm source, Work work, String remarks) {
+	        super(source, work);
+	        this.remarks = remarks;
+	    }
+
+	    public String getRemarks() {
+	        return remarks;
+	    }
 	}
+	public static class RequestDeleteEvent extends WorkFormEvent {
+	    private static final long serialVersionUID = 1L;
 
+	    public RequestDeleteEvent(WorkForm source, Work work) {
+	        super(source, work);
+	    }
+	}
 	public static class CloseEvent extends WorkFormEvent {
 		/**
 		 * 

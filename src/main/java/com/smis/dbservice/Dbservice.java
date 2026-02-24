@@ -686,9 +686,9 @@ public class Dbservice implements Serializable {
 	}
 
 	// Inbox
-	public List<Work> getFilteredWorksByUser(Scheme scheme, Constituency consti, Block block, Year year) {
+	public List<Work> getFilteredWorksForInbox(String searchTerm,Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
-			return wrepo.getFilteredWorksByUser(getLoggedUser(), scheme, getDistrict(), year, consti, block);
+			return wrepo.getFilteredWorksForInbox(getLoggedUser(), scheme, getDistrict(), year, consti, block, searchTerm);
 		} catch (Exception e) {
 
 			return Collections.emptyList();
@@ -697,7 +697,7 @@ public class Dbservice implements Serializable {
 	}
 
 	// History
-	public List<Work> getFilteredWorksAndSearch(String searchTerm, Scheme scheme, Constituency consti, Block block,
+	public List<Work> getFilteredWorksForHistory(String searchTerm, Scheme scheme, Constituency consti, Block block,
 			Year year) {
 		try {
 			return wrepo.findWorksEverProcessedByUserAndSearch(getLoggedUser(), scheme, getDistrict(), year, consti,
@@ -753,11 +753,13 @@ public class Dbservice implements Serializable {
 		}
 	}
 
-	public void deleteWork(Work work) {
+	public void deleteWork(Work work, String remarks) {
 		// irepo.deleteByWork(work);
 		try {
 			String action = "Soft Delete";
 			String process = "Work";
+			work.setIsDeleted(true);
+			work.setRemarks(remarks);
 			wrepo.save(work);
 			auditservice.saveAudit(work, process, action);
 			Notification.show("Deleted Successfully", 5000, Position.TOP_CENTER)

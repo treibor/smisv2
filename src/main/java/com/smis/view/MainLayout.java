@@ -185,7 +185,8 @@ public class MainLayout extends AppLayout {
 		);
 		audit.setVisible(isAdmin);
 		users.setVisible(isAdmin);
-
+		old_works.setVisible(service.hasRole("OLD"));
+		old_ro.setVisible(service.hasRole("OLD"));
 		VerticalLayout navItems = new VerticalLayout(home, mla, history, releaseorder, old_works,old_ro,master, distmaster, report,
 				audit, users);
 		navItems.setPadding(true);

@@ -109,11 +109,12 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 			            SELECT 1 FROM ConstituencyUser cu
 			            WHERE cu.user = :user AND cu.constituency = w.constituency
 			      )
+			      
 			    ORDER BY w.workCode DESC
 			""")
 	List<Work> findWorksByUser(@Param("user") Users user);
 
-	// Works Search History
+	// Works Search History--------------------------------------------------------------------------
 	@Query("""
 		    SELECT DISTINCT w
 		    FROM Work w
@@ -149,7 +150,7 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 		        @Param("searchTerm") String searchTerm
 		);
 
-	// Inbox
+	// Inbox________________________________________________________________________________________________
 	@Query("""
 			    SELECT w
 			    FROM Work w
@@ -184,12 +185,19 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 			    AND (:year   IS NULL OR w.year = :year)
 			    AND (:block  IS NULL OR w.block = :block)
 			    AND (:consti IS NULL OR w.constituency = :consti)
-
+				AND (
+		            :searchTerm IS NULL
+		         OR CAST(w.workCode AS string) = :searchTerm
+		         OR LOWER(w.workName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+		         OR LOWER(w.sanctionNo) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+		      )
 			    ORDER BY w.workCode DESC
 			""")
-	List<Work> getFilteredWorksByUser(@Param("user") Users user, @Param("scheme") Scheme scheme,
+	List<Work> getFilteredWorksForInbox(@Param("user") Users user, @Param("scheme") Scheme scheme,
 			@Param("district") District district, @Param("year") Year year, @Param("consti") Constituency consti,
-			@Param("block") Block block);
+			@Param("block") Block block, @Param("searchTerm") String searchTerm);
+	
+	//____________________________________________________________________________________________________________
 
 	@Query("SELECT DISTINCT ph.work FROM ProcessHistory ph " + "WHERE ph.user = :user "
 			+ "ORDER BY ph.work.workCode DESC")
