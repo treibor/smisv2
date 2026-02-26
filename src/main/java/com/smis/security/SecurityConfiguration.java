@@ -122,40 +122,9 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 	    	);
 
 	    super.configure(http);
-	    http.logout(logout -> logout
-	    	    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
-	    	    .logoutSuccessUrl("/login?logout")
-	    	    .invalidateHttpSession(true)
-	    	    .clearAuthentication(true)
-	    	    .deleteCookies("JSESSIONID")
-	    	);
+	    
 	    setLoginView(http, Login.class);
-	    http.formLogin(form -> form
-	    	    .successHandler((request, response, authentication) -> {
-
-	    	        String username = authentication.getName();
-	    	        String roles = authentication.getAuthorities().stream()
-	    	                .map(a -> a.getAuthority())
-	    	                .distinct()
-	    	                .sorted()
-	    	                .collect(java.util.stream.Collectors.joining(", "));
-	    	        String ip = auditService.getRealClientIp(request);
-	    	        auditService.saveAuthAudit("Login",  "Login Success",username, "Roles:"+roles, ip);
-	    	        
-	    	        response.sendRedirect("/"); // change if you want a specific landing page
-	    	    })
-	    	    .failureHandler((request, response, exception) -> {
-
-	    	        String username = request.getParameter("username");
-	    	        if (username == null || username.isBlank()) username = "UNKNOWN";
-	    	        String ip = auditService.getRealClientIp(request);
-
-					auditService.saveAuthAudit("Login", "Login Fail",username,  
-							"Reason=" + exception.getClass().getSimpleName(),ip);
-					
-	    	        response.sendRedirect("/login?error");
-	    	    })
-	    	);
+	    
 	}
 
 	private boolean isVaadinInternalRequest(HttpServletRequest request) {

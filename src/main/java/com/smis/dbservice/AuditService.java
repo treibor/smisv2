@@ -41,7 +41,8 @@ public class AuditService {
 	}
 
 	public List<AuditTrail> getAuditTrail(District district) {
-		return aRepo.findByDistrictOrderByIdDesc(district);
+		//return aRepo.findByDistrictOrderByIdDesc(district);
+		return aRepo.findAllByOrderByIdDesc();
 	}
 
 	public String getRealClientIp() {
@@ -149,8 +150,6 @@ public class AuditService {
 		audit.setOtherDetails(odetails);
 		audit.setIpAddress(ip);
 		audit.setActionOn(LocalDateTime.now());
-
-		// don't call aservice.getLoggedUser() here.
 		updateAudit(audit);
 	}
 

@@ -18,6 +18,10 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.dom.Element;
+
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 
 import java.util.List;
@@ -278,7 +282,20 @@ public class Login extends Div implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        Map<String, List<String>> params = event.getLocation().getQueryParameters().getParameters();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        boolean loggedIn = auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken);
+
+        if (loggedIn) {
+            event.forwardTo("");  // home route
+            return;               // IMPORTANT
+        }
+
+        Map<String, List<String>> params =
+                event.getLocation().getQueryParameters().getParameters();
 
         if (params.containsKey("captcha")) {
             message.setText("Invalid captcha. Please try again.");

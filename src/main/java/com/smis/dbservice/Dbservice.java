@@ -904,9 +904,18 @@ public class Dbservice implements Serializable {
 			phistoryrrepo.save(pfh);
 			long id=pfh.getId();
 			String action = "Save | Update";
+			String from = Optional.ofNullable(pfh.getFromStep())
+			        .map(ProcessFlow::getStepName)
+			        .orElse("N/A");
+
+			String to = Optional.ofNullable(pfh.getToStep())
+			        .map(ProcessFlow::getStepName)
+			        .orElse("N/A");
+
+			String odetails = "From:" + from + " | To:" + to;
 			String process = "Process History";
 			String details = "Id:" + id +" | Process:" + pfh.getProcessName();
-			String odetails = "From:"+pfh.getFromStep().getStepName()+" | To:"+pfh.getToStep().getStepName();
+			//String odetails = "From:"+pfh.getFromStep().getStepName()+" | To:"+pfh.getToStep().getStepName();
 			
 			auditservice.saveAudit(action, process, details, odetails);
 			
@@ -916,7 +925,13 @@ public class Dbservice implements Serializable {
 		}
 		
 	}
-
+	
+	public ProcessHistory getLastPocessStep(Work work) {
+		return phistoryrrepo.findTopByWorkOrderByEnteredOnDesc(work);
+	}
+	
+	
+	
 	public List<ProcessHistory> getProcessHistory() {
 		try {
 			return phistoryrrepo.findByUser(getLoggedUser());

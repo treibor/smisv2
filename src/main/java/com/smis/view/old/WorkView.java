@@ -322,7 +322,7 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void deleteWork(WorkForm.DeleteEvent event) {
-		service.deleteWork(event.getWork());
+		service.deleteWork(event.getWork(),"");
 		updateList();
 		closeEditor();
 

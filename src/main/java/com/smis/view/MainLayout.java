@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,7 @@ import com.smis.entity.Users;
 import com.smis.entity.UsersRoles;
 import com.smis.entity.master.District;
 import com.smis.entity.master.State;
+import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
@@ -80,7 +82,8 @@ public class MainLayout extends AppLayout {
 	boolean isAdmin;
 	boolean isSuper;
 	private Users loggedUser;
-
+	@Autowired
+	SecurityService secService;
 	public MainLayout(Dbservice dbservice) {
 		this.service = dbservice;
 		this.loggedUser = service.getLoggedUser();
@@ -284,7 +287,7 @@ public class MainLayout extends AppLayout {
 		addToNavbar(header);
 	}
 	public void logout() {
-		UI.getCurrent().getPage().setLocation("/logout");
+		secService.logout();
 	}
 	private void openAboutDialog() {
 		if (aboutdialog != null) {

@@ -2,6 +2,7 @@ package com.smis.view;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -22,19 +23,24 @@ import com.smis.entity.Users;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.util.ButtonUtil;
+import com.smis.util.NotificationUtil;
 import com.smis.util.StatusBadgeUtil;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
+import com.vaadin.flow.component.grid.contextmenu.GridMenuItem;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -180,23 +186,163 @@ public class WorkViewHistory extends VerticalLayout {
 		});
 		GridContextMenu<Work> contextMenu = new GridContextMenu<>(gridhistory);
 
-		// Add a menu item for viewing installments
-		contextMenu.addItem("View Details", event -> {
-			Optional<Work> selectedWork = event.getItem();
-			selectedWork.ifPresent(work -> {
-				// Show a dialog or a new component with installments
-				showInstallmentsDialog(work);
-			});
-		});
-		contextMenu.addItem("View History", event -> {
-			Optional<Work> selectedWork = event.getItem();
-			selectedWork.ifPresent(work -> {
-				// Show a dialog or a new component with installments
-				showHistoryDialog(work);
-			});
-		});
-	}
+		contextMenu.addItem(menuItem(VaadinIcon.EYE, "View Details"),
+				event -> event.getItem().ifPresent(this::showInstallmentsDialog));
 
+		contextMenu.addItem(menuItem(VaadinIcon.TIME_BACKWARD, "View History"),
+				event -> event.getItem().ifPresent(this::showHistoryDialog));
+		
+
+		if (isAdmin) {
+		    GridMenuItem<Work> undoItem = contextMenu.addItem(
+		        menuItem(VaadinIcon.REFRESH, "Undo Delete"),
+		        event -> event.getItem().ifPresent(this::confirmUndoDelete)
+		    );
+		    undoItem.setVisible(false);
+		    contextMenu.addGridContextMenuOpenedListener(e -> {
+		        Optional<Work> item = e.getItem();          // ✅ this is the safest
+		        undoItem.setVisible(item.isPresent() && item.get().getIsDeleted());
+		    });
+		}
+		if (isAdmin) {
+		    GridMenuItem<Work> undoRecast = contextMenu.addItem(
+		        menuItem(VaadinIcon.REFRESH, "Undo Recast"),
+		        event -> event.getItem().ifPresent(this::confirmUndoRecast)
+		    );
+		    undoRecast.setVisible(false);
+		    contextMenu.addGridContextMenuOpenedListener(e -> {
+		        Optional<Work> item = e.getItem();          // ✅ this is the safest
+		        undoRecast.setVisible(item.isPresent() && item.get().getIsRecasted());
+		    });
+		}
+
+	}
+	public void undoDelete(Work work, String remarks) {
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsDeleted(false);
+	    work.setRemarks(remarks);
+	    service.saveWork(work);
+	    ProcessHistory ph = new ProcessHistory();
+	    ph.setWork(work);
+	    ph.setEnteredOn(LocalDateTime.now());
+	    ph.setProcessName("Undo Delete");
+	    ph.setFromStep(existing.getFromStep());
+	    ph.setToStep(existing.getToStep()); // optional, nice for audit
+	    ph.setUser(service.getLoggedUser());
+	    ph.setRemarks(remarks);
+	    service.saveProcessHistory(ph);
+	    NotificationUtil.showSuccess("Work Reverted to Last Process Successfully");
+	    updateGrid();
+	}
+	public void confirmUndoDelete(Work work) {
+
+		if (work == null)
+			return;
+
+		ConfirmDialog dialog = new ConfirmDialog();
+		dialog.setHeader("Undo?");
+
+		Paragraph warning = new Paragraph("Are you sure you want to undo delete this item? "
+				+ "This Work will be restored to the last Process Flow");
+
+		TextField remarks = new TextField("Remarks");
+		remarks.setWidthFull();
+		remarks.setRequired(true);
+		remarks.setErrorMessage("Remarks is mandatory");
+
+		VerticalLayout layout = new VerticalLayout(warning, remarks);
+		layout.setPadding(false);
+		layout.setSpacing(true);
+		dialog.add(layout);
+		dialog.setCancelable(true);
+		dialog.setConfirmText("Delete");
+		dialog.addConfirmListener(e -> {
+
+			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
+
+			if (r.isEmpty()) {
+				remarks.setInvalid(true);
+				NotificationUtil.showError("Please Enter Remarks");
+				e.getSource().setOpened(true);
+				return; // ✅ keep dialog open
+			}
+			dialog.close();
+			undoDelete(work, r);
+			
+		});
+
+		dialog.open();
+	}
+	public void undoRecast(Work work, String remarks) {
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsRecasted(false);
+	    work.setRemarks(remarks);
+	    service.saveWork(work);
+	    ProcessHistory ph = new ProcessHistory();
+	    ph.setWork(work);
+	    ph.setEnteredOn(LocalDateTime.now());
+	    ph.setProcessName("Undo Recast");
+	    ph.setFromStep(existing.getFromStep());
+	    ph.setToStep(existing.getToStep()); // optional, nice for audit
+	    ph.setUser(service.getLoggedUser());
+	    ph.setRemarks(remarks);
+	    service.saveProcessHistory(ph);
+	    NotificationUtil.showSuccess("Work Reverted to Last Process Successfully");
+	    updateGrid();
+	}
+	public void confirmUndoRecast(Work work) {
+
+		if (work == null)
+			return;
+
+		ConfirmDialog dialog = new ConfirmDialog();
+		dialog.setHeader("Undo?");
+
+		Paragraph warning = new Paragraph("Are you sure you want to undo recast this item? "
+				+ "This Work will be restored to the last Process Flow");
+
+		TextField remarks = new TextField("Remarks");
+		remarks.setWidthFull();
+		remarks.setRequired(true);
+		remarks.setErrorMessage("Remarks is mandatory");
+
+		VerticalLayout layout = new VerticalLayout(warning, remarks);
+		layout.setPadding(false);
+		layout.setSpacing(true);
+		dialog.add(layout);
+		dialog.setCancelable(true);
+		dialog.setConfirmText("Delete");
+		dialog.addConfirmListener(e -> {
+
+			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
+
+			if (r.isEmpty()) {
+				remarks.setInvalid(true);
+				NotificationUtil.showError("Please Enter Remarks");
+				e.getSource().setOpened(true);
+				return; // ✅ keep dialog open
+			}
+			dialog.close();
+			undoRecast(work, r);
+			
+		});
+
+		dialog.open();
+	}
+	private Component menuItem(VaadinIcon icon, String text) {
+		Icon i = icon.create();
+		i.setSize("16px");
+
+		Span label = new Span(text);
+
+		HorizontalLayout hl = new HorizontalLayout(i, label);
+		hl.setSpacing(true);
+		hl.setPadding(false);
+		hl.setMargin(false);
+		hl.setAlignItems(FlexComponent.Alignment.CENTER);
+
+		return hl;
+	}
 	private void showInstallmentsDialog(Work work) {
 		try {
 			Dialog dialog = new Dialog();
@@ -371,26 +517,57 @@ public class WorkViewHistory extends VerticalLayout {
 		// 3️⃣ Action Performed (Arrow + Text)
 		grid.addComponentColumn(ph -> {
 
-			Icon icon;
-			if (ph.isReversed()) {
-				icon = VaadinIcon.ARROW_BACKWARD.create();
-				icon.getStyle().set("color", "var(--lumo-error-color)");
-				icon.getElement().setAttribute("title", "Reverse");
-			} else {
-				icon = VaadinIcon.ARROW_FORWARD.create();
-				icon.getStyle().set("color", "var(--lumo-success-color)");
-				icon.getElement().setAttribute("title", "Forward");
-			}
-			icon.setSize("16px");
+		    String action = ph.getProcessName() != null ? ph.getProcessName().trim() : "";
+		    String actionLower = action.toLowerCase();
 
-			Span text = new Span(ph.getProcessName() != null ? ph.getProcessName() : "");
+		    Icon icon;
+		    String title;
 
-			HorizontalLayout layout = new HorizontalLayout(icon, text);
-			layout.getStyle().set("align-items", "center");
-			layout.setSpacing(true);
-			layout.setPadding(false);
+		    // --- special actions ---
+		    if (actionLower.equals("deleted") || actionLower.equals("delete")) {
+		        icon = VaadinIcon.TRASH.create();
+		        icon.getStyle().set("color", "var(--lumo-error-color)");
+		        title = "Deleted";
 
-			return layout;
+		    } else if (actionLower.equals("undo delete") || actionLower.equals("undelete")) {
+		        icon = VaadinIcon.ROTATE_LEFT.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Undo Delete";
+
+		    }else if (actionLower.equals("recasted") || actionLower.equals("recast")) {
+		        icon = VaadinIcon.DEL.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Recasted";
+
+		    } else if (actionLower.equals("undo recast") || actionLower.equals("unrecast")) {
+		        icon = VaadinIcon.ROTATE_RIGHT.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Undo Recast";
+
+		    }else {
+		        // --- normal workflow actions ---
+		        if (ph.isReversed()) {
+		            icon = VaadinIcon.ARROW_BACKWARD.create();
+		            icon.getStyle().set("color", "var(--lumo-error-color)");
+		            title = "Reverse";
+		        } else {
+		            icon = VaadinIcon.ARROW_FORWARD.create();
+		            icon.getStyle().set("color", "var(--lumo-success-color)");
+		            title = "Forward";
+		        }
+		    }
+
+		    icon.getElement().setAttribute("title", title);
+		    icon.setSize("16px");
+
+		    Span text = new Span(action);
+
+		    HorizontalLayout layout = new HorizontalLayout(icon, text);
+		    layout.getStyle().set("align-items", "center");
+		    layout.setSpacing(true);
+		    layout.setPadding(false);
+
+		    return layout;
 
 		}).setHeader("Action Performed").setAutoWidth(true);
 

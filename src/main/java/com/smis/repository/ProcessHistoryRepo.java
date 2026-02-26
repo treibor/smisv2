@@ -13,18 +13,22 @@ import com.smis.entity.Users;
 import com.smis.entity.Work;
 
 
-public interface ProcessHistoryRepo extends JpaRepository<ProcessHistory, Long>{
+public interface ProcessHistoryRepo extends JpaRepository<ProcessHistory, Long> {
 	List<ProcessHistory> findByUser(Users user);
+
 	List<ProcessHistory> findByWork(Work work);
+
 	Optional<ProcessHistory> findTop1ByWorkAndReversedFalseOrderByEnteredOnDesc(Work work);
+
 	@Query("SELECT DISTINCT ph.work FROM ProcessHistory ph WHERE ph.user = :user")
 	List<Work> findDistinctWorkByUser(@Param("user") Users user);
-	//boolean existsByWorkAndProcessFlowAndUser(Work work, ProcessFlow processFlow, Users user);
+
+	// boolean existsByWorkAndProcessFlowAndUser(Work work, ProcessFlow processFlow,
+	// Users user);
 	boolean existsByWorkAndFromStepAndUser(Work work, ProcessFlow fromStep, Users user);
-	Optional<ProcessHistory> findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(
-	        Work work, ProcessFlow toStep
-	);
-	
+
+	Optional<ProcessHistory> findTopByWorkAndToStepAndReversedFalseOrderByEnteredOnDesc(Work work, ProcessFlow toStep);
+
 	@Query("""
 			  SELECT ph
 			  FROM ProcessHistory ph
@@ -32,6 +36,8 @@ public interface ProcessHistoryRepo extends JpaRepository<ProcessHistory, Long>{
 			    AND ph.toStep = :toStep
 			  ORDER BY ph.enteredOn DESC
 			""")
-			List<ProcessHistory> findLatestMoveIntoStep(@Param("work") Work work,
-			                                           @Param("toStep") ProcessFlow toStep);
+	List<ProcessHistory> findLatestMoveIntoStep(@Param("work") Work work, @Param("toStep") ProcessFlow toStep);
+	
+	ProcessHistory findTopByWorkOrderByEnteredOnDesc(Work work);
+	//ProcessHistory findTopByWorkAndFromStepIsNotNullOrderByEnteredOnDesc(Work work);
 }

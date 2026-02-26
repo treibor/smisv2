@@ -46,7 +46,7 @@ public class YearForm extends FormLayout{
 		//yearName.addValueChangeListener(e->yearLabel.setValue(e.getValue()));
 		masterYear.setItems(service.getMasterYears());
 		masterYear.setItemLabelGenerator(masteryear->masteryear.getYearName());
-		masterYear.addValueChangeListener(e->yearLabel.setValue(e.getValue().getYearName()));
+		//masterYear.addValueChangeListener(e->yearLabel.setValue(e.getValue().getYearName()));
 		add(new Span("* Click New Button To Add New Item"),masterYear, yearLabel, inUse, createButtonsLayout());
 	}
 	

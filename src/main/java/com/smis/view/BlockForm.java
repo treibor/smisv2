@@ -77,12 +77,12 @@ public class BlockForm extends FormLayout{
 			binder.writeBean(block);
 			block.setDistrict(service.getDistrict());
 			fireEvent(new SaveEvent(this, block));
-			Notification.show("Block Added Successfully", 5000, Position.BOTTOM_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+			//Notification.show("Block Added Successfully", 5000, Position.BOTTOM_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 		} catch (ValidationException e) {
 			Notification.show("Please Enter All Fields", 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			
 		}catch (Exception e) {
-			Notification.show("Please Contact Your Administrator: Error Code:"+e, 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+			Notification.show("Please Contact Your Administrator: Error Code:"+e.getMessage(), 5000, Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}
 		
 	}

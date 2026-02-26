@@ -10,4 +10,5 @@ import com.smis.entity.master.District;
 
 public interface AuditRepository extends JpaRepository<AuditTrail, Long> {
 	List<AuditTrail> findByDistrictOrderByIdDesc(District district);
+	List<AuditTrail> findAllByOrderByIdDesc();
 }

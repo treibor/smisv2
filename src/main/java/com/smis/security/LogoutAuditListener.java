@@ -29,8 +29,6 @@ public class LogoutAuditListener {
                     .collect(java.util.stream.Collectors.joining(", "))
                 : "—";
 
-        // No HttpServletRequest here, so IP/UA is not available.
-        // (We can solve that by storing IP in session during login if you really need it.)
         auditService.saveAuthAudit("Logout","Logout Success", username, roles, "");
     }
 }

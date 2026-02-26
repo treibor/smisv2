@@ -52,6 +52,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.transaction.Transactional;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 
 @PageTitle("Inbox")
@@ -184,6 +185,11 @@ public class WorkView extends VerticalLayout {
 
 		contextMenu.addItem(menuItem(VaadinIcon.TIME_BACKWARD, "View History"),
 				event -> event.getItem().ifPresent(this::showHistoryDialog));
+		
+		if (isAdmin) {
+			contextMenu.addItem(menuItem(VaadinIcon.BULLSEYE, "Recast"),
+					event -> event.getItem().ifPresent(this::confirmRecast)).addClassName("danger-item");
+		}
 		if (isAdmin) {
 			contextMenu.addItem(menuItem(VaadinIcon.TRASH, "Delete"),
 					event -> event.getItem().ifPresent(this::confirmDelete)).addClassName("danger-item");
@@ -191,63 +197,94 @@ public class WorkView extends VerticalLayout {
 	}
 
 	public void confirmDelete(Work work) {
-
 		if (work == null)
 			return;
-
 		ConfirmDialog dialog = new ConfirmDialog();
 		dialog.setHeader("Delete?");
-
-		Paragraph warning = new Paragraph("Are you sure you want to delete this item? "
-				+ "You will lose all details and you will not be able to undo this action.");
-
+		Paragraph warning = new Paragraph("Are you sure you want to delete this work? "
+				+ "This Work will be removed from the Inbox of All WorkFlow Players.");
 		TextField remarks = new TextField("Remarks");
 		remarks.setWidthFull();
 		remarks.setRequired(true);
 		remarks.setErrorMessage("Remarks is mandatory");
-
 		VerticalLayout layout = new VerticalLayout(warning, remarks);
 		layout.setPadding(false);
 		layout.setSpacing(true);
-
 		dialog.add(layout);
-
 		dialog.setCancelable(true);
-		dialog.setRejectable(true);
-		dialog.setRejectText("Discard");
 		dialog.setConfirmText("Delete");
-
 		dialog.addConfirmListener(e -> {
-
 			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
 
 			if (r.isEmpty()) {
 				remarks.setInvalid(true);
 				NotificationUtil.showError("Please Enter Remarks");
 				e.getSource().setOpened(true);
-				return; // ✅ keep dialog open
+				return; //  keep dialog open
 			}
 			dialog.close();
 			deleteWorkAndLog(work, r);
-
 			closeEditor();
 		});
-
 		dialog.open();
 	}
-
+	public void confirmRecast(Work work) {
+		if (work == null)
+			return;
+		ConfirmDialog dialog = new ConfirmDialog();
+		dialog.setHeader("Recast?");
+		Paragraph warning = new Paragraph("Are you sure you want to Recast this work? "
+				+ "This Work will be removed from the Inbox of All WorkFlow Players.");
+		TextField remarks = new TextField("Remarks");
+		remarks.setWidthFull();
+		remarks.setRequired(true);
+		remarks.setErrorMessage("Remarks is mandatory");
+		VerticalLayout layout = new VerticalLayout(warning, remarks);
+		layout.setPadding(false);
+		layout.setSpacing(true);
+		dialog.add(layout);
+		dialog.setCancelable(true);
+		dialog.setConfirmText("Recast");
+		dialog.addConfirmListener(e -> {
+			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
+			if (r.isEmpty()) {
+				remarks.setInvalid(true);
+				NotificationUtil.showError("Please Enter Remarks");
+				e.getSource().setOpened(true);
+				return; //  keep dialog open
+			}
+			dialog.close();
+			recastWork(work, r);
+			closeEditor();
+		});
+		dialog.open();
+	}
+	public void recastWork(Work work, String remarks) {
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsRecasted(true);
+		work.setRemarks(remarks);
+		service.saveWork(work);
+		ProcessHistory ph = new ProcessHistory();
+		ph.setWork(work);
+		ph.setEnteredOn(LocalDateTime.now());
+		ph.setProcessName("Recasted");
+		ph.setFromStep(existing.getFromStep()); 
+		ph.setToStep(existing.getToStep());
+		ph.setUser(service.getLoggedUser());
+		ph.setRemarks(remarks); 
+		service.saveProcessHistory(ph);
+		NotificationUtil.showSuccess("Work Recasted Successfully and Removed from Inbox");
+		updateGrid();
+	}
 	private Component menuItem(VaadinIcon icon, String text) {
 		Icon i = icon.create();
 		i.setSize("16px");
-
 		Span label = new Span(text);
-
 		HorizontalLayout hl = new HorizontalLayout(i, label);
 		hl.setSpacing(true);
 		hl.setPadding(false);
 		hl.setMargin(false);
 		hl.setAlignItems(FlexComponent.Alignment.CENTER);
-
 		return hl;
 	}
 
@@ -261,7 +298,6 @@ public class WorkView extends VerticalLayout {
 			Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 			DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
 			installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
 			installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released")
 					.setResizable(true);
@@ -425,26 +461,57 @@ public class WorkView extends VerticalLayout {
 		// 3️⃣ Action Performed (Arrow + Text)
 		grid.addComponentColumn(ph -> {
 
-			Icon icon;
-			if (ph.isReversed()) {
-				icon = VaadinIcon.ARROW_BACKWARD.create();
-				icon.getStyle().set("color", "var(--lumo-error-color)");
-				icon.getElement().setAttribute("title", "Reverse");
-			} else {
-				icon = VaadinIcon.ARROW_FORWARD.create();
-				icon.getStyle().set("color", "var(--lumo-success-color)");
-				icon.getElement().setAttribute("title", "Forward");
-			}
-			icon.setSize("16px");
+		    String action = ph.getProcessName() != null ? ph.getProcessName().trim() : "";
+		    String actionLower = action.toLowerCase();
 
-			Span text = new Span(ph.getProcessName() != null ? ph.getProcessName() : "");
+		    Icon icon;
+		    String title;
 
-			HorizontalLayout layout = new HorizontalLayout(icon, text);
-			layout.getStyle().set("align-items", "center");
-			layout.setSpacing(true);
-			layout.setPadding(false);
+		    // --- special actions ---
+		    if (actionLower.equals("deleted") || actionLower.equals("delete")) {
+		        icon = VaadinIcon.TRASH.create();
+		        icon.getStyle().set("color", "var(--lumo-error-color)");
+		        title = "Deleted";
 
-			return layout;
+		    } else if (actionLower.equals("undo delete") || actionLower.equals("undelete")) {
+		        icon = VaadinIcon.ROTATE_LEFT.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Undo Delete";
+
+		    }else if (actionLower.equals("recasted") || actionLower.equals("recast")) {
+		        icon = VaadinIcon.DEL.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Recasted";
+
+		    } else if (actionLower.equals("undo recast") || actionLower.equals("unrecast")) {
+		        icon = VaadinIcon.ROTATE_RIGHT.create(); // or VaadinIcon.UNDO if you prefer
+		        icon.getStyle().set("color", "var(--lumo-primary-color)");
+		        title = "Undo Recast";
+
+		    }else {
+		        // --- normal workflow actions ---
+		        if (ph.isReversed()) {
+		            icon = VaadinIcon.ARROW_BACKWARD.create();
+		            icon.getStyle().set("color", "var(--lumo-error-color)");
+		            title = "Reverse";
+		        } else {
+		            icon = VaadinIcon.ARROW_FORWARD.create();
+		            icon.getStyle().set("color", "var(--lumo-success-color)");
+		            title = "Forward";
+		        }
+		    }
+
+		    icon.getElement().setAttribute("title", title);
+		    icon.setSize("16px");
+
+		    Span text = new Span(action);
+
+		    HorizontalLayout layout = new HorizontalLayout(icon, text);
+		    layout.getStyle().set("align-items", "center");
+		    layout.setSpacing(true);
+		    layout.setPadding(false);
+
+		    return layout;
 
 		}).setHeader("Action Performed").setAutoWidth(true);
 
@@ -570,21 +637,26 @@ public class WorkView extends VerticalLayout {
 		String remarks = event.getRemarks(); // ✅ get from event
 		deleteWorkAndLog(work, remarks);
 	}
-
+	
+	@Transactional
 	private void deleteWorkAndLog(Work work, String remarks) {
-		if (work == null) return;
-		Users user = service.getLoggedUser();
-		service.deleteWork(work, remarks);
-		ProcessHistory ph=null;
-		ph=new ProcessHistory();
+		//ProcessFlow current = work.getProcessflow();
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsDeleted(true);
+		work.setRemarks(remarks);
+		service.saveWork(work);
+
+		ProcessHistory ph = new ProcessHistory();
 		ph.setWork(work);
 		ph.setEnteredOn(LocalDateTime.now());
 		ph.setProcessName("Deleted");
-		ph.setUser(user);
-		ph.setRemarks(remarks);
+		ph.setFromStep(existing.getFromStep()); // may still be null, but we tried best
+		ph.setToStep(existing.getToStep());
+		ph.setUser(service.getLoggedUser());
+		ph.setRemarks(remarks); // if you have this column
 		service.saveProcessHistory(ph);
+		NotificationUtil.showSuccess("Work Deleted Successfully and Removed from Inbox");
 		updateGrid();
-		closeEditor();
 	}
 
 	private void closeEditor() {
