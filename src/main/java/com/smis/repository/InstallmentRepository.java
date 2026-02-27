@@ -1,5 +1,6 @@
 package com.smis.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +21,6 @@ import com.smis.entity.master.District;
 public interface InstallmentRepository extends JpaRepository<Installment, Long> {
 	List<Installment> findByWorkAndIsDeletedFalse(Work work);
 	int countByWorkAndIsDeletedFalse(Work work);
-	int countByIsDeletedFalse();
 	Optional<Installment> findTopByWorkAndIsDeletedFalseOrderByInstallmentNoDesc(Work work);
 	boolean existsByWorkAndIsDeletedFalse(Work work);
 	@Query("""
@@ -115,5 +115,51 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
 	
 	@Query("select  c, d, e,f,g, h, i  from Installment c join c.work d join d.year e  join d.scheme f join d.constituency g join d.district h join d.block i where d.block=:block and d.district=:district and d.scheme=:scheme  and d.constituency=:consti and d.scheme=:scheme and d.year=:year and c.installmentNo=:installment order by d.workCode ASC")
 	List<Installment> getFilteredInstallment(@Param("scheme") Scheme scheme, @Param("consti") Constituency consti,  @Param ("block") Block block ,  @Param ("district") District district, @Param ("year") Year year, @Param ("installment") int installment);
+	
+	
+	
+	//______________Dashboard
+	
+	
+	long countByIsDeletedFalse();
+	long countByIsDeletedFalseAndWork_District(District district);
+	//long countByDistrictAndIsDeletedFalse();
+	long countByIsDeletedFalseAndInstallmentNo(int installmentNo);
+	long countByInstallmentNoAndWork_DistrictAndIsDeletedFalse(int installmentNo, District district);
+	long countByInstallmentNoAndWork_DistrictAndIsDeletedFalseAndWork_IsDeletedFalse(
+	        int installmentNo,
+	        District district
+	);
+	
+	@Query("""
+		    select coalesce(sum(i.installmentAmount), 0)
+		    from Installment i
+		    where i.installmentNo = :no
+		      and (:district is null or i.work.district = :district)
+		      and i.isDeleted = false
+		      and i.work.isDeleted = false
+		""")
+		BigDecimal sumInstallmentAmount(
+		        @Param("no") int installmentNo,
+		        @Param("district") District district
+		);
+	
+	@Query("""
+		    select coalesce(sum(i.installmentAmount), 0)
+		    from Installment i
+		    where  i.work.isDeleted = false
+		      and (:district is null or i.work.district = :district)
+		      and i.isDeleted = false
+		      
+		""")
+		BigDecimal sumInstallmentAmount(
+		        
+		        @Param("district") District district
+		);
+	//__________________________________________
+		        
+		        
+	
+	
 	
 }

@@ -3,7 +3,9 @@ package com.smis.dbservice;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,7 +19,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.smis.entity.AuditTrail;
 import com.smis.entity.Block;
 import com.smis.entity.BlockUser;
 import com.smis.entity.Constituency;
@@ -40,7 +41,6 @@ import com.smis.entity.master.MasterScheme;
 import com.smis.entity.master.MasterYear;
 import com.smis.entity.master.State;
 import com.smis.entity.master.Village;
-import com.smis.repository.AuditRepository;
 import com.smis.repository.BlockRepository;
 import com.smis.repository.BlockUserRepo;
 import com.smis.repository.ConstituencyRepository;
@@ -63,7 +63,6 @@ import com.smis.repository.UserRepository;
 import com.smis.repository.VillageRepository;
 import com.smis.repository.WorkRepository;
 import com.smis.repository.YearRepository;
-
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -664,8 +663,32 @@ public class Dbservice implements Serializable {
 			int installment) {
 		return irepo.getFilteredInstallment(scheme, consti, block, getDistrict(), year, installment);
 	}
+	//Dashboard
+	public long getTotalInstallmentCount() {
+		if(isSuperAdmin()) {
+		return irepo.countByIsDeletedFalse();
+		}
+		return irepo.countByIsDeletedFalseAndWork_District(getDistrict());
+	}
+	public long getInstallmentCount(int a) {
+		if(isSuperAdmin()) {
+			return irepo.countByIsDeletedFalseAndInstallmentNo(a);
+		}
+		return irepo.countByInstallmentNoAndWork_DistrictAndIsDeletedFalseAndWork_IsDeletedFalse(a,getDistrict());
+	}
 	
-	
+	public BigDecimal getSumOfInstallments() {
+		if(isSuperAdmin()) {
+			return irepo.sumInstallmentAmount(null);
+		}
+		return irepo.sumInstallmentAmount(getDistrict());
+	}
+	public BigDecimal getSumOfInstallments(int no) {
+		if(isSuperAdmin()) {
+			return irepo.sumInstallmentAmount(no, null);
+		}
+		return irepo.sumInstallmentAmount(no,getDistrict());
+	}
 	// Works Queries___________________________________________________________________________________________________
 	public List<Work> getWorks() {
 		if (isSuperAdmin()) {
@@ -785,6 +808,73 @@ public class Dbservice implements Serializable {
 			return Collections.emptyList();
 		}
 	}
+	
+	//Dashboard
+	
+	
+	public long getTotalWorksCount() {
+		if(isSuperAdmin()) {
+			return wrepo.count();
+		}
+		return wrepo.countByDistrict(getDistrict());
+	}
+	public long getActiveWorksCount() {
+		if(isSuperAdmin()) {
+			return wrepo.countByIsDeletedFalse();
+		}
+		return wrepo.countByIsDeletedFalseAndDistrict(getDistrict());
+	}
+	public long getDeletedWorksCount() {
+		if(isSuperAdmin()) {
+			return wrepo.countByIsDeletedTrue();
+		}
+		return wrepo.countByIsDeletedTrueAndDistrict(getDistrict());
+	}
+	public long getRecastedWorksCount() {
+		if(isSuperAdmin()) {
+			return wrepo.countByIsRecastedTrue();
+		}
+		return wrepo.countByIsRecastedTrueAndDistrict(getDistrict());
+	}
+	public long getOldWorksCount() {
+		if(isSuperAdmin()) {
+			return wrepo.countByIsOldWorkTrue();
+		}
+		return wrepo.countByIsOldWorkTrueAndDistrict(getDistrict());
+	}
+	
+	public Map<String, Long> getActiveWorksCountByMasterSchemeName() {
+	    return wrepo.countActiveWorksByMasterSchemeNameInDistrict(getDistrict())
+	            .stream()
+	            .collect(Collectors.toMap(
+	                    r -> (String) r[0],
+	                    r -> (Long) r[1],
+	                    (a, b) -> a,
+	                    LinkedHashMap::new
+	            ));
+	}
+	public Map<String, Long> getActiveWorkCountsByMasterScheme() {
+	    return wrepo.countActiveWorksByMasterScheme()
+	            .stream()
+	            .collect(Collectors.toMap(
+	                    r -> (String) r[0],
+	                    r -> (Long) r[1],
+	                    (a, b) -> a,
+	                    LinkedHashMap::new
+	            ));
+	}
+	
+	public Map<String, Long> getActiveWorkCountsByMasterConstituencyName() {
+	    return wrepo.countActiveWorksByMasterConstituencyName()
+	            .stream()
+	            .collect(Collectors.toMap(
+	                    r -> (String) r[0],
+	                    r -> (Long) r[1],
+	                    (a, b) -> a,
+	                    LinkedHashMap::new
+	            ));
+	}
+	
 //____________________________________________________________________________________________
 	
 	// save & Delete state

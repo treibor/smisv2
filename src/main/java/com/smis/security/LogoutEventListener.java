@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component;
 import com.smis.dbservice.AuditService;
 
 @Component
-public class LogoutAuditListener {
+public class LogoutEventListener {
 
     private final AuditService auditService;
 
-    public LogoutAuditListener(AuditService auditService) {
+    public LogoutEventListener(AuditService auditService) {
         this.auditService = auditService;
     }
 

@@ -20,7 +20,6 @@ import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -94,9 +93,7 @@ public class MainLayout extends AppLayout {
 		createHeader();
 		createDrawer();
 		checkPasswordExpiry();
-		// addToDrawer(createHeader(), createDrawer());
-
-		// setPrimarySection(Section.DRAWER);
+		
 	}
 
 	private void checkPasswordExpiry() {

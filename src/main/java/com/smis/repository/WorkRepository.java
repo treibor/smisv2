@@ -78,13 +78,59 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 	
 	
 
-	// Dashboard
+	// Dashboard_________________________________________
+	
 	@Query("select  count(*) from Work c  where  c.isDeleted=false and c.isRecasted=false and c.updatedOn between :sdate and :edate")
 	int getWorksCountBetweenDates(@Param("sdate") LocalDateTime sdate, @Param("edate") LocalDateTime edate);
 
 	@Query("select  count(*) from Work c where  c.isDeleted=false and c.isRecasted=false")
 	int getWorksCount();
+	
+	long count();
+	long countByIsDeletedFalse();
+	long countByIsDeletedTrue();
+	long countByIsOldWorkTrue();
+	long countByIsRecastedTrue();
+	long countByDistrict(District district);
+	long countByIsDeletedFalseAndDistrict(District district);
+	long countByIsDeletedTrueAndDistrict(District district);
+	long countByIsOldWorkTrueAndDistrict(District district);
+	long countByIsRecastedTrueAndDistrict(District district);
+	
+	@Query("""
+		    select ms.schemeName, count(w)
+		    from Work w
+		    join w.scheme s
+		    join s.masterScheme ms
+		    where w.isDeleted = false
+		      and w.district = :district
+		    group by ms.schemeName
+		    order by ms.schemeName
+		""")
+		List<Object[]> countActiveWorksByMasterSchemeNameInDistrict(@Param("district") District district);
+		
+		@Query("""
+			    select ms.schemeName, count(w)
+			    from Work w
+			    join w.scheme s
+			    join s.masterScheme ms
+				    where w.isDeleted = false
+				    group by ms.schemeName
+				    order by ms.schemeName
+				""")
+		List<Object[]> countActiveWorksByMasterScheme();
 
+		@Query("""
+				    select mc.constituencyName, count(w)
+				    from Work w
+				    join w.constituency c
+				    join c.masterConstituency mc
+				    where w.isDeleted = false
+				    group by mc.constituencyName
+				    order by mc.constituencyName
+				""")
+		List<Object[]> countActiveWorksByMasterConstituencyName();
+	//________________________________________________________________________________________
 	// Find Works Inbox
 	@Query("""
 			    SELECT w

@@ -1,6 +1,5 @@
 package com.smis.security;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,7 +12,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.smis.entity.UsersRoles;
 import com.smis.entity.Users;
 import com.smis.repository.UserRepository;
 
