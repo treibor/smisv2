@@ -252,7 +252,7 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 	
 	
 	//OldWorks
-	@Query("SELECT c FROM Work c WHERE c.isOldWork=true and c.district = :district " +
+	@Query("SELECT c FROM Work c WHERE c.isOldWork=true and c.isDeleted= false and  c.isRecasted=false and c.district = :district " +
 		       "AND (:scheme IS NULL OR c.scheme = :scheme) " +
 		       "AND (:year IS NULL OR c.year = :year) " +
 		       "AND (:block IS NULL OR c.block = :block) " +
@@ -264,7 +264,7 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 		                            @Param("consti") Constituency consti, 
 		                            @Param("block") Block block);
 	
-	@Query("select c from Work c where c.isOldWork=true and c.district= :district and(str(c.workCode)=:searchTerm or lower(c.workName) like lower(concat('%', :searchTerm, '%'))or lower(c.sanctionNo) like lower(concat('%', :searchTerm, '%'))) order by c.workCode Desc")
+	@Query("select c from Work c where c.isOldWork=true and c.isDeleted= false and  c.isRecasted=false and c.district= :district and(str(c.workCode)=:searchTerm or lower(c.workName) like lower(concat('%', :searchTerm, '%'))or lower(c.sanctionNo) like lower(concat('%', :searchTerm, '%'))) order by c.workCode Desc")
 	List<Work> searchAll(@Param("searchTerm") String searchTerm, @Param("district") District district);
 	
 }

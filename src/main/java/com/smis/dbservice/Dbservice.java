@@ -663,6 +663,22 @@ public class Dbservice implements Serializable {
 			int installment) {
 		return irepo.getFilteredInstallment(scheme, consti, block, getDistrict(), year, installment);
 	}
+	
+	public boolean isLargestInstallment(Installment inst) {
+	    if (inst == null || inst.getWork() == null) {
+	        return false;
+	    }
+	    Integer maxNo = irepo.findMaxInstallmentNoByWork(inst.getWork());
+
+	    if (maxNo == null) {
+	        return false;
+	    }
+	    return inst.getInstallmentNo() == maxNo;
+	}
+	public void deleteInstallment(Installment inst) {
+		irepo.delete(inst);
+	}
+	
 	//Dashboard
 	public long getTotalInstallmentCount() {
 		if(isSuperAdmin()) {

@@ -16,6 +16,7 @@ import com.smis.entity.Installment;
 import com.smis.entity.Scheme;
 import com.smis.entity.Work;
 import com.smis.entity.Year;
+import com.smis.util.NotificationUtil;
 import com.smis.view.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
@@ -192,13 +193,42 @@ public class WorkView extends VerticalLayout {
 		List<Installment> installments = service.getInstallments(work);
 		installmentGrid.setItems(installments);
 		installmentGrid.setAllRowsVisible(true);
+		Button deleteButton = new Button("Delete");
+		deleteButton.setEnabled(false); // default off
+
+		// 1) Click listener ONCE
+		deleteButton.addClickListener(click -> {
+		    Installment selected = installmentGrid.asSingleSelect().getValue();
+		    if (selected == null) return;
+		    service.deleteInstallment(selected);
+		    NotificationUtil.showSuccess("Installment Deleted");
+		    //filterGrid();
+		    grid.asSingleSelect().clear();
+		    dialog.close();
+		});
+
+		// 2) Selection listener ONLY enables/disables
+		installmentGrid.asSingleSelect().addValueChangeListener(e -> {
+		    Installment selected = e.getValue();
+
+		    if (!isAdmin || selected == null) {
+		        deleteButton.setEnabled(false);
+		        return;
+		    }
+
+		    boolean isLargest = service.isLargestInstallment(selected);
+		    deleteButton.setEnabled(isLargest);
+		});
 		Button closeButton = new Button("Close", e -> dialog.close());
+		
 		dialog.add(installmentGrid);
-		dialog.getFooter().add(closeButton);
+		dialog.getFooter().add(deleteButton,closeButton);
+		deleteButton.setEnabled(false);
 		dialog.open();
 	}
 	
-	//test
+	
+	
 	
 	public void filterGrid() {
 		
@@ -364,7 +394,7 @@ public class WorkView extends VerticalLayout {
 				
 				workform.setWork(work);
 				workform.setVisible(true);
-				workform.save.setEnabled(isUser);
+				//workform.save.setEnabled(isUser);
 				enableFields();
 				workinstallment = work.getNoOfInstallments();
 				
@@ -396,7 +426,7 @@ public class WorkView extends VerticalLayout {
 							} else {
 								// Work is completed
 								closeAllAccordion();
-								workform.save.setEnabled(false);
+								//workform.save.setEnabled(false);
 							}
 						} else {
 							// Not All Installments are entered
