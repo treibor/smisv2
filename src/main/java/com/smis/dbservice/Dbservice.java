@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -727,7 +728,11 @@ public class Dbservice implements Serializable {
 	// Inbox
 	public List<Work> getFilteredWorksForInbox(String searchTerm,Scheme scheme, Constituency consti, Block block, Year year) {
 		try {
-			return wrepo.getFilteredWorksForInbox(getLoggedUser(), scheme, getDistrict(), year, consti, block, searchTerm);
+			boolean noFilters = scheme == null && consti == null && block == null && year == null
+					&& (searchTerm == null || searchTerm.isBlank());
+
+			Pageable pageable = noFilters ? PageRequest.of(0, 100) : Pageable.unpaged();
+			return wrepo.getFilteredWorksForInbox(getLoggedUser(), scheme, getDistrict(), year, consti, block, searchTerm,pageable);
 		} catch (Exception e) {
 
 			return Collections.emptyList();
@@ -739,18 +744,16 @@ public class Dbservice implements Serializable {
 	public List<Work> getFilteredWorksForHistory(String searchTerm, Scheme scheme, Constituency consti, Block block,
 			Year year) {
 		try {
+			boolean noFilters = scheme == null && consti == null && block == null && year == null
+					&& (searchTerm == null || searchTerm.isBlank());
+
+			Pageable pageable = noFilters ? PageRequest.of(0, 100) : Pageable.unpaged();
+
 			return wrepo.findWorksEverProcessedByUserAndSearch(getLoggedUser(), scheme, getDistrict(), year, consti,
-					block, searchTerm);
+					block, searchTerm, pageable);
+
 		} catch (Exception e) {
 			e.printStackTrace();
-			return Collections.emptyList();
-		}
-	}
-
-	public List<Work> getWorkHistory() {
-		try {
-			return wrepo.findWorksByUserFromHistory(getLoggedUser());
-		} catch (Exception e) {
 			return Collections.emptyList();
 		}
 	}
@@ -808,22 +811,30 @@ public class Dbservice implements Serializable {
 		}
 	}
 	//Old Works
-	public List<Work> getFilteredWorks(Scheme scheme, Constituency consti, Block block, Year year) {
+	public List<Work> getFilteredWorks(Scheme scheme, Constituency consti, Block block, Year year, String searchTerm) {
+
 		try {
-			return wrepo.getFilteredWorks(scheme, getDistrict(), year, consti, block);
+
+			boolean noFilters = scheme == null && consti == null && block == null && year == null
+					&& (searchTerm == null || searchTerm.isBlank());
+
+			Pageable pageable;
+
+			if (noFilters) {
+				pageable = PageRequest.of(0, 100); // only first 100
+			} else {
+				pageable = Pageable.unpaged(); // return all matching
+			}
+
+			return wrepo.getFilteredWorksWithSearch(
+			        getDistrict(), scheme, year, consti, block, searchTerm, pageable
+			);
+
 		} catch (Exception e) {
-
 			return Collections.emptyList();
-
 		}
 	}
-	public List<Work> getFilteredWorks(String searchTerm) {
-		try {
-			return wrepo.searchAll(searchTerm, getDistrict());
-		} catch (Exception e) {
-			return Collections.emptyList();
-		}
-	}
+	
 	
 	//Dashboard
 	

@@ -26,6 +26,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -63,6 +64,7 @@ public class WorkView extends VerticalLayout {
 	WorkForm workform;
 	boolean isAdmin;
 	boolean isUser;
+	Span workCount;
 	@Autowired
 	//private Audit audit;
 	public WorkView(Dbservice service) {
@@ -73,10 +75,22 @@ public class WorkView extends VerticalLayout {
 		// displayFilter.addValueChangeListener(e-> displayFilters());
 		configureGrid();
 		configureForm();
-		add(getToolbar(), getContent());
+		workCount = new Span();
+		workCount.getStyle().set("font-size", "var(--lumo-font-size-s)");
+		workCount.getStyle().set("color", "var(--lumo-secondary-text-color)");
+		workCount.getStyle().set("margin-left", "5px");
+		add(getToolbar(),getCountPanel(), getContent());
 		updateGrid();
 		closeEditor();
 
+	}
+	
+	private Component getCountPanel(){
+		workCount = new Span();
+		workCount.getStyle().set("font-size", "var(--lumo-font-size-s)");
+		workCount.getStyle().set("color", "var(--lumo-secondary-text-color)");
+		workCount.getStyle().set("margin-left", "5px");
+		return workCount;
 	}
 	private void configureCombos() {
 		block.setItems(service.getAllBlocks());
@@ -101,10 +115,10 @@ public class WorkView extends VerticalLayout {
 		scheme.setWidthFull();
 		year.setWidthFull();
 		consti.setWidthFull();
-		block.addValueChangeListener(e -> filterGrid());
-		consti.addValueChangeListener(e -> filterGrid());
-		year.addValueChangeListener(e -> filterGrid());
-		scheme.addValueChangeListener(e -> filterGrid());
+		block.addValueChangeListener(e -> updateGrid());
+		consti.addValueChangeListener(e -> updateGrid());
+		year.addValueChangeListener(e -> updateGrid());
+		scheme.addValueChangeListener(e -> updateGrid());
 	}
 
 	private void configureGrid() {
@@ -228,16 +242,6 @@ public class WorkView extends VerticalLayout {
 	}
 	
 	
-	
-	
-	public void filterGrid() {
-		
-		// selected
-		// filterText.setValue("");
-		grid.setItems(
-				service.getFilteredWorks(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue()));
-	}
-
 	private Component getContent() {
 		HorizontalLayout content = new HorizontalLayout(grid, workform);
 		content.setFlexGrow(1, grid);
@@ -246,35 +250,14 @@ public class WorkView extends VerticalLayout {
 		content.setSizeFull();
 		return content;
 	}
-	public void updateGrid() {
-		grid.setItems(
-				service.getFilteredWorks(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue()));
-	}
-
-	private Sort toSpringSort(List<QuerySortOrder> orders, Sort defaultSort) {
-	    if (orders == null || orders.isEmpty()) return defaultSort;
-	    Sort sort = Sort.unsorted();
-	    for (QuerySortOrder o : orders) {
-	        // Map your grid column keys to entity fields
-	        String prop = switch (o.getSorted()) {
-	            case "workCode" -> "workCode";
-	            case "name"     -> "name";
-	            // add more mappings as needed
-	            default         -> "workCode";
-	        };
-	        Sort s = (o.getDirection() == SortDirection.ASCENDING)
-	                ? Sort.by(Sort.Direction.ASC, prop)
-	                : Sort.by(Sort.Direction.DESC, prop);
-	        sort = sort.and(s);
-	    }
-	    return sort.isUnsorted() ? defaultSort : sort;
-	}
-
+	
+	
+	
 	private Component getToolbar() {
 		filterText.setPlaceholder("Filter By Work Code, Name or Sanction Number");
 		filterText.setClearButtonVisible(true);
 		filterText.setValueChangeMode(ValueChangeMode.LAZY);
-		filterText.addValueChangeListener(e -> updateList());
+		filterText.addValueChangeListener(e -> updateGrid());
 		filterText.setWidth("10%");
 		expButton.addClickListener(e -> GridExporter.newWithDefaults(grid).open());
 		expButton.setIcon(new Icon(VaadinIcon.EXTERNAL_LINK));
@@ -320,7 +303,7 @@ public class WorkView extends VerticalLayout {
 		long a = event.getWork().getWorkCode();
 
 		service.saveWork(event.getWork());
-		updateList();
+		updateGrid();
 		long b = service.getWorkCode();
 		
 
@@ -353,20 +336,19 @@ public class WorkView extends VerticalLayout {
 
 	public void deleteWork(WorkForm.DeleteEvent event) {
 		service.deleteWork(event.getWork(),"");
-		updateList();
+		updateGrid();
 		closeEditor();
 
 	}
-
-	private void updateList() {
-		block.clear();
-		scheme.clear();
-		consti.clear();
-		year.clear();
-		///grid.setItems(service.getFilteredWorks(filterText.getValue()));
-		grid.setItems(service.getFilteredWorks(filterText.getValue()));
-		// configureGrid();
+	private void updateCount() {
+	    int count = grid.getListDataView().getItemCount();
+	    workCount.setText("Showing " + count + " works");
 	}
+	public void updateGrid() {
+		grid.setItems(service.getFilteredWorks(scheme.getValue(), consti.getValue(), block.getValue(), year.getValue(),filterText.getValue()));
+		updateCount();
+	}
+	
 
 	private void closeEditor() {
 		workform.setWork(null);

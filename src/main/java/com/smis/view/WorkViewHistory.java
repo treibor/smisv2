@@ -81,7 +81,7 @@ public class WorkViewHistory extends VerticalLayout {
 	boolean isSuper;
 	// @Autowired
 	// private AuditTrail audit;
-
+	Span workCount;
 	public WorkViewHistory(Dbservice service) {
 		this.service = service;
 		setSizeFull();
@@ -90,11 +90,17 @@ public class WorkViewHistory extends VerticalLayout {
 		isUser = service.hasRole("USER");
 
 		configureGridHistory();
-		add(getToolbar(), getContent());
+		add(getToolbar(),getCountPanel(), getContent());
 		updateGrid();
 
 	}
-
+	private Component getCountPanel(){
+		workCount = new Span();
+		workCount.getStyle().set("font-size", "var(--lumo-font-size-s)");
+		workCount.getStyle().set("color", "var(--lumo-secondary-text-color)");
+		workCount.getStyle().set("margin-left", "5px");
+		return workCount;
+	}
 	public boolean checkAuthority(ProcessFlow pf) {
 		Users user = service.getLoggedUser();
 		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
@@ -128,10 +134,10 @@ public class WorkViewHistory extends VerticalLayout {
 		scheme.setWidthFull();
 		year.setWidthFull();
 		consti.setWidthFull();
-		block.addValueChangeListener(e -> filterGrid());
-		consti.addValueChangeListener(e -> filterGrid());
-		year.addValueChangeListener(e -> filterGrid());
-		scheme.addValueChangeListener(e -> filterGrid());
+		block.addValueChangeListener(e -> updateGrid());
+		consti.addValueChangeListener(e -> updateGrid());
+		year.addValueChangeListener(e -> updateGrid());
+		scheme.addValueChangeListener(e -> updateGrid());
 	}
 
 	private void configureGridHistory() {
@@ -629,9 +635,7 @@ public class WorkViewHistory extends VerticalLayout {
 		dialog.open();
 	}
 
-	public void filterGrid() {
-		gridhistory.setItems(service.getWorkHistory());
-	}
+	
 
 	private Component getContent() {
 		// var grids=new VerticalLayout(grid, gridhistory);
@@ -672,7 +676,11 @@ public class WorkViewHistory extends VerticalLayout {
 	public void updateGrid() {
 		gridhistory.setItems(service.getFilteredWorksForHistory(filterText.getValue(), scheme.getValue(),
 				consti.getValue(), block.getValue(), year.getValue()));
+		updateCount();
 	}
-
+	private void updateCount() {
+	    int count = gridhistory.getListDataView().getItemCount();
+	    workCount.setText("Showing " + count + " works");
+	}
 	
 }

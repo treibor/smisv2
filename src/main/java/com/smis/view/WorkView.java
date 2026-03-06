@@ -83,7 +83,7 @@ public class WorkView extends VerticalLayout {
 	boolean isAdmin;
 	boolean isSuper;
 	private Users loggedUser;
-
+	Span workCount;
 	public WorkView(Dbservice service, FileStorageService fss) {
 		this.service = service;
 		this.fileStorageService = fss;
@@ -95,12 +95,18 @@ public class WorkView extends VerticalLayout {
 		configureGrid();
 		// configureGridHistory();
 		configureForm();
-		add(getToolbar(), getContent());
+		add(getToolbar(), getCountPanel(),getContent());
 		updateGrid();
 		closeEditor();
 
 	}
-
+	private Component getCountPanel(){
+		workCount = new Span();
+		workCount.getStyle().set("font-size", "var(--lumo-font-size-s)");
+		workCount.getStyle().set("color", "var(--lumo-secondary-text-color)");
+		workCount.getStyle().set("margin-left", "5px");
+		return workCount;
+	}
 	private void configureCombos() {
 		block.setItems(service.getBlocksByUser());
 		// block.setClearButtonVisible(true);
@@ -451,14 +457,14 @@ public class WorkView extends VerticalLayout {
 
 		List<ProcessHistory> history = service.getProcessHistory(work);
 
-		// 1️⃣ Serial Number Column
+		// 1️ Serial Number Column
 		grid.addColumn(ph -> history.indexOf(ph) + 1).setHeader("Sl. No.").setWidth("90px").setFlexGrow(0);
 
-		// 2️⃣ Task
+		// 2️ Task
 		grid.addColumn(ph -> ph.getFromStep() != null ? ph.getFromStep().getStepName() : "").setHeader("Task")
 				.setAutoWidth(true);
 
-		// 3️⃣ Action Performed (Arrow + Text)
+		// 3️ Action Performed (Arrow + Text)
 		grid.addComponentColumn(ph -> {
 
 		    String action = ph.getProcessName() != null ? ph.getProcessName().trim() : "";
@@ -515,15 +521,15 @@ public class WorkView extends VerticalLayout {
 
 		}).setHeader("Action Performed").setAutoWidth(true);
 
-		// 4️⃣ Remarks
+		// 4️ Remarks
 		grid.addColumn(ph -> ph.getRemarks() != null ? ph.getRemarks() : "").setHeader("Remarks").setWidth("35%")
 				.setResizable(true);
 
-		// 5️⃣ Performed By
+		// 5️ Performed By
 		grid.addColumn(ph -> ph.getUser() != null ? ph.getUser().getProfileName() : "").setHeader("Performed By")
 				.setAutoWidth(true);
 
-		// 6️⃣ Document
+		// 6️ Document
 		grid.addComponentColumn(ph -> {
 
 			String path = ph.getDocument();
@@ -587,9 +593,12 @@ public class WorkView extends VerticalLayout {
 	public void updateGrid() {
 		grid.setItems(service.getFilteredWorksForInbox(filterText.getValue(), scheme.getValue(), consti.getValue(),
 				block.getValue(), year.getValue()));
-
+		updateCount();
 	}
-
+	private void updateCount() {
+	    int count = grid.getListDataView().getItemCount();
+	    workCount.setText("Showing " + count + " works");
+	}
 	private Component getToolbar() {
 		filterText.setPlaceholder("Filter By Work Code, Name or Sanction Number");
 		filterText.setClearButtonVisible(true);
@@ -894,7 +903,6 @@ public class WorkView extends VerticalLayout {
 		}
 	}
 
-	// If you want "close all"
 	private void closeAllAccordions() {
 		for (AccordionPanel p : allPanels()) {
 			p.setOpened(false);

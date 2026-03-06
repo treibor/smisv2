@@ -3,6 +3,7 @@ package com.smis.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -193,7 +194,8 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 		        @Param("year") Year year,
 		        @Param("consti") Constituency consti,
 		        @Param("block") Block block,
-		        @Param("searchTerm") String searchTerm
+		        @Param("searchTerm") String searchTerm,
+		        Pageable pageable
 		);
 
 	// Inbox________________________________________________________________________________________________
@@ -241,7 +243,7 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 			""")
 	List<Work> getFilteredWorksForInbox(@Param("user") Users user, @Param("scheme") Scheme scheme,
 			@Param("district") District district, @Param("year") Year year, @Param("consti") Constituency consti,
-			@Param("block") Block block, @Param("searchTerm") String searchTerm);
+			@Param("block") Block block, @Param("searchTerm") String searchTerm, Pageable pageable);
 	
 	//____________________________________________________________________________________________________________
 
@@ -252,19 +254,36 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 	
 	
 	//OldWorks
-	@Query("SELECT c FROM Work c WHERE c.isOldWork=true and c.isDeleted= false and  c.isRecasted=false and c.district = :district " +
-		       "AND (:scheme IS NULL OR c.scheme = :scheme) " +
-		       "AND (:year IS NULL OR c.year = :year) " +
-		       "AND (:block IS NULL OR c.block = :block) " +
-		       "AND (:consti IS NULL OR c.constituency = :consti) " +
-		       "ORDER BY c.workCode DESC")
-		List<Work> getFilteredWorks(@Param("scheme") Scheme scheme, 
-		                            @Param("district") District district, 
-		                            @Param("year") Year year,
-		                            @Param("consti") Constituency consti, 
-		                            @Param("block") Block block);
-	
-	@Query("select c from Work c where c.isOldWork=true and c.isDeleted= false and  c.isRecasted=false and c.district= :district and(str(c.workCode)=:searchTerm or lower(c.workName) like lower(concat('%', :searchTerm, '%'))or lower(c.sanctionNo) like lower(concat('%', :searchTerm, '%'))) order by c.workCode Desc")
-	List<Work> searchAll(@Param("searchTerm") String searchTerm, @Param("district") District district);
+	@Query("""
+		    SELECT c
+		    FROM Work c
+		    WHERE c.isOldWork = true
+		      AND c.isDeleted = false
+		      AND c.isRecasted = false
+		      AND c.district = :district
+
+		      AND (:scheme IS NULL OR c.scheme = :scheme)
+		      AND (:year   IS NULL OR c.year = :year)
+		      AND (:block  IS NULL OR c.block = :block)
+		      AND (:consti IS NULL OR c.constituency = :consti)
+
+		      AND (
+		            :searchTerm IS NULL OR :searchTerm = '' OR
+		            str(c.workCode) = :searchTerm OR
+		            lower(c.workName)   LIKE lower(concat('%', :searchTerm, '%')) OR
+		            lower(c.sanctionNo) LIKE lower(concat('%', :searchTerm, '%'))
+		          )
+
+		    ORDER BY c.workCode DESC
+		""")
+		List<Work> getFilteredWorksWithSearch(
+		        @Param("district") District district,
+		        @Param("scheme") Scheme scheme,
+		        @Param("year") Year year,
+		        @Param("consti") Constituency consti,
+		        @Param("block") Block block,
+		        @Param("searchTerm") String searchTerm,
+		        Pageable pageable
+		);
 	
 }
