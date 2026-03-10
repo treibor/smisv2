@@ -1,0 +1,18 @@
+.drawer-section {
+  margin-bottom: 10px;
+}
+
+.drawer-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 6px;
+}
+
+/* Divider */
+.drawer-divider {
+  border: none;
+  height: 1px;
+  background: var(--lumo-contrast-10pct);
+  margin: 12px 6px;
+}

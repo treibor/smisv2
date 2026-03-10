@@ -138,72 +138,123 @@ public class MainLayout extends AppLayout {
 
 	private void createDrawer() {
 
-		VerticalLayout drawerContent = new VerticalLayout();
-		drawerContent.setSizeFull();
-		drawerContent.setPadding(false); // important: root no padding
-		drawerContent.setSpacing(false);
+	    VerticalLayout drawerContent = new VerticalLayout();
+	    drawerContent.setSizeFull();
+	    drawerContent.setPadding(false);
+	    drawerContent.setSpacing(false);
 
-		// Add navigation items with helper text
-		SideNavItemWithHelperText home = new SideNavItemWithHelperText("Home", "", HomeView.class,
-				LineAwesomeIcon.HOME_SOLID.create());
+	    // Items
+	    SideNavItemWithHelperText home = new SideNavItemWithHelperText(
+	            "Home", "", HomeView.class, LineAwesomeIcon.HOME_SOLID.create());
 
-		SideNavItemWithHelperText mla = new SideNavItemWithHelperText("Inbox", "", WorkView.class,
-				LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
+	    SideNavItemWithHelperText mla = new SideNavItemWithHelperText(
+	            "Inbox", "", WorkView.class, LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
 
-		SideNavItemWithHelperText history = new SideNavItemWithHelperText("History", "", WorkViewHistory.class,
-				LineAwesomeIcon.HISTORY_SOLID.create());
+	    SideNavItemWithHelperText history = new SideNavItemWithHelperText(
+	            "History", "", WorkViewHistory.class, LineAwesomeIcon.HISTORY_SOLID.create());
 
-		SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText("Bulk Release Order", "", PrintView.class,
-				LineAwesomeIcon.WOLF_PACK_BATTALION.create());
+	    SideNavItemWithHelperText releaseorder = new SideNavItemWithHelperText(
+	            "Bulk Release Order", "", PrintView.class, LineAwesomeIcon.WOLF_PACK_BATTALION.create());
 
-		SideNavItemWithHelperText master = new SideNavItemWithHelperText("Master", "", MasterView.class,
-				LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
+	    SideNavItemWithHelperText master = new SideNavItemWithHelperText(
+	            "Master", "", MasterView.class, LineAwesomeIcon.BALANCE_SCALE_LEFT_SOLID.create());
 
-		SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText("District Master", "", DistView.class,
-				LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
+	    SideNavItemWithHelperText distmaster = new SideNavItemWithHelperText(
+	            "District Master", "", DistView.class, LineAwesomeIcon.BALANCE_SCALE_RIGHT_SOLID.create());
 
-		SideNavItemWithHelperText report = new SideNavItemWithHelperText("Reports", "", ReportView.class,
-				LineAwesomeIcon.CALCULATOR_SOLID.create());
+	    SideNavItemWithHelperText report = new SideNavItemWithHelperText(
+	            "Reports", "", ReportView.class, LineAwesomeIcon.CALCULATOR_SOLID.create());
 
-		SideNavItemWithHelperText audit = new SideNavItemWithHelperText("Audit Trail", "", AuditView.class,
-				LineAwesomeIcon.CALENDAR.create());
+	    SideNavItemWithHelperText audit = new SideNavItemWithHelperText(
+	            "Audit Trail", "", AuditView.class, LineAwesomeIcon.CALENDAR.create());
 
-		SideNavItemWithHelperText users = new SideNavItemWithHelperText("Users", "", UsersView.class,
-				LineAwesomeIcon.USER.create());
-		SideNavItemWithHelperText old_works = new SideNavItemWithHelperText("Old Works", "", com.smis.view.old.WorkView.class,
-				LineAwesomeIcon.OLD_REPUBLIC.create());
-		SideNavItemWithHelperText old_ro = new SideNavItemWithHelperText("Release Order", "", com.smis.view.old.PrintView.class,
-				LineAwesomeIcon.DONATE_SOLID.create());
+	    SideNavItemWithHelperText users = new SideNavItemWithHelperText(
+	            "Users", "", UsersView.class, LineAwesomeIcon.USER.create());
 
-		master.setVisible(isAdmin);
-		distmaster.setVisible(isSuper);
-		// releaseorder.setVisible(checkAuthority(service.getProcessFlowByOrder(3)));
-		releaseorder.setVisible(
-		        service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER")
-		        ||
-		        service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER")
-		);
-		audit.setVisible(isAdmin);
-		users.setVisible(isAdmin);
-		old_works.setVisible(service.hasRole("OLD"));
-		old_ro.setVisible(service.hasRole("OLD"));
-		VerticalLayout navItems = new VerticalLayout(home, mla, history, releaseorder, old_works,old_ro,master, distmaster, report,
-				audit, users);
-		navItems.setPadding(true);
-		navItems.setSpacing(true);
-		navItems.setWidthFull();
-		navItems.addClassName("drawer-nav");
+	    SideNavItemWithHelperText oldWorks = new SideNavItemWithHelperText(
+	            "Old Works", "", com.smis.view.old.WorkView.class, LineAwesomeIcon.OLD_REPUBLIC.create());
 
-		Div spacer = new Div();
-		drawerContent.expand(spacer);
+	    SideNavItemWithHelperText oldRo = new SideNavItemWithHelperText(
+	            "Release Order", "", com.smis.view.old.PrintView.class, LineAwesomeIcon.DONATE_SOLID.create());
 
-		Component userInfo = createDrawerUserInfo();
+	    // Visibility
+	    master.setVisible(isAdmin);
+	    distmaster.setVisible(isSuper);
+	    releaseorder.setVisible(
+	            service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER")
+	            || service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER")
+	    );
+	    audit.setVisible(isAdmin);
+	    users.setVisible(isAdmin);
+	    oldWorks.setVisible(service.hasRole("OLD"));
+	    oldRo.setVisible(service.hasRole("OLD"));
 
-		drawerContent.add(navItems, spacer, userInfo);
+	    // Sections
+	    Component newWorks = createDrawerSection(home, mla, history, releaseorder);
+	    Component oldItems = createDrawerSection(oldWorks, oldRo);
+	    Component manageSection = createDrawerSection(        
+	            master, distmaster, users
+	    );
 
-		addToDrawer(drawerContent);
+	    Component systemSection = createDrawerSection(
+	           
+	            report, audit
+	    );
+
+	    VerticalLayout navItems = new VerticalLayout(
+	            newWorks,oldItems,
+	            manageSection,
+	            systemSection
+	    );
+	    navItems.setPadding(true);
+	    navItems.setSpacing(false);
+	    navItems.setWidthFull();
+	    navItems.addClassName("drawer-nav");
+
+	    Div spacer = new Div();
+	    drawerContent.expand(spacer);
+
+	    Component userInfo = createDrawerUserInfo();
+
+	    drawerContent.add(navItems, spacer, userInfo);
+	    addToDrawer(drawerContent);
 	}
+	
+	private Component createDrawerSection(Component... items) {
 
+	    VerticalLayout section = new VerticalLayout();
+	    section.setPadding(false);
+	    section.setSpacing(false);
+	    section.setWidthFull();
+	    section.addClassName("drawer-section");
+
+	    VerticalLayout itemContainer = new VerticalLayout();
+	    itemContainer.setPadding(false);
+	    itemContainer.setSpacing(false);
+	    itemContainer.setWidthFull();
+	    itemContainer.addClassName("drawer-section-items");
+
+	    boolean hasVisibleItems = false;
+
+	    for (Component item : items) {
+	        if (item.isVisible()) {
+	            itemContainer.add(item);
+	            hasVisibleItems = true;
+	        }
+	    }
+
+	    if (!hasVisibleItems) {
+	        section.setVisible(false);
+	        return section;
+	    }
+
+	    Hr divider = new Hr();
+	    divider.addClassName("drawer-divider");
+
+	    section.add(itemContainer, divider);
+
+	    return section;
+	}
 	private Component menuItem(VaadinIcon icon, String text) {
 		Icon i = icon.create();
 		i.setSize("12px");

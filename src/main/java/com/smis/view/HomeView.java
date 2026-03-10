@@ -24,6 +24,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
@@ -52,20 +53,35 @@ public class HomeView extends VerticalLayout {
     }
 
     private Component getCards() {
-		HorizontalLayout cards = new HorizontalLayout();
-		cards.setWidthFull();
-		
-		cards.add(createCard(1), createCard(2), createCard(3), createCard(4), createCard(5));
-		return cards;
+    	FlexLayout cardContainer = new FlexLayout();
+    	cardContainer.setWidthFull();
+    	cardContainer.setFlexWrap(FlexLayout.FlexWrap.WRAP);
+    	cardContainer.getStyle().set("gap", "16px");
+
+    	VerticalLayout card1 = createCard(1);
+    	VerticalLayout card2 = createCard(2);
+    	VerticalLayout card3 = createCard(3);
+    	VerticalLayout card4 = createCard(4);
+
+    	cardContainer.add(card1, card2, card3, card4);
+
+    	// responsive widths
+    	card1.getStyle().set("flex", "1 1 240px");
+    	card2.getStyle().set("flex", "1 1 240px");
+    	card3.getStyle().set("flex", "1 1 240px");
+    	card4.getStyle().set("flex", "1 1 240px");
+		return cardContainer;
 	}
     private VerticalLayout createCard(int type) {
-        // OUTER (size + perspective)
+        // OUTER
         VerticalLayout card = new VerticalLayout();
         card.addClassName("flip-card");
         card.setPadding(false);
         card.setSpacing(false);
+        card.setMargin(false);
+        card.setWidthFull();
 
-        // INNER (rotates)
+        // INNER
         Div inner = new Div();
         inner.addClassName("flip-card-inner");
 
@@ -111,6 +127,7 @@ public class HomeView extends VerticalLayout {
                 icon = VaadinIcon.BARCODE.create();
                 title = "-";
                 description = "Default Card";
+                break;
         }
 
         icon.addClassName("card-icon");
@@ -121,78 +138,133 @@ public class HomeView extends VerticalLayout {
         Span descriptionLabel = new Span(description);
         descriptionLabel.addClassName("card-description");
 
-        // Front
         front.add(icon, titleLabel, descriptionLabel);
 
-        // Back (now using switch)
+        // Back title + content wrapper
+        Div backContent = new Div();
+        backContent.addClassName("card-back-content");
+
         switch (type) {
             case 1: {
                 Span backTitle = new Span("Works Breakdown");
                 backTitle.addClassName("card-back-title");
-                long active=service.getActiveWorksCount();
+
+                long active = service.getActiveWorksCount();
                 long deleted = service.getDeletedWorksCount();
                 long old = service.getOldWorksCount();
                 long recasted = service.getRecastedWorksCount();
-                Span activeBadge = new Span("ActiveWorks: " + active);
-                activeBadge.getElement().getThemeList().add("badge error");
+
+                Span activeBadge = new Span("Active Works: " + active);
+                activeBadge.getElement().getThemeList().add("badge success");
                 activeBadge.addClassName("card-back-text");
+
                 Span oldBadge = new Span("Old Works: " + old);
                 oldBadge.getElement().getThemeList().add("badge");
                 oldBadge.addClassName("card-back-text");
-                Span deletedBadge = new Span("Deleted: " + deleted +" | Recasted: " + recasted);
+
+                Span deletedBadge = new Span("Deleted: " + deleted);
                 deletedBadge.getElement().getThemeList().add("badge error");
                 deletedBadge.addClassName("card-back-text");
-                back.add(backTitle,activeBadge, oldBadge, deletedBadge);
+
+                Span recastedBadge = new Span("Recasted: " + recasted);
+                recastedBadge.getElement().getThemeList().add("badge contrast");
+                recastedBadge.addClassName("card-back-text");
+
+                backContent.add(activeBadge, oldBadge, deletedBadge, recastedBadge);
+                back.add(backTitle, backContent);
                 break;
             }
+
             case 2: {
-                Span backTitle = new Span("Details");
+                Span backTitle = new Span("Installment Details");
                 backTitle.addClassName("card-back-title");
-                long installment1=service.getInstallmentCount(1);
-                long installment2=service.getInstallmentCount(2);
-                long installment3=service.getInstallmentCount(3);
-				BigDecimal amount1 = service.getSumOfInstallments(1);
-				BigDecimal amount2 = service.getSumOfInstallments(2);
-				BigDecimal amount3 = service.getSumOfInstallments(3);
-				BigDecimal amount = service.getSumOfInstallments();
-                //long old = service.getOldWorksCount();
-                //long recasted = service.getRecastedWorksCount();
-                Span activeBadge = new Span("Installment 1: " + installment1 +" nos | Rs. "+amount1);
-                activeBadge.getElement().getThemeList().add("badge error");
-                activeBadge.addClassName("card-back-text");
-                Span oldBadge = new Span("Installment 2: " + installment2 +" nos | Rs. "+amount2);
-                oldBadge.getElement().getThemeList().add("badge");
-                oldBadge.addClassName("card-back-text");
-                Span inst3 = new Span("Installment 3: " + installment3 +" nos | Rs. "+amount3);
+
+                long installment1 = service.getInstallmentCount(1);
+                long installment2 = service.getInstallmentCount(2);
+                long installment3 = service.getInstallmentCount(3);
+
+                BigDecimal amount1 = service.getSumOfInstallments(1);
+                BigDecimal amount2 = service.getSumOfInstallments(2);
+                BigDecimal amount3 = service.getSumOfInstallments(3);
+                BigDecimal totalAmount = service.getSumOfInstallments();
+
+                Span inst1 = new Span("Installment 1: " + installment1 + " nos | Rs. " + amount1);
+                inst1.getElement().getThemeList().add("badge");
+                inst1.addClassName("card-back-text");
+
+                Span inst2 = new Span("Installment 2: " + installment2 + " nos | Rs. " + amount2);
+                inst2.getElement().getThemeList().add("badge");
+                inst2.addClassName("card-back-text");
+
+                Span inst3 = new Span("Installment 3: " + installment3 + " nos | Rs. " + amount3);
                 inst3.getElement().getThemeList().add("badge");
                 inst3.addClassName("card-back-text");
-                
-                Span deletedBadge = new Span("Total Amount Released: Rs." + amount);
-                deletedBadge.getElement().getThemeList().add("badge error");
-                deletedBadge.addClassName("card-back-text");
-                back.add(backTitle,activeBadge, oldBadge,inst3, deletedBadge);
+
+                Span total = new Span("Total Amount Released: Rs. " + totalAmount);
+                total.getElement().getThemeList().add("badge success");
+                total.addClassName("card-back-text");
+
+                backContent.add(inst1, inst2, inst3, total);
+                back.add(backTitle, backContent);
                 break;
             }
+
             case 3: {
+                Span backTitle = new Span("Scheme Breakdown");
+                backTitle.addClassName("card-back-title");
 
-            	Map<String, Long> counts = service.getActiveWorksCountByMasterSchemeName();
+                Map<String, Long> counts = service.getActiveWorksCountByMasterSchemeName();
 
-            	counts.forEach((schemeNo, cnt) -> {
-            	    Span s = new Span(schemeNo + ": " + cnt);
-            	    s.getElement().getThemeList().add("badge");
-            	    s.addClassName("card-back-text");
-            	    back.add(s);
-            	});
-            	break;
+                if (counts == null || counts.isEmpty()) {
+                    Span empty = new Span("No data available");
+                    empty.addClassName("card-back-text");
+                    backContent.add(empty);
+                } else {
+                    counts.forEach((schemeNo, cnt) -> {
+                        Span s = new Span(schemeNo + ": " + cnt);
+                        s.getElement().getThemeList().add("badge");
+                        s.addClassName("card-back-text");
+                        backContent.add(s);
+                    });
+                }
+
+                back.add(backTitle, backContent);
+                break;
             }
+
+            case 4: {
+                Span backTitle = new Span("Previous Month");
+                backTitle.addClassName("card-back-title");
+
+                Span backText = new Span("Additional previous month details can go here.");
+                backText.addClassName("card-back-text");
+
+                backContent.add(backText);
+                back.add(backTitle, backContent);
+                break;
+            }
+
+            case 5: {
+                Span backTitle = new Span("Alerts / Pending");
+                backTitle.addClassName("card-back-title");
+
+                Span backText = new Span("Add alert or pending work summary here.");
+                backText.addClassName("card-back-text");
+
+                backContent.add(backText);
+                back.add(backTitle, backContent);
+                break;
+            }
+
             default: {
                 Span backTitle = new Span("Details");
                 backTitle.addClassName("card-back-title");
 
-                Span backText = new Span("Put extra information here (filters, last updated, etc.)");
+                Span backText = new Span("Put extra information here.");
                 backText.addClassName("card-back-text");
 
-                back.add(backTitle, backText);
+                backContent.add(backText);
+                back.add(backTitle, backContent);
                 break;
             }
         }
@@ -202,8 +274,11 @@ public class HomeView extends VerticalLayout {
 
         // Flip on click
         card.getElement().addEventListener("click", e -> {
-            if (card.hasClassName("flipped")) card.removeClassName("flipped");
-            else card.addClassName("flipped");
+            if (card.hasClassName("flipped")) {
+                card.removeClassName("flipped");
+            } else {
+                card.addClassName("flipped");
+            }
         });
 
         return card;
