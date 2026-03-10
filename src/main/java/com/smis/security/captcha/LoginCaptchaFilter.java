@@ -5,18 +5,36 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+
+
 @Component
 public class LoginCaptchaFilter extends OncePerRequestFilter {
 
+    private final boolean captchaEnabled;
+
+    public LoginCaptchaFilter(Environment env) {
+        this.captchaEnabled = env.getProperty(
+                "app.login.captcha-enabled",
+                Boolean.class,
+                true
+        );
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !("POST".equalsIgnoreCase(request.getMethod()) &&
-                 "/login".equals(request.getServletPath()));
+        if (!captchaEnabled) {
+            return true;
+        }
+
+        return !("POST".equalsIgnoreCase(request.getMethod())
+                && "/login".equals(request.getServletPath()));
     }
 
     @Override
@@ -27,14 +45,14 @@ public class LoginCaptchaFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        String expected = (session == null) ? null : (String) session.getAttribute(CaptchaController.SESSION_KEY);
+        String expected = (session == null) ? null
+                : (String) session.getAttribute(CaptchaController.SESSION_KEY);
         String provided = request.getParameter("captcha");
 
         boolean ok = expected != null
                 && provided != null
                 && expected.equalsIgnoreCase(provided.trim());
 
-        // One-time use: remove in both success and failure (if session exists)
         if (session != null) {
             session.removeAttribute(CaptchaController.SESSION_KEY);
         }
