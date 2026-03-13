@@ -30,7 +30,7 @@ public class Constituency implements Serializable{
 	private String constituencyMLA;
 	@ManyToOne
 	@JoinColumn(name="constituency_master_id")
-	@NotNull
+	@NotNull(message = "Select Constituency")
 	private MasterConstituency masterConstituency;
 	private boolean inUse;
 	@ManyToOne

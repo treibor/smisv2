@@ -754,14 +754,8 @@ public class WorkForm extends VerticalLayout {
 	    }
 
 	    try {
-	    	 // 1) If we are reversing from RELEASE_INSTALLMENT,
-	        //    delete the latest installment first (so prev-step logic sees correct state)
 	    	ProcessFlow returnTo = service.getPrevStepFromHistory(work);
-	    	
-
-	        // 2) Now compute where to return
-	        
-	        if (returnTo == null) {
+	          if (returnTo == null) {
 	            NotificationUtil.showError("Unable to determine previous step.");
 	            return;
 	        }
@@ -936,6 +930,7 @@ public void reverseFlow_ReverseProblem(TextField remarks) {
 	        service.saveProcessHistory(ph);
 
 	        // ✅ advance workflow
+	        //updateWork(next);
 	        work.setProcessflow(next);
 	        work.setUpdatedBy(user);
 	        work.setUpdatedOn(now);

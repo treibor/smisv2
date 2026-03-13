@@ -25,6 +25,7 @@ public class UsersView extends HorizontalLayout {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	boolean isSuperAdmin;
 	Grid<Users> usergrid=new Grid<>(Users.class);
 	Dbservice service;
 	UsersForm form;
@@ -33,6 +34,7 @@ public class UsersView extends HorizontalLayout {
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	public UsersView(Dbservice service) {
 		this.service=service;
+		this.isSuperAdmin=service.isSuperAdmin();
 		form=new UsersForm(service);
 		// TODO Auto-generated constructor stub
 		setSizeFull();
@@ -71,7 +73,7 @@ public class UsersView extends HorizontalLayout {
         .setHeader("Enabled?")
         .setSortable(true)
         .setResizable(true);
-		usergrid.addColumn(users->users.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setResizable(true);
+		usergrid.addColumn(users->users.getDistrict().getDistrictName()).setHeader("District").setSortable(true).setResizable(true).setVisible(isSuperAdmin);
 		usergrid.addColumn(users->users.getEnteredBy().getProfileName()).setHeader("Created By").setSortable(true).setResizable(true);
 		usergrid.addColumn(users->users.getEnteredOn().format(timeFormatter)).setHeader("Created On").setSortable(true).setResizable(true);
 		usergrid.setItems(service.findUsers());

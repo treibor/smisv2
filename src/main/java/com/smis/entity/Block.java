@@ -34,7 +34,7 @@ public class Block implements Serializable{
 	private boolean inUse;
 	@ManyToOne
 	@JoinColumn(name="block_master_id")
-	@NotNull
+	@NotNull(message = "Select Block")
 	private MasterBlock masterBlock;
 	@ManyToOne
 	@JoinColumn(name="districtId")

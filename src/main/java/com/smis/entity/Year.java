@@ -32,7 +32,7 @@ public class Year implements Serializable{
 	private boolean inUse;
 	@ManyToOne
 	@JoinColumn(name="year_master_id")
-	@NotNull
+	@NotNull(message = "Select Financial Year")
 	private MasterYear masterYear;
 	@ManyToOne
 	@JoinColumn(name = "updated_by")

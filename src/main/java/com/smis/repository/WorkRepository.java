@@ -80,6 +80,15 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 	
 
 	// Dashboard_________________________________________
+	@Query("""
+		    select count(distinct ph.work.workId)
+		    from ProcessHistory ph
+		    where ph.reversed = false
+		      and ph.fromStep.stepCode = 'WORK_ENTRY'
+		      and ph.enteredOn between :sdate and :edate
+		""")
+		int countEnteredWorksBetweenDates(@Param("sdate") LocalDateTime sdate,
+		                                  @Param("edate") LocalDateTime edate);
 	
 	@Query("select  count(*) from Work c  where  c.isDeleted=false and c.isRecasted=false and c.updatedOn between :sdate and :edate")
 	int getWorksCountBetweenDates(@Param("sdate") LocalDateTime sdate, @Param("edate") LocalDateTime edate);

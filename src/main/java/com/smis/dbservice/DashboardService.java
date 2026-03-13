@@ -35,7 +35,8 @@ public class DashboardService {
 	            .atDay(1)
 	            .atStartOfDay();
 
-	    return workrepo.getWorksCountBetweenDates(start, endExclusive);
+	    //return workrepo.getWorksCountBetweenDates(start, endExclusive);
+	    return workrepo.countEnteredWorksBetweenDates(start, endExclusive);
 	}
 	public int getCurrentMonthData() {
 
@@ -49,6 +50,7 @@ public class DashboardService {
 	            .atEndOfMonth()
 	            .atTime(23, 59, 59);
 
-	    return workrepo.getWorksCountBetweenDates(startDateTime, endDateTime);
+	    //return workrepo.getWorksCountBetweenDates(startDateTime, endDateTime);
+	    return workrepo.countEnteredWorksBetweenDates(startDateTime, endDateTime);
 	}
 }
