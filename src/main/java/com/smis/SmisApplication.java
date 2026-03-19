@@ -2,6 +2,7 @@ package com.smis;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -16,7 +17,7 @@ import com.vaadin.flow.theme.Theme;
 //@Theme (variant= Lumo.LIGHT)
 //@JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 @Theme(value = "my-theme")
-@PWA(name = "MLA-LADS", shortName = "MLA-LADS", iconPath = "/images/plant.png")
+//@PWA(name = "MLA-LADS", shortName = "MLA-LADS", iconPath = "/images/plant.png")
 public class SmisApplication extends SpringBootServletInitializer implements AppShellConfigurator{
 	
 	/**

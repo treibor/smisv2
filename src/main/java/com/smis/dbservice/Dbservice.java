@@ -901,6 +901,16 @@ public class Dbservice implements Serializable {
 	                    LinkedHashMap::new
 	            ));
 	}
+	public Map<String, Long> getActiveWorkCountsByMasterBlockName() {
+	    return wrepo.countActiveWorksByMasterBlockName()
+	            .stream()
+	            .collect(Collectors.toMap(
+	                    r -> (String) r[0],
+	                    r -> (Long) r[1],
+	                    (a, b) -> a,
+	                    LinkedHashMap::new
+	            ));
+	}
 	
 //____________________________________________________________________________________________
 	

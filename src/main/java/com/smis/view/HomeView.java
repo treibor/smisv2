@@ -9,8 +9,10 @@ import com.smis.dbservice.DashboardService;
 import com.smis.dbservice.Dbservice;
 import com.storedobject.chart.BarChart;
 import com.storedobject.chart.CategoryData;
+import com.storedobject.chart.Color;
 import com.storedobject.chart.Data;
 import com.storedobject.chart.DataType;
+import com.storedobject.chart.ItemStyle;
 import com.storedobject.chart.NightingaleRoseChart;
 import com.storedobject.chart.Position;
 import com.storedobject.chart.RectangularCoordinate;
@@ -291,7 +293,7 @@ public class HomeView extends VerticalLayout {
     	SOChart soChart = new SOChart();
     	SOChart soChart2 = new SOChart();
     	Map<String, Long> counts = service.getActiveWorkCountsByMasterConstituencyName();
-
+    	
     	CategoryData labels = new CategoryData();
     	Data data = new Data();
 
@@ -300,6 +302,7 @@ public class HomeView extends VerticalLayout {
     	    data.add(cnt);
     	});
         BarChart bc = new BarChart(labels, data);
+        
         RectangularCoordinate rc;
         rc  = new RectangularCoordinate(new XAxis(DataType.CATEGORY), new YAxis(DataType.NUMBER));
         Position p = new Position();
@@ -308,7 +311,7 @@ public class HomeView extends VerticalLayout {
         bc.plotOn(rc); // Bar chart needs to be plotted on a coordinate system
         bc.setName("Works");
         Toolbox toolbox = new Toolbox();
-        toolbox.addButton(new Toolbox.Download(), new Toolbox.Zoom());
+        toolbox.addButton(new Toolbox.Download(), new Toolbox.Zoom(), new Toolbox.DataView());
         // Let's add some titles.
         Title title = new Title("Constituency Wise Works");
         //title.setSubtext("Please Test");
@@ -323,6 +326,10 @@ public class HomeView extends VerticalLayout {
         //soChart.s
         soChart.add(nc, toolbox);
         soChart2.add(bc, toolbox, title);
+        ItemStyle style = new ItemStyle();
+        style.setColor(new Color("#1E88E5"));   // bar color
+
+        bc.setItemStyle(style);
         HorizontalLayout getCharts=new HorizontalLayout();
         
         getCharts.addClassName("chartsLayout1");
@@ -334,41 +341,42 @@ public class HomeView extends VerticalLayout {
     }
     
     public Component getCharts2() {
-        SOChart soChart = new SOChart();
         SOChart soChart2 = new SOChart();
-
-        // ✅ get the map
-        Map<String, Long> counts = Optional.ofNullable(service.getActiveWorkCountsByMasterScheme())
-                .orElse(Collections.emptyMap());
-
+        Map<String, Long> counts = Optional.ofNullable(service.getActiveWorkCountsByMasterBlockName()).orElse(Collections.emptyMap());
         CategoryData labels = new CategoryData();
         Data data = new Data();
-
+        RectangularCoordinate rc = new RectangularCoordinate(new XAxis(DataType.CATEGORY), new YAxis(DataType.NUMBER));
         counts.forEach((label, cnt) -> {
             labels.add(label);
             data.add(cnt);
         });
-
         BarChart bc = new BarChart(labels, data);
         bc.setName("Works");
-
-        RectangularCoordinate rc =
-                new RectangularCoordinate(new XAxis(DataType.CATEGORY), new YAxis(DataType.NUMBER));
-        bc.plotOn(rc);
-
         Toolbox toolbox = new Toolbox();
-        toolbox.addButton(new Toolbox.Download(), new Toolbox.Zoom());
-
-        Title title = new Title("Scheme Wise Works");
-
-        NightingaleRoseChart nc = new NightingaleRoseChart(labels, data);
+        toolbox.addButton(new Toolbox.Download(), new Toolbox.Zoom(), new Toolbox.DataView());
+        Title title = new Title("Block Wise Works");
+        bc.plotOn(rc);
+        soChart2.add(bc, toolbox, title);
+        
+		SOChart soChart = new SOChart();
+		Map<String, Long> schemecounts = Optional.ofNullable(service.getActiveWorkCountsByMasterScheme())
+				.orElse(Collections.emptyMap());
+		 CategoryData schemelabels = new CategoryData();
+		//
+		Data schemedata = new Data();
+		schemecounts.forEach((schemelabel, cnt) -> {
+			schemelabels.add(schemelabel);
+			schemedata.add(cnt);
+		});
+        //   NightingaleRoseChart nc = new NightingaleRoseChart(labels, data);
+        NightingaleRoseChart nc = new NightingaleRoseChart(schemelabels, schemedata);
         nc.setName("Works");
 
         Position p = new Position();
         nc.setPosition(p);
 
         soChart.add(nc, toolbox);
-        soChart2.add(bc, toolbox, title);
+        
 
         HorizontalLayout getCharts = new HorizontalLayout();
         // ✅ add both charts

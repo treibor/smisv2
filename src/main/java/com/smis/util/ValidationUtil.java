@@ -1,11 +1,13 @@
 package com.smis.util;
 
+import java.util.regex.Pattern;
+
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 
 public class ValidationUtil {
 	private static final String ALLOWED_PATTERN = "[-0-9A-Za-zñÑïÏ.*%_:+,();@/'&\\s]";
-	
+
 	public static void applyValidation(TextField textField, int length) {
         textField.setAllowedCharPattern(ALLOWED_PATTERN);
         textField.setMinLength(0);
@@ -34,5 +36,8 @@ public class ValidationUtil {
     	}
     	return false;    	
     }
+    
+
+    
 
 }

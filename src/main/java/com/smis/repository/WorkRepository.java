@@ -140,6 +140,17 @@ List<Work> getReportWorksByUser(@Param("user") Users user, @Param("scheme") Sche
 				    order by mc.constituencyName
 				""")
 		List<Object[]> countActiveWorksByMasterConstituencyName();
+		
+		@Query("""
+			    select mb.blockName, count(w)
+			    from Work w
+			    join w.block b
+			    join b.masterBlock mb
+			    where w.isDeleted = false
+			    group by mb.blockName
+			    order by mb.blockName
+			""")
+	List<Object[]> countActiveWorksByMasterBlockName();
 	//________________________________________________________________________________________
 	// Find Works Inbox
 	@Query("""

@@ -18,6 +18,7 @@ import com.smis.entity.master.District;
 import com.smis.entity.master.State;
 import com.smis.security.SecurityService;
 import com.smis.util.EmailValidator;
+import com.smis.util.NotificationUtil;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -46,6 +47,8 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -93,7 +96,20 @@ public class MainLayout extends AppLayout {
 		createHeader();
 		createDrawer();
 		checkPasswordExpiry();
-		
+		/*
+		VaadinServletRequest request = (VaadinServletRequest) VaadinService.getCurrentRequest();
+		HttpSession session = request.getSession(false);
+
+		if (session != null) {
+		    System.out.println("SESSION ID: " + session.getId());
+		    System.out.println("TIMEOUT: " + session.getMaxInactiveInterval());
+		    System.out.println("CREATION: " + session.getCreationTime());
+		    System.out.println("LAST ACCESS: " + session.getLastAccessedTime());
+		} else {
+		    System.out.println("NO SESSION");
+		}*/
+
+       
 	}
 
 	private void checkPasswordExpiry() {
@@ -314,7 +330,7 @@ public class MainLayout extends AppLayout {
 		// --- Actions ---
 		subMenu.addItem(menuItem(VaadinIcon.INFO_CIRCLE, "About"), e -> openAboutDialog());
 
-		subMenu.addItem(menuItem(VaadinIcon.KEY, "Change Password"), e -> openPasswordDialog());
+		subMenu.addItem(menuItem(VaadinIcon.KEY, "Update Profile"), e -> openAccountDialog());
 
 		subMenu.addItem(menuItem(VaadinIcon.USER_CHECK, "Create User"), e -> createUser()).setVisible(isAdmin);
 
@@ -365,19 +381,159 @@ public class MainLayout extends AppLayout {
 		return dialogLayout1;
 	}
 
-	private void openPasswordDialog() {
-		if (dialog != null) {
-			dialog = null;
-		}
-		dialog = new Dialog();
-		dialog.setModal(true);
-		dialog.setCloseOnEsc(false);
-		dialog.setCloseOnOutsideClick(false);
-		VerticalLayout dialogLayout = createDialogLayout(dialog);
-		dialog.add(dialogLayout);
-		dialog.open();
+	private void openAccountDialog() {
+	    if (dialog != null) {
+	        dialog = null;
+	    }
+
+	    dialog = new Dialog();
+	    dialog.setModal(true);
+	    dialog.setCloseOnEsc(false);
+	    dialog.setCloseOnOutsideClick(false);
+
+	    dialog.add(createAccountDialogLayout(dialog));
+	    dialog.open();
 	}
 
+	private VerticalLayout createAccountDialogLayout(Dialog dialog) {
+	    H2 headline = new H2("Account Settings");
+	    headline.getStyle()
+	            .set("margin", "var(--lumo-space-m) 0 0 0")
+	            .set("font-size", "1.5em")
+	            .set("font-weight", "bold");
+
+	    Tab passwordTab = new Tab("Change Password");
+	    Tab profileTab = new Tab("Update Profile");
+
+	    Tabs tabs = new Tabs(passwordTab, profileTab);
+	    tabs.setWidthFull();
+
+	    VerticalLayout passwordLayout = createPasswordLayout(dialog);
+	    VerticalLayout profileLayout = createProfileLayout(dialog);
+
+	    profileLayout.setVisible(false);
+
+	    tabs.addSelectedChangeListener(event -> {
+	        boolean isPasswordTab = event.getSelectedTab().equals(passwordTab);
+	        passwordLayout.setVisible(isPasswordTab);
+	        profileLayout.setVisible(!isPasswordTab);
+	    });
+
+	    VerticalLayout contentLayout = new VerticalLayout(passwordLayout, profileLayout);
+	    contentLayout.setPadding(false);
+	    contentLayout.setSpacing(false);
+	    contentLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+	    VerticalLayout dialogLayout = new VerticalLayout(headline, tabs, contentLayout);
+	    dialogLayout.setPadding(false);
+	    dialogLayout.setSpacing(true);
+	    dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+	    dialogLayout.getStyle().set("width", "400px").set("max-width", "100%");
+
+	    clearDialog();
+
+	    return dialogLayout;
+	}
+
+	private VerticalLayout createPasswordLayout(Dialog dialog) {
+	    oldpwd = new PasswordField("Old Password");
+	    newpwd = new PasswordField("New Password");
+	    confirmpwd = new PasswordField("Confirm New Password");
+
+	    oldpwd.setRevealButtonVisible(false);
+	    newpwd.setRevealButtonVisible(false);
+	    confirmpwd.setRevealButtonVisible(false);
+
+	    Button cancelButton = new Button("Cancel", e -> dialog.close());
+	    Button saveButton = new Button("Save",
+	            e -> changePassword(oldpwd, newpwd, confirmpwd, dialog));
+	    saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+	    VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
+	    fieldLayout.setSpacing(false);
+	    fieldLayout.setPadding(false);
+	    fieldLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+	    HorizontalLayout buttonLayout = new HorizontalLayout(cancelButton, saveButton);
+	    buttonLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+
+	    VerticalLayout layout = new VerticalLayout(fieldLayout, buttonLayout);
+	    layout.setPadding(false);
+	    layout.setSpacing(true);
+	    layout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+	    return layout;
+	}
+
+	private VerticalLayout createProfileLayout(Dialog dialog) {
+	    TextField profileName = new TextField("Profile Name");
+	    EmailField email = new EmailField("Email");
+
+	    profileName.setWidthFull();
+	    email.setWidthFull();
+
+	    //Users user = service.getLoggedUser(); // replace this
+	    if (loggedUser != null) {
+	        profileName.setValue(loggedUser.getProfileName() != null ? loggedUser.getProfileName() : "");
+	        email.setValue(loggedUser.getEmail() != null ? loggedUser.getEmail() : "");
+	    }
+
+	    Button cancelButton = new Button("Cancel", e -> dialog.close());
+	    Button updateButton = new Button("Update", e -> updateProfile(profileName, email, dialog));
+	    updateButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+	    VerticalLayout fieldLayout = new VerticalLayout(profileName, email);
+	    fieldLayout.setSpacing(false);
+	    fieldLayout.setPadding(false);
+	    fieldLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+	    HorizontalLayout buttonLayout = new HorizontalLayout(cancelButton, updateButton);
+	    buttonLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+
+	    VerticalLayout layout = new VerticalLayout(fieldLayout, buttonLayout);
+	    layout.setPadding(false);
+	    layout.setSpacing(true);
+	    layout.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+	    return layout;
+	}
+	private void updateProfile(TextField profileName, EmailField email, Dialog dialog) {
+
+	    String name = profileName.getValue() != null ? profileName.getValue().trim() : "";
+	    String emailValue = email.getValue() != null ? email.getValue().trim() : "";
+
+	    if (name.isEmpty()) {
+	        NotificationUtil.showError("Profile name is required");
+	        profileName.focus();
+	        return;
+	    }
+
+	    if (emailValue.isEmpty()) {
+	        NotificationUtil.showError("Email is required");
+	        email.focus();
+	        return;
+	    }
+	    if (!EmailValidator.isValidEmail(emailValue)) {
+	        NotificationUtil.showError("Please enter a valid email address");
+	        email.focus();
+	        return;
+	    }
+	    try {
+	        // get logged-in user (replace with your own method)
+	        Users user = loggedUser;
+
+	        user.setProfileName(name);
+	        user.setEmail(emailValue);
+
+	        service.saveUser(user);
+
+	        NotificationUtil.showSuccess("Profile updated successfully. Re-Login To View Changes");
+	        dialog.close();
+
+	    } catch (Exception ex) {
+	        NotificationUtil.showError("Failed to update profile");
+	    }
+	}
 	private void openMandatoryPasswordDialog() {
 		if (dialog != null) {
 			dialog = null;
@@ -419,37 +575,7 @@ public class MainLayout extends AppLayout {
 		dialog.open();
 	}
 
-	private VerticalLayout createDialogLayout(Dialog dialog) {
-		H2 headline = new H2("Change Password");
-		headline.getStyle().set("margin", "var(--lumo-space-m) 0 0 0").set("font-size", "1.5em").set("font-weight",
-				"bold");
-
-		oldpwd = new PasswordField("Old Password");
-		newpwd = new PasswordField("New Password");
-		confirmpwd = new PasswordField("Confirm New Password");
-		oldpwd.setRevealButtonVisible(false);
-		newpwd.setRevealButtonVisible(false);
-		confirmpwd.setRevealButtonVisible(false);
-		// oldpwd.setValue("");
-		cancelButton.addClickListener(e -> dialog.close());
-		Button saveButton = new Button("Save", e ->
-        changePassword(oldpwd, newpwd, confirmpwd, dialog));
-		VerticalLayout fieldLayout = new VerticalLayout(oldpwd, newpwd, confirmpwd);
-		fieldLayout.setSpacing(false);
-		fieldLayout.setPadding(false);
-		fieldLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-
-		saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		HorizontalLayout buttonLayout = new HorizontalLayout(cancelButton, saveButton);
-		buttonLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-		VerticalLayout dialogLayout = new VerticalLayout(headline, fieldLayout, buttonLayout);
-		dialogLayout.setPadding(false);
-		dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
-		dialogLayout.getStyle().set("width", "300px").set("max-width", "100%");
-		clearDialog();
-
-		return dialogLayout;
-	}
+	
 
 	public void clearDialog() {
 		oldpwd.setValue("");
@@ -561,8 +687,8 @@ public class MainLayout extends AppLayout {
 		saveButton.addClickListener(e -> saveNewUser());
 		newpwd = new PasswordField("Password");
 		confirmpwd = new PasswordField("Confirm Password");
-		profileName.setHelperText("This will be used as a display name. Other Users will see this name.");
-		userName.setHelperText("Your Login Name. Only the Admin and the user should know this name.");
+		profileName.setHelperText("This will be used as a display name. Eg: John Doe, L.D.A");
+		userName.setHelperText("The Login Id. You can use the Mobile No of the user.");
 		VerticalLayout fieldLayout1 = new VerticalLayout(state, district, profileName, userName, email, newpwd,
 				confirmpwd, usertype);
 		fieldLayout1.setSpacing(false);

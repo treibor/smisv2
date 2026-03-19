@@ -2,10 +2,7 @@ package com.smis.view;
 
 import java.time.format.DateTimeFormatter;
 
-import javax.print.attribute.standard.PrinterMoreInfoManufacturer;
-
 import com.smis.dbservice.Dbservice;
-import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.Users;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.Grid;
