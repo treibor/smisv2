@@ -164,7 +164,7 @@ public class MainLayout extends AppLayout {
 	            "Home", "", HomeView.class, LineAwesomeIcon.HOME_SOLID.create());
 
 	    SideNavItemWithHelperText mla = new SideNavItemWithHelperText(
-	            "Inbox", "", WorkView.class, LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
+	            "Inbox", "", WorkViewNew.class, LineAwesomeIcon.PEOPLE_CARRY_SOLID.create());
 
 	    SideNavItemWithHelperText history = new SideNavItemWithHelperText(
 	            "History", "", WorkViewHistory.class, LineAwesomeIcon.HISTORY_SOLID.create());

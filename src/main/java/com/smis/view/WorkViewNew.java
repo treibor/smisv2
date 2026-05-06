@@ -2,10 +2,11 @@ package com.smis.view;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -16,7 +17,6 @@ import com.smis.entity.Block;
 import com.smis.entity.Constituency;
 import com.smis.entity.Installment;
 import com.smis.entity.ProcessFlow;
-import com.smis.entity.ProcessFlowUser;
 import com.smis.entity.ProcessHistory;
 import com.smis.entity.Scheme;
 import com.smis.entity.Users;
@@ -24,8 +24,9 @@ import com.smis.entity.Work;
 import com.smis.entity.Year;
 import com.smis.util.ButtonUtil;
 import com.smis.util.NotificationUtil;
-import com.smis.util.StatusBadgeUtil;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -34,7 +35,6 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
-import com.vaadin.flow.component.grid.contextmenu.GridMenuItem;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -50,12 +50,14 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.transaction.Transactional;
 import software.xdev.vaadin.grid_exporter.GridExporter;
 
-@PageTitle("History")
-@Route(value = "workhistory", layout = MainLayout.class)
+@PageTitle("Inbox")
+@Route(value = "inbox", layout = MainLayout.class)
 @RolesAllowed({ "USER", "SUPER", "ADMIN" })
-public class WorkViewHistory extends VerticalLayout {
+//@CssImport(value = "../components/vaadin-grid.css", themeFor = "vaadin-grid")
+public class WorkViewNew extends VerticalLayout  {
 	/**
 	 * 
 	 */
@@ -63,7 +65,7 @@ public class WorkViewHistory extends VerticalLayout {
 	Dbservice service;
 	@Autowired
 	FileStorageService fileStorageService;
-	// Grid<Work> grid = new Grid<>(Work.class);
+	Grid<Work> grid = new Grid<>(Work.class);
 	Grid<Work> gridhistory = new Grid<>(Work.class);
 	TextField filterText = new TextField();
 	ComboBox<Block> block = new ComboBox<Block>();
@@ -72,27 +74,33 @@ public class WorkViewHistory extends VerticalLayout {
 	ComboBox<Scheme> scheme = new ComboBox<Scheme>();
 	Button expButton = new Button("Export");
 	// Checkbox displayFilter= new Checkbox("Show More Filters");
+	WorkForm workform;
 	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-	WorkForm workform;
 	boolean isUser;
 	boolean isAdmin;
 	boolean isSuper;
-	// @Autowired
-	// private AuditTrail audit;
+	private Users loggedUser;
 	Span workCount;
-	public WorkViewHistory(Dbservice service) {
+	public WorkViewNew(Dbservice service) {
+		
+	
 		this.service = service;
+		//this.fileStorageService = fss;
 		setSizeFull();
+		this.loggedUser = service.getLoggedUser();
 		isAdmin = service.hasRole("ADMIN");
 		isSuper = service.hasRole("SUPER"); // or SUPER_ADMIN / DIST_ADMIN etc.
 		isUser = service.hasRole("USER");
-
-		configureGridHistory();
-		add(getToolbar(),getCountPanel(), getContent());
+		configureGrid();
+		// configureGridHistory();
+		configureForm();
+		add(getToolbar(), getCountPanel(),getContent());
 		updateGrid();
-
+		closeEditor();
+		 
 	}
+	
 	private Component getCountPanel(){
 		workCount = new Span();
 		workCount.getStyle().set("font-size", "var(--lumo-font-size-s)");
@@ -100,16 +108,6 @@ public class WorkViewHistory extends VerticalLayout {
 		workCount.getStyle().set("margin-left", "5px");
 		return workCount;
 	}
-	public boolean checkAuthority(ProcessFlow pf) {
-		Users user = service.getLoggedUser();
-		ProcessFlowUser pfu = service.getProcessFlowUser(user, pf);
-		if (pfu == null) {
-			return false;
-		} else {
-			return true;
-		}
-	}
-
 	private void configureCombos() {
 		block.setItems(service.getBlocksByUser());
 		// block.setClearButtonVisible(true);
@@ -139,46 +137,44 @@ public class WorkViewHistory extends VerticalLayout {
 		scheme.addValueChangeListener(e -> updateGrid());
 	}
 
-	private void configureGridHistory() {
-		gridhistory.setSizeFull();
-		gridhistory.setColumns("workCode");
-		gridhistory.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%")
-				.setResizable(true).setSortable(true);
-		gridhistory.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true)
-				.setSortable(true).setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getBlock().getBlockLabel()).setAutoWidth(true).setHeader("Block/MB")
+	private void configureGrid() {
+		grid.setSizeFull();
+		grid.setColumns("workCode");
+		grid.addColumn(work -> work.getWorkName()).setHeader("Name of The Work").setWidth("20%").setResizable(true)
+				.setSortable(true);
+		grid.addColumn(work -> work.getWorkAmount()).setHeader("Sanc. Amount").setResizable(true).setSortable(true)
+				.setAutoWidth(true);
+		grid.addColumn(work -> work.getBlock().getBlockLabel()).setAutoWidth(true).setHeader("Block/MB")
 				.setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getScheme().getSchemeLabel()).setAutoWidth(true).setHeader("Scheme")
+		grid.addColumn(work -> work.getScheme().getSchemeLabel()).setAutoWidth(true).setHeader("Scheme")
 				.setSortable(true).setResizable(true);
-		gridhistory
-				.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-"
-						+ work.getConstituency().getConstituencyMLA())
-				.setWidth("20%").setHeader("Constituency").setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getYear().getYearLabel()).setAutoWidth(true).setHeader("Year")
+		grid.addColumn(work -> work.getConstituency().getConstituencyLabel() + "-"
+				+ work.getConstituency().getConstituencyMLA()).setWidth("20%").setHeader("Constituency")
 				.setSortable(true).setResizable(true);
-		gridhistory.addColumn(work -> work.getSanctionNo()).setHeader("Sanc. No").setResizable(true).setSortable(true)
+		grid.addColumn(work -> work.getYear().getYearLabel()).setAutoWidth(true).setHeader("Year").setSortable(true)
+				.setResizable(true);
+		grid.addColumn(work -> work.getSanctionNo()).setHeader("Sanc. No").setResizable(true).setSortable(true)
 				.setAutoWidth(true);
 		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-		gridhistory.addColumn(
+		grid.addColumn(
 				work -> work.getSanctionDate() != null ? work.getSanctionDate().format(dateFormatter) : "No Date")
 				.setHeader("Sanc. Date").setResizable(true).setSortable(true).setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getNoOfInstallments()).setHeader("Installments").setResizable(true)
+		grid.addColumn(work -> work.getNoOfInstallments()).setHeader("Installments").setResizable(true)
 				.setSortable(true).setAutoWidth(true);
-		gridhistory.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Process")
-				.setResizable(true).setSortable(true).setAutoWidth(true);
-		gridhistory
-				.addComponentColumn(work -> StatusBadgeUtil.workStatusBadge(work.getIsDeleted(), work.getIsRecasted()))
-				.setHeader("Status").setAutoWidth(true).setResizable(true).setComparator(work -> {
-					if (Boolean.TRUE.equals(work.getIsDeleted()))
-						return 2;
-					if (Boolean.TRUE.equals(work.getIsRecasted()))
-						return 1;
-					return 0;
-				});
-				gridhistory.getHeaderRows().clear();
-		gridhistory.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
-		gridhistory.setClassNameGenerator(work -> {
+		grid.addColumn(work -> work.getProcessflow().getStepName()).setHeader("Current Process").setResizable(true)
+				.setSortable(true).setAutoWidth(true);
+		// grid.addColumn(work ->
+		// work.getWorkStatus()).setHeader("Status").setResizable(true).setSortable(true).setAutoWidth(true);
+		grid.addColumn(work -> work.getUpdatedBy().getProfileName()).setHeader("Sent By").setResizable(true)
+				.setSortable(true).setAutoWidth(true);
+
+		grid.addColumn(work -> work.getUpdatedOn() != null ? work.getUpdatedOn().format(timeFormatter) : "No Date")
+				.setHeader("Sent On").setResizable(true).setSortable(true).setAutoWidth(true);
+		grid.asSingleSelect().addValueChangeListener(e -> editWork(e.getValue()));
+		grid.getHeaderRows().clear();
+		grid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT);
+		grid.setClassNameGenerator(work -> {
 			String status = work.getWorkStatus();
 
 			if ("Completed".equals(status)) {
@@ -189,7 +185,7 @@ public class WorkViewHistory extends VerticalLayout {
 			}
 			return null;
 		});
-		GridContextMenu<Work> contextMenu = new GridContextMenu<>(gridhistory);
+		GridContextMenu<Work> contextMenu = new GridContextMenu<>(grid);
 
 		contextMenu.addItem(menuItem(VaadinIcon.EYE, "View Details"),
 				event -> event.getItem().ifPresent(this::showInstallmentsDialog));
@@ -197,64 +193,27 @@ public class WorkViewHistory extends VerticalLayout {
 		contextMenu.addItem(menuItem(VaadinIcon.TIME_BACKWARD, "View History"),
 				event -> event.getItem().ifPresent(this::showHistoryDialog));
 		
-
 		if (isAdmin) {
-		    GridMenuItem<Work> undoItem = contextMenu.addItem(
-		        menuItem(VaadinIcon.REFRESH, "Undo Delete"),
-		        event -> event.getItem().ifPresent(this::confirmUndoDelete)
-		    );
-		    undoItem.setVisible(false);
-		    contextMenu.addGridContextMenuOpenedListener(e -> {
-		        Optional<Work> item = e.getItem();          // ✅ this is the safest
-		        undoItem.setVisible(item.isPresent() && item.get().getIsDeleted());
-		    });
+			contextMenu.addItem(menuItem(VaadinIcon.BULLSEYE, "Recast"),
+					event -> event.getItem().ifPresent(this::confirmRecast)).addClassName("danger-item");
 		}
 		if (isAdmin) {
-		    GridMenuItem<Work> undoRecast = contextMenu.addItem(
-		        menuItem(VaadinIcon.REFRESH, "Undo Recast"),
-		        event -> event.getItem().ifPresent(this::confirmUndoRecast)
-		    );
-		    undoRecast.setVisible(false);
-		    contextMenu.addGridContextMenuOpenedListener(e -> {
-		        Optional<Work> item = e.getItem();          // ✅ this is the safest
-		        undoRecast.setVisible(item.isPresent() && item.get().getIsRecasted());
-		    });
+			contextMenu.addItem(menuItem(VaadinIcon.TRASH, "Delete"),
+					event -> event.getItem().ifPresent(this::confirmDelete)).addClassName("danger-item");
 		}
-
 	}
-	public void undoDelete(Work work, String remarks) {
-		ProcessHistory existing=service.getLastPocessStep(work);
-		work.setIsDeleted(false);
-	    work.setRemarks(remarks);
-	    service.saveWork(work);
-	    ProcessHistory ph = new ProcessHistory();
-	    ph.setWork(work);
-	    ph.setEnteredOn(LocalDateTime.now());
-	    ph.setProcessName("Undo Delete");
-	    ph.setFromStep(existing.getFromStep());
-	    ph.setToStep(existing.getToStep()); // optional, nice for audit
-	    ph.setUser(service.getLoggedUser());
-	    ph.setRemarks(remarks);
-	    service.saveProcessHistory(ph);
-	    NotificationUtil.showSuccess("Work Reverted to Last Process Successfully");
-	    updateGrid();
-	}
-	public void confirmUndoDelete(Work work) {
 
+	public void confirmDelete(Work work) {
 		if (work == null)
 			return;
-
 		ConfirmDialog dialog = new ConfirmDialog();
-		dialog.setHeader("Undo?");
-
-		Paragraph warning = new Paragraph("Are you sure you want to undo delete this item? "
-				+ "This Work will be restored to the last Process Flow");
-
+		dialog.setHeader("Delete?");
+		Paragraph warning = new Paragraph("Are you sure you want to delete this work? "
+				+ "This Work will be removed from the Inbox of All WorkFlow Players.");
 		TextField remarks = new TextField("Remarks");
 		remarks.setWidthFull();
 		remarks.setRequired(true);
 		remarks.setErrorMessage("Remarks is mandatory");
-
 		VerticalLayout layout = new VerticalLayout(warning, remarks);
 		layout.setPadding(false);
 		layout.setSpacing(true);
@@ -262,92 +221,80 @@ public class WorkViewHistory extends VerticalLayout {
 		dialog.setCancelable(true);
 		dialog.setConfirmText("Delete");
 		dialog.addConfirmListener(e -> {
-
 			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
 
 			if (r.isEmpty()) {
 				remarks.setInvalid(true);
 				NotificationUtil.showError("Please Enter Remarks");
 				e.getSource().setOpened(true);
-				return; // ✅ keep dialog open
+				return; //  keep dialog open
 			}
 			dialog.close();
-			undoDelete(work, r);
-			
+			deleteWorkAndLog(work, r);
+			closeEditor();
 		});
-
 		dialog.open();
 	}
-	public void undoRecast(Work work, String remarks) {
-		ProcessHistory existing=service.getLastPocessStep(work);
-		work.setIsRecasted(false);
-	    work.setRemarks(remarks);
-	    service.saveWork(work);
-	    ProcessHistory ph = new ProcessHistory();
-	    ph.setWork(work);
-	    ph.setEnteredOn(LocalDateTime.now());
-	    ph.setProcessName("Undo Recast");
-	    ph.setFromStep(existing.getFromStep());
-	    ph.setToStep(existing.getToStep()); // optional, nice for audit
-	    ph.setUser(service.getLoggedUser());
-	    ph.setRemarks(remarks);
-	    service.saveProcessHistory(ph);
-	    NotificationUtil.showSuccess("Work Reverted to Last Process Successfully");
-	    updateGrid();
-	}
-	public void confirmUndoRecast(Work work) {
-
+	public void confirmRecast(Work work) {
 		if (work == null)
 			return;
-
 		ConfirmDialog dialog = new ConfirmDialog();
-		dialog.setHeader("Undo?");
-
-		Paragraph warning = new Paragraph("Are you sure you want to undo recast this item? "
-				+ "This Work will be restored to the last Process Flow");
-
+		dialog.setHeader("Recast?");
+		Paragraph warning = new Paragraph("Are you sure you want to Recast this work? "
+				+ "This Work will be removed from the Inbox of All WorkFlow Players.");
 		TextField remarks = new TextField("Remarks");
 		remarks.setWidthFull();
 		remarks.setRequired(true);
 		remarks.setErrorMessage("Remarks is mandatory");
-
 		VerticalLayout layout = new VerticalLayout(warning, remarks);
 		layout.setPadding(false);
 		layout.setSpacing(true);
 		dialog.add(layout);
 		dialog.setCancelable(true);
-		dialog.setConfirmText("Delete");
+		dialog.setConfirmText("Recast");
 		dialog.addConfirmListener(e -> {
-
 			String r = remarks.getValue() == null ? "" : remarks.getValue().trim();
-
 			if (r.isEmpty()) {
 				remarks.setInvalid(true);
 				NotificationUtil.showError("Please Enter Remarks");
 				e.getSource().setOpened(true);
-				return; // ✅ keep dialog open
+				return; //  keep dialog open
 			}
 			dialog.close();
-			undoRecast(work, r);
-			
+			recastWork(work, r);
+			closeEditor();
 		});
-
 		dialog.open();
+	}
+	public void recastWork(Work work, String remarks) {
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsRecasted(true);
+		work.setRemarks(remarks);
+		service.saveWork(work);
+		ProcessHistory ph = new ProcessHistory();
+		ph.setWork(work);
+		ph.setEnteredOn(LocalDateTime.now());
+		ph.setProcessName("Recasted");
+		ph.setFromStep(existing.getFromStep()); 
+		ph.setToStep(existing.getToStep());
+		ph.setUser(service.getLoggedUser());
+		ph.setRemarks(remarks); 
+		service.saveProcessHistory(ph);
+		NotificationUtil.showSuccess("Work Recasted Successfully and Removed from Inbox");
+		updateGrid();
 	}
 	private Component menuItem(VaadinIcon icon, String text) {
 		Icon i = icon.create();
 		i.setSize("16px");
-
 		Span label = new Span(text);
-
 		HorizontalLayout hl = new HorizontalLayout(i, label);
 		hl.setSpacing(true);
 		hl.setPadding(false);
 		hl.setMargin(false);
 		hl.setAlignItems(FlexComponent.Alignment.CENTER);
-
 		return hl;
 	}
+
 	private void showInstallmentsDialog(Work work) {
 		try {
 			Dialog dialog = new Dialog();
@@ -358,7 +305,6 @@ public class WorkViewHistory extends VerticalLayout {
 			Grid<Installment> installmentGrid = new Grid<>(Installment.class, false);
 			DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 			DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
 			installmentGrid.addColumn(Installment::getInstallmentNo).setHeader("Installment Number").setResizable(true);
 			installmentGrid.addColumn(Installment::getInstallmentAmount).setHeader("Amount Released")
 					.setResizable(true);
@@ -512,14 +458,14 @@ public class WorkViewHistory extends VerticalLayout {
 
 		List<ProcessHistory> history = service.getProcessHistory(work);
 
-		// 1️⃣ Serial Number Column
+		// 1️ Serial Number Column
 		grid.addColumn(ph -> history.indexOf(ph) + 1).setHeader("Sl. No.").setWidth("90px").setFlexGrow(0);
 
-		// 2️⃣ Task
+		// 2️ Task
 		grid.addColumn(ph -> ph.getFromStep() != null ? ph.getFromStep().getStepName() : "").setHeader("Task")
 				.setAutoWidth(true);
 
-		// 3️⃣ Action Performed (Arrow + Text)
+		// 3️ Action Performed (Arrow + Text)
 		grid.addComponentColumn(ph -> {
 
 		    String action = ph.getProcessName() != null ? ph.getProcessName().trim() : "";
@@ -576,15 +522,15 @@ public class WorkViewHistory extends VerticalLayout {
 
 		}).setHeader("Action Performed").setAutoWidth(true);
 
-		// 4️⃣ Remarks
+		// 4️ Remarks
 		grid.addColumn(ph -> ph.getRemarks() != null ? ph.getRemarks() : "").setHeader("Remarks").setWidth("35%")
 				.setResizable(true);
 
-		// 5️⃣ Performed By
+		// 5️ Performed By
 		grid.addColumn(ph -> ph.getUser() != null ? ph.getUser().getProfileName() : "").setHeader("Performed By")
 				.setAutoWidth(true);
 
-		// 6️⃣ Document
+		// 6️ Document
 		grid.addComponentColumn(ph -> {
 
 			String path = ph.getDocument();
@@ -634,27 +580,39 @@ public class WorkViewHistory extends VerticalLayout {
 		dialog.open();
 	}
 
-	
-
 	private Component getContent() {
 		// var grids=new VerticalLayout(grid, gridhistory);
 		// grids.setSizeFull();
-		HorizontalLayout content = new HorizontalLayout(gridhistory);
-		content.setFlexGrow(1, gridhistory);
-		// content.setFlexGrow(1, workform);
+		HorizontalLayout content = new HorizontalLayout(grid, workform);
+		content.setFlexGrow(1, grid);
+		content.setFlexGrow(1, workform);
 		content.addClassName("content");
 		content.setSizeFull();
 		return content;
 	}
 
+	public void updateGrid() {
+		grid.setItems(service.getFilteredWorksForInbox(filterText.getValue(), scheme.getValue(), consti.getValue(),
+				block.getValue(), year.getValue()));
+		updateCount();
+	}
+	private void updateCount() {
+	    int count = grid.getListDataView().getItemCount();
+	    workCount.setText("Showing " + count + " works");
+	}
 	private Component getToolbar() {
 		filterText.setPlaceholder("Filter By Work Code, Name or Sanction Number");
 		filterText.setClearButtonVisible(true);
 		filterText.setValueChangeMode(ValueChangeMode.LAZY);
 		filterText.addValueChangeListener(e -> updateGrid());
 		filterText.setWidth("10%");
-		expButton.addClickListener(e -> GridExporter.newWithDefaults(gridhistory).open());
+		expButton.addClickListener(e -> GridExporter.newWithDefaults(grid).open());
 		expButton.setIcon(new Icon(VaadinIcon.EXTERNAL_LINK));
+		Button addButton = new Button("New Work");
+		ButtonUtil.applyNewStyle(addButton);
+		// addButton.setIcon(new Icon(VaadinIcon.PLUS_CIRCLE_O));
+		addButton.addClickListener(e -> addWork());
+		addButton.setVisible(service.hasAuthorityForStep(loggedUser, "WORK_ENTRY"));
 		configureCombos();
 		FormLayout toolbar = new FormLayout();
 		toolbar.add(filterText, 2);
@@ -662,7 +620,7 @@ public class WorkViewHistory extends VerticalLayout {
 		toolbar.add(block, 2);
 		toolbar.add(scheme, 1);
 		toolbar.add(year, 1);
-
+		toolbar.add(addButton, 1);
 		toolbar.add(expButton, 1);
 		toolbar.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2), // 1 column by default
 				new FormLayout.ResponsiveStep("600px", 4), // 2 columns for screens wider than 600px
@@ -672,14 +630,304 @@ public class WorkViewHistory extends VerticalLayout {
 		return toolbar;
 	}
 
-	public void updateGrid() {
-		gridhistory.setItems(service.getFilteredWorksForHistory(filterText.getValue(), scheme.getValue(),
-				consti.getValue(), block.getValue(), year.getValue()));
-		updateCount();
+	public void configureForm() {
+		workform = new WorkForm(service, fileStorageService);
+		workform.setWidth("40%");
+		workform.addListener(WorkForm.SaveEvent.class, this::saveWork);
+		workform.addListener(WorkForm.DeleteEvent.class, this::deleteWork);
+		workform.addListener(WorkForm.RequestDeleteEvent.class, e -> confirmDelete(e.getWork()));
+		workform.addListener(WorkForm.CloseEvent.class, e -> closeEditor());
+		workform.addListener(WorkForm.RefreshEvent.class, e -> {
+			updateGrid();
+		});
 	}
-	private void updateCount() {
-	    int count = gridhistory.getListDataView().getItemCount();
-	    workCount.setText("Showing " + count + " works");
+
+	public void deleteWork(WorkForm.DeleteEvent event) {
+		Work work = event.getWork();
+		String remarks = event.getRemarks(); // ✅ get from event
+		deleteWorkAndLog(work, remarks);
 	}
 	
+	@Transactional
+	private void deleteWorkAndLog(Work work, String remarks) {
+		//ProcessFlow current = work.getProcessflow();
+		ProcessHistory existing=service.getLastPocessStep(work);
+		work.setIsDeleted(true);
+		work.setRemarks(remarks);
+		service.saveWork(work);
+
+		ProcessHistory ph = new ProcessHistory();
+		ph.setWork(work);
+		ph.setEnteredOn(LocalDateTime.now());
+		ph.setProcessName("Deleted");
+		ph.setFromStep(existing.getFromStep()); // may still be null, but we tried best
+		ph.setToStep(existing.getToStep());
+		ph.setUser(service.getLoggedUser());
+		ph.setRemarks(remarks); // if you have this column
+		service.saveProcessHistory(ph);
+		NotificationUtil.showSuccess("Work Deleted Successfully and Removed from Inbox");
+		updateGrid();
+	}
+
+	private void closeEditor() {
+		workform.setWork(null);
+		workform.setVisible(false);
+		workform.complRemarks.clear();
+		workform.genroRemarks.clear();
+		workform.instRemarks.clear();
+		workform.ucletter.clear();
+		workform.roRemarks.clear();
+		workform.rfRemarks.clear();
+		workform.complRemarks.clear();
+
+	}
+
+	private void addWork() {
+		// workform.save.setEnabled(true);
+		grid.asSingleSelect().clear();
+		// openWorkAccordion();
+		workform.workSelect.setValue("");
+		editWork(new Work());
+
+	}
+
+	public void saveWork(WorkForm.SaveEvent event) {
+
+		Work work = event.getWork();
+
+		boolean isNew = (work.getWorkId() == 0L); // Or work.getWorkCode() == 0
+
+		service.saveWork(work);
+
+		updateGrid();
+
+		if (isNew) {
+			addWorkAgain(work);
+		} else {
+			closeEditor();
+		}
+	}
+
+	private void addWorkAgain(Work work) {
+		// workform.save.setEnabled(true);
+		grid.asSingleSelect().clear();
+		closeAllAccordions();
+		Work newWork = new Work();
+		newWork.setBlock(work.getBlock());
+		newWork.setConstituency(work.getConstituency());
+		newWork.setSanctionDate(work.getSanctionDate());
+		newWork.setScheme(work.getScheme());
+		newWork.setYear(work.getYear());
+		newWork.setSanctionDate(work.getSanctionDate());
+		newWork.setSanctionNo(work.getSanctionNo());
+		editWork(newWork);
+	}
+
+	private void editWork(Work work) {
+		try {
+			workform.accordion.close();
+
+			if (work == null) {
+				closeEditor();
+				return;
+			}
+
+			// ✅ NEW/unsaved work: no DB queries
+			if (work.getWorkId() == 0) {
+				workform.setWork(work);
+				workform.setVisible(true);
+				workform.delete.setEnabled(false);
+
+				closeAllAccordions();
+				showOnly(workform.workaccordion);
+				applyAccordionVisibilityByAuthority();
+				return;
+			}
+
+			// ✅ Reload managed Work
+			Work dbWork = service.getWorkById(work.getWorkId());
+			if (dbWork == null) {
+				NotificationUtil.showError("Work not found. Reloading...");
+				UI.getCurrent().getPage().reload();
+				return;
+			}
+			work = dbWork;
+
+			workform.setWork(work);
+			workform.setVisible(true);
+
+			// roles
+			workform.delete.setEnabled(isAdmin);
+
+			// load installments once (safe now because Work is persisted)
+			int instcount = service.getInstallmentCount(work);
+			List<Installment> installments = service.getInstallments(work);
+
+			// default: reset accordion state
+			closeAllAccordions();
+
+			// If there are installments, allow admin to open work accordion
+			if (!installments.isEmpty()) {
+				workform.workaccordion.setOpened(isAdmin);
+				workform.workaccordion.setEnabled(isAdmin);
+			}
+
+			// Current stepCode
+			ProcessFlow pf = work.getProcessflow();
+			String stepCode = (pf != null) ? pf.getStepCode() : null;
+
+			// -------------- step-specific UI --------------
+			if ("WORK_ENTRY".equals(stepCode)) {
+
+				// ✅ return-to from HISTORY (must ignore reversed rows in query)
+
+				showOnly(workform.workaccordion);
+
+			} else if ("RELEASE_INSTALLMENT".equals(stepCode)) {
+
+				// ✅ return-to from HISTORY (must ignore reversed rows in query)
+				// ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				ProcessFlow returnTo = service.getPrevStepFromHistory(work);
+				workform.instAction.setItems("Forward", "Return to " + returnTo.getStepName());
+				workform.instAction.setValue("Forward");
+
+				if (instcount > 0 && installments.size() >= instcount) {
+					BigDecimal lastAmount = installments.get(instcount - 1).getInstallmentAmount();
+					BigDecimal remaining = work.getWorkAmount().subtract(lastAmount);
+
+					workform.installmentAmount.setValue(remaining);
+					workform.installmentmaster.setText("Installment: " + (instcount + 1));
+					// workform.instAction.setVisible(true);
+				} else {
+					// default first installment suggestion
+					BigDecimal perInst = work.getWorkAmount().divide(new BigDecimal(work.getNoOfInstallments()), 2,
+							java.math.RoundingMode.HALF_UP);
+					workform.installmentAmount.setValue(perInst);
+					workform.installmentmaster.setText("Installment: 1");
+					// workform.instAction.setVisible(false);
+				}
+
+				showOnly(workform.installaccordion);
+
+			} else if ("GENERATE_RELEASE_ORDER".equals(stepCode)) {
+				showOnly(workform.genroaccordion);
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.genroText.setText("Return to " + returnTo.getStepName());
+
+			} else if ("UPLOAD_RELEASE_ORDER".equals(stepCode)) {
+
+				showOnly(workform.uproaccordion);
+
+				// ✅ return-to from HISTORY
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.roAction.setItems("Forward", "Return to " + returnTo.getStepName());
+				workform.roAction.setValue("Forward");
+
+			} else if ("RELEASE_FUNDS".equals(stepCode)) {
+
+				showOnly(workform.rfaccordion);
+
+				// ✅ return-to from HISTORY
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.rfAction.setItems("Forward", "Return to " + returnTo.getStepName());
+				workform.rfAction.setValue("Forward");
+
+			} else if ("UPLOAD_UC".equals(stepCode)) {
+
+				showOnly(workform.ucaccordion);
+
+				// ✅ return-to from HISTORY
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.ucAction.setItems("Forward", "Return to " + returnTo.getStepName());
+				workform.ucAction.setValue("Forward");
+
+			} else if ("COMPLETED".equals(stepCode)) {
+				ProcessFlow returnTo = service.getReturnToStepFromHistory(work);
+				workform.complText.setText("Return to " + returnTo.getStepName());
+				showOnly(workform.complaccordion);
+
+			} else {
+				closeAllAccordions();
+			}
+
+			// -------------- Authority visibility --------------
+			applyAccordionVisibilityByAuthority();
+
+		} catch (ArithmeticException aE) {
+			NotificationUtil.showError("Invalid installment calculation. Check number of installments.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			NotificationUtil.showError("Something went wrong: " + e.getMessage());
+		}
+	}
+
+	private void applyAccordionVisibilityByAuthority() {
+		workform.workaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "WORK_ENTRY"));
+		workform.installaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "RELEASE_INSTALLMENT"));
+
+		// RO accordion should be visible if user has authority in either RO steps
+		boolean canRo = service.hasAuthorityForStep(loggedUser, "GENERATE_RELEASE_ORDER")
+				|| service.hasAuthorityForStep(loggedUser, "UPLOAD_RELEASE_ORDER");
+		workform.uproaccordion.setVisible(canRo);
+
+		workform.rfaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "RELEASE_FUNDS"));
+		workform.ucaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "UPLOAD_UC"));
+		workform.complaccordion.setVisible(service.hasAuthorityForStep(loggedUser, "COMPLETED"));
+	}
+
+	private Map<String, AccordionPanel> stepToPanel() {
+		return Map.of("WORK_ENTRY", workform.workaccordion, "RELEASE_INSTALLMENT", workform.installaccordion,
+				"GENERATE_RELEASE_ORDER", workform.genroaccordion, "UPLOAD_RELEASE_ORDER", workform.uproaccordion,
+				"RELEASE_FUNDS", workform.rfaccordion, "UPLOAD_UC", workform.ucaccordion, "COMPLETED",
+				workform.complaccordion);
+	}
+
+	public void openByStepCode(String stepCode) {
+		AccordionPanel p = stepToPanel().get(stepCode);
+		if (p == null) {
+			closeAllAccordions();
+			return;
+		}
+		showOnly(p);
+	}
+
+	private List<AccordionPanel> allPanels() {
+		return List.of(workform.workaccordion, workform.installaccordion, workform.uproaccordion,
+				workform.genroaccordion, workform.rfaccordion, workform.ucaccordion, workform.complaccordion);
+	}
+
+	private void showOnly(AccordionPanel panelToOpen) {
+		for (AccordionPanel p : allPanels()) {
+			boolean active = (p == panelToOpen);
+			p.setOpened(active);
+			p.setEnabled(active);
+		}
+	}
+
+	private void closeAllAccordions() {
+		for (AccordionPanel p : allPanels()) {
+			p.setOpened(false);
+			p.setEnabled(false);
+		}
+	}
+
+	public void enableFields() {
+		workform.scheme.setEnabled(true);
+		workform.constituency.setEnabled(true);
+		workform.block.setEnabled(true);
+		workform.year.setEnabled(true);
+		workform.workAmount.setEnabled(true);
+		workform.noOfInstallments.setEnabled(true);
+		workform.workSelect.setEnabled(true);
+	}
+
+	public void disableFields() {
+		workform.scheme.setEnabled(false);
+		workform.constituency.setEnabled(false);
+		workform.block.setEnabled(false);
+		workform.year.setEnabled(false);
+		workform.workAmount.setEnabled(false);
+		workform.noOfInstallments.setEnabled(false);
+		workform.workSelect.setEnabled(false);
+	}
 }
